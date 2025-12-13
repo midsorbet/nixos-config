@@ -39,6 +39,8 @@ let user = "me"; in
     agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
   ] ++ (import ../../modules/shared/packages.nix { inherit pkgs; });
 
+  services.aerospace.enable = true;
+
   # Broken: https://github.com/nix-darwin/nix-darwin/issues/1041
   # services.karabiner-elements.enable = true;
 
