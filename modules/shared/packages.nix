@@ -11,6 +11,7 @@ with pkgs; [
 
   dust
 
+  git-crypt
   glow
 
   hunspell
