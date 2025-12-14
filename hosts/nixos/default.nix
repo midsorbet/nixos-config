@@ -19,21 +19,22 @@ let user = "me";
       };
       efi.canTouchEfiVariables = true;
     };
-    initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usbhid" "usb_storage" "sd_mod" ];
+    initrd.availableKernelModules = [
+      "xhci_pci" "ahci" "nvme" "usbhid" "usb_storage" "sd_mod"
+      # VirtIO modules for better VM performance
+      "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_net"
+    ];
     kernelPackages = pkgs.linuxPackages_latest;
-    kernelModules = [ "uinput" ];
+    kernelModules = [ "uinput" "virtio_balloon" "virtio_console" "virtio_rng" ];
   };
 
   # Set your time zone.
   time.timeZone = "America/Los_Angeles";
 
-  # The global useDHCP flag is deprecated, therefore explicitly set to false here.
-  # Per-interface useDHCP will be mandatory in the future, so this generated config
-  # replicates the default behaviour.
   networking = {
-    hostName = "mini-nix"; 
-    useDHCP = false;
-    interfaces."enp0s1".useDHCP = true;
+    hostName = "mini-nix";
+    # Global DHCP - works for VMs where interface names may vary
+    useDHCP = true;
   };
 
   nix = {
@@ -60,11 +61,11 @@ let user = "me";
   };
 
   services = {
-    # Better support for general peripherals
-    libinput.enable = true;
-
     # Let's be able to SSH into this machine
     openssh.enable = true;
+
+    # QEMU guest agent for better host integration (graceful shutdown, etc.)
+    qemuGuest.enable = true;
 
     # Sync state between machines
     syncthing = {
@@ -83,13 +84,7 @@ let user = "me";
         options.globalAnnounceEnabled = false; # Only sync on LAN
       };
     };
-
-
-  # Video support
-  hardware = {
-    graphics.enable = true;
   };
-
 
   # Add docker daemon
   virtualisation.docker.enable = true;
