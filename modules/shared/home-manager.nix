@@ -73,6 +73,11 @@ let user = "me";
           )
         ];
       };
+      "nix-vm" = {
+        hostname = "192.168.64.3";
+        user = "me";
+        forwardAgent = true;
+      };
     };
   };
 
