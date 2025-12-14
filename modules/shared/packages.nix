@@ -30,6 +30,8 @@ with pkgs; [
   unrar
   unzip
 
+  vim
+
   wget
 
   zip
