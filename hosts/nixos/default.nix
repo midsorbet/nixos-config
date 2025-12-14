@@ -33,8 +33,8 @@ let user = "me";
 
   networking = {
     hostName = "mini-nix";
-    # Global DHCP - works for VMs where interface names may vary
     useDHCP = true;
+    firewall.allowedTCPPorts = [ 2283 ];
   };
 
   nix = {
@@ -61,6 +61,15 @@ let user = "me";
   };
 
   services = {
+    immich = {
+      enable = true;
+      host = "0.0.0.0";
+      port = 2283;
+      mediaLocation = "/mnt/data/immich";
+      openFirewall = true;
+      machine-learning.enable = true;
+    };
+
     # Let's be able to SSH into this machine
     openssh.enable = true;
 
