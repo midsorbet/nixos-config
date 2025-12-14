@@ -133,6 +133,16 @@ let user = "me"; in
   # Broken: https://github.com/nix-darwin/nix-darwin/issues/1041
   # services.karabiner-elements.enable = true;
 
+  launchd.user.agents.nixos-vm = {
+    serviceConfig = {
+      Label = "com.user.nixos-vim";
+      ProgramArguments = [ "/Applications/UTM.app/Contents/MacOS/utmctl" "start" "mini-nix" ];
+      RunAtLoad = true;
+      StandardOutPath = "/tmp/utm/nixos-vim.log";
+      StandardErrorPath = "/tmp/utm/nixos-vim.err";
+    };
+  };
+
   system = {
     checks.verifyNixPath = false;
     primaryUser = user;
