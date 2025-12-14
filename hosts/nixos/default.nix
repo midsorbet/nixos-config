@@ -84,6 +84,8 @@ let user = "me";
         options.globalAnnounceEnabled = false; # Only sync on LAN
       };
     };
+
+    tailscale.enable = true;
   };
 
   # Add docker daemon
