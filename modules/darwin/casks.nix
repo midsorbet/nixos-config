@@ -6,6 +6,8 @@ _:
   "ghostty"
 
   "karabiner-elements"
+  
+  "utm"
 
   "visual-studio-code"
 ]

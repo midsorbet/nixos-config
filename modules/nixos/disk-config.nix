@@ -1,17 +1,15 @@
 _: {
-  # This formats the disk with the ext4 filesystem
-  # Other examples found here: https://github.com/nix-community/disko/tree/master/example
   disko.devices = {
     disk = {
       vdb = {
-        device = "/dev/%DISK%";
+        device = "/dev/vda";
         type = "disk";
         content = {
           type = "gpt";
           partitions = {
             ESP = {
               type = "EF00";
-              size = "100M";
+              size = "512M";
               content = {
                 type = "filesystem";
                 format = "vfat";
