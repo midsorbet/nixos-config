@@ -154,16 +154,16 @@ let user = "me"; in
       };
 
       dock = {
-        autohide = false;
+        autohide = true;
         show-recents = false;
-        launchanim = true;
-        orientation = "bottom";
         tilesize = 48;
       };
 
       finder = {
-        _FXShowPosixPathInTitle = false;
+        AppleShowAllExtensions = true;
       };
+
+      screencapture.location = "~/Pictures/screenshots";
 
       trackpad = {
         Clicking = true;
