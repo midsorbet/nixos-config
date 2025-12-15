@@ -34,7 +34,12 @@ let user = "me";
   networking = {
     hostName = "mini-nix";
     useDHCP = true;
-    firewall.allowedTCPPorts = [ 2283 ];
+    firewall = {
+      enable = true;
+      trustedInterfaces = [ "tailscale0" ];
+      allowedUDPPorts = [ config.services.tailscale.port ];
+      allowedTCPPorts = [ 22 2283 ];
+    };
   };
 
   nix = {
@@ -94,7 +99,10 @@ let user = "me";
       };
     };
 
-    tailscale.enable = true;
+    tailscale = {
+      enable = true;
+      extraUpFlags = [ "--ssh" ];
+    };
   };
 
   # Add docker daemon
