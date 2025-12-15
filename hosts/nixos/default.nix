@@ -66,6 +66,18 @@ let user = "me";
   };
 
   services = {
+    borgbackup.jobs."immich" = {
+      paths = "/mnt/data/immich";
+      repo = "/mnt/data/backups/borg-immich";
+      startAt = "daily";
+      compression = "zstd";
+      encryption.mode = "none";
+      prune.keep = {
+        daily = 7;
+        weekly = 4;
+        monthly = 6;
+      };
+    };
     immich = {
       enable = true;
       host = "0.0.0.0";
