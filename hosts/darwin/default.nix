@@ -144,13 +144,35 @@ let user = "me"; in
     overrideLocalDns = true;
   };
 
-  launchd.user.agents.nixos-vm = {
-    serviceConfig = {
-      Label = "com.user.nixos-vim";
-      ProgramArguments = [ "/Applications/UTM.app/Contents/MacOS/utmctl" "start" "mini-nix" ];
-      RunAtLoad = true;
-      StandardOutPath = "/tmp/utm/nixos-vim.log";
-      StandardErrorPath = "/tmp/utm/nixos-vim.err";
+  launchd.user.agents = {
+    nixos-vm = {
+      serviceConfig = {
+        Label = "com.user.nixos-vim";
+        ProgramArguments = [ "/Applications/UTM.app/Contents/MacOS/utmctl" "start" "mini-nix" ];
+        RunAtLoad = true;
+        StandardOutPath = "/tmp/utm/nixos-vim.log";
+        StandardErrorPath = "/tmp/utm/nixos-vim.err";
+      };
+    };
+    immich-backup-sync = {
+      serviceConfig = {
+        Label = "com.user.immich-backup-sync";
+        ProgramArguments = [
+          "${pkgs.rsync}/bin/rsync"
+          "-rv"
+          "--omit-dir-times"
+          "--no-perms"
+          "--no-group"
+          "--no-owner"
+          "backup@mini-nix:borg-immich"
+          "/Volumes/Samsung T3/backups/"
+        ];
+        StartCalendarInterval = [
+          { Hour = 19; Minute = 0; }
+        ];
+        StandardOutPath = "/tmp/immich-backup-sync.log";
+        StandardErrorPath = "/tmp/immich-backup-sync.err";
+      };
     };
   };
 
