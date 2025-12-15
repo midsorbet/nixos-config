@@ -23,6 +23,8 @@ with pkgs; [
   libfido2
   lnav
 
+  mosh
+
   ncdu
 
   tree
