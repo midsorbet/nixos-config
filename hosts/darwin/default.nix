@@ -42,6 +42,12 @@ let user = "me"; in
     agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
   ] ++ (import ../../modules/shared/packages.nix { inherit pkgs; });
 
+  networking.knownNetworkServices = [
+    "Ethernet"
+    "Thunderbolt Bridge"
+    "Wi-Fi"
+  ];
+
   services.aerospace = {
     enable = true;
     settings = {
@@ -132,6 +138,11 @@ let user = "me"; in
 
   # Broken: https://github.com/nix-darwin/nix-darwin/issues/1041
   # services.karabiner-elements.enable = true;
+
+  services.tailscale = {
+    enable = true;
+    overrideLocalDns = true;
+  };
 
   launchd.user.agents.nixos-vm = {
     serviceConfig = {
