@@ -6,6 +6,7 @@ with pkgs; [
   aspellDicts.en
 
   claude-code
+  codex
   coreutils
   curl
 
