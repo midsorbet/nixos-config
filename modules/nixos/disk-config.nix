@@ -1,7 +1,7 @@
 _: {
   disko.devices = {
     disk = {
-      vdb = {
+      vda = {
         device = "/dev/vda";
         type = "disk";
         content = {
@@ -9,7 +9,7 @@ _: {
           partitions = {
             ESP = {
               type = "EF00";
-              size = "512M";
+              size = "1G";
               content = {
                 type = "filesystem";
                 format = "vfat";
