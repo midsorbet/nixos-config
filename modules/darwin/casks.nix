@@ -1,12 +1,10 @@
-_:
-
-[
+_: [
   "firefox"
 
   "ghostty"
 
   "karabiner-elements"
-  
+
   "utm"
 
   "visual-studio-code"

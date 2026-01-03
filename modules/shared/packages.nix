@@ -1,5 +1,4 @@
-{ pkgs }:
-
+{pkgs}:
 with pkgs; [
   age
   aspell
@@ -20,7 +19,7 @@ with pkgs; [
   imagemagick
 
   killall
-  
+
   libfido2
   lnav
 

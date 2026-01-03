@@ -1,6 +1,3 @@
-{ user, ... }:
-
-let
-  home           = builtins.getEnv "HOME";
-  in
-{ }
+{user, ...}: let
+  home = builtins.getEnv "HOME";
+in {}

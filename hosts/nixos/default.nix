@@ -1,8 +1,13 @@
-{ config, inputs, pkgs, agenix, ... }:
-
-let user = "me";
-    keys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"  ]; in
 {
+  config,
+  inputs,
+  pkgs,
+  agenix,
+  ...
+}: let
+  user = "me";
+  keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
+in {
   imports = [
     ../../modules/nixos/secrets.nix
     ../../modules/nixos/disk-config.nix
@@ -20,12 +25,20 @@ let user = "me";
       efi.canTouchEfiVariables = true;
     };
     initrd.availableKernelModules = [
-      "xhci_pci" "ahci" "nvme" "usbhid" "usb_storage" "sd_mod"
+      "xhci_pci"
+      "ahci"
+      "nvme"
+      "usbhid"
+      "usb_storage"
+      "sd_mod"
       # VirtIO modules for better VM performance
-      "virtio_pci" "virtio_blk" "virtio_scsi" "virtio_net"
+      "virtio_pci"
+      "virtio_blk"
+      "virtio_scsi"
+      "virtio_net"
     ];
     kernelPackages = pkgs.linuxPackages_latest;
-    kernelModules = [ "uinput" "virtio_balloon" "virtio_console" "virtio_rng" ];
+    kernelModules = ["uinput" "virtio_balloon" "virtio_console" "virtio_rng"];
   };
 
   # Set your time zone.
@@ -36,19 +49,19 @@ let user = "me";
     useDHCP = true;
     firewall = {
       enable = true;
-      trustedInterfaces = [ "tailscale0" ];
-      allowedUDPPorts = [ config.services.tailscale.port ];
-      allowedTCPPorts = [ 22 2283 ];
+      trustedInterfaces = ["tailscale0"];
+      allowedUDPPorts = [config.services.tailscale.port];
+      allowedTCPPorts = [22 2283];
     };
   };
 
   nix = {
-    nixPath = [ "nixos-config=/home/${user}/.local/share/src/nixos-config:/etc/nixos" ];
+    nixPath = ["nixos-config=/home/${user}/.local/share/src/nixos-config:/etc/nixos"];
     settings = {
-      allowed-users = [ "${user}" ];
-      trusted-users = [ "@admin" "${user}" ];
-      substituters = [ "https://nix-community.cachix.org" "https://cache.nixos.org" ];
-      trusted-public-keys = [ "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" ];
+      allowed-users = ["${user}"];
+      trusted-users = ["@admin" "${user}"];
+      substituters = ["https://nix-community.cachix.org" "https://cache.nixos.org"];
+      trusted-public-keys = ["cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="];
     };
 
     package = pkgs.nix;
@@ -147,15 +160,17 @@ let user = "me";
   # Don't require password for users in `wheel` group for these commands
   security.sudo = {
     enable = true;
-    extraRules = [{
-      commands = [
-       {
-         command = "${pkgs.systemd}/bin/reboot";
-         options = [ "NOPASSWD" ];
-        }
-      ];
-      groups = [ "wheel" ];
-    }];
+    extraRules = [
+      {
+        commands = [
+          {
+            command = "${pkgs.systemd}/bin/reboot";
+            options = ["NOPASSWD"];
+          }
+        ];
+        groups = ["wheel"];
+      }
+    ];
   };
 
   environment.systemPackages = with pkgs; [
@@ -167,7 +182,7 @@ let user = "me";
   fileSystems."/mnt/data" = {
     device = "/dev/disk/by-uuid/e39bd467-65ea-4b73-b985-60abe07a4047";
     fsType = "ext4";
-    options = [ "nofail" ];
+    options = ["nofail"];
   };
 
   system.stateVersion = "25.11"; # Don't change this

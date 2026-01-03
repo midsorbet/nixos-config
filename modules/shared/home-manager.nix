@@ -1,8 +1,12 @@
-{ config, pkgs, lib, ... }:
-
-let user = "me";
-    localSecrets = import ../../secrets.local.nix; in
 {
+  config,
+  pkgs,
+  lib,
+  ...
+}: let
+  user = "me";
+  localSecrets = import ../../secrets.local.nix;
+in {
   bat = {
     enable = true;
   };
@@ -40,7 +44,7 @@ let user = "me";
   };
 
   pandoc.enable = true;
-  
+
   ripgrep = {
     enable = true;
   };
@@ -49,26 +53,30 @@ let user = "me";
     enable = true;
     enableDefaultConfig = false;
     includes = [
-      (lib.mkIf pkgs.stdenv.hostPlatform.isLinux
+      (
+        lib.mkIf pkgs.stdenv.hostPlatform.isLinux
         "/home/${user}/.ssh/config_external"
       )
-      (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin
+      (
+        lib.mkIf pkgs.stdenv.hostPlatform.isDarwin
         "/Users/${user}/.ssh/config_external"
       )
     ];
     matchBlocks = {
       "*" = {
         # Set the default values we want to keep
-        sendEnv = [ "LANG" "LC_*" ];
+        sendEnv = ["LANG" "LC_*"];
         hashKnownHosts = true;
       };
       "github.com" = {
         identitiesOnly = true;
         identityFile = [
-          (lib.mkIf pkgs.stdenv.hostPlatform.isLinux
+          (
+            lib.mkIf pkgs.stdenv.hostPlatform.isLinux
             "/home/${user}/.ssh/id_github"
           )
-          (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin
+          (
+            lib.mkIf pkgs.stdenv.hostPlatform.isDarwin
             "/Users/${user}/.ssh/id_github"
           )
         ];
@@ -79,7 +87,7 @@ let user = "me";
   # Shared shell configuration
   zsh = {
     enable = true;
-    cdpath = [ "~/Projects" ];
+    cdpath = ["~/Projects"];
     initContent = lib.mkBefore ''
       if [[ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]]; then
         . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh

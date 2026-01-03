@@ -1,12 +1,15 @@
-{ config, pkgs, lib, home-manager, ... }:
-
-let
-  user = "me";
-  sharedFiles = import ../shared/files.nix { inherit config pkgs; };
-in
 {
+  config,
+  pkgs,
+  lib,
+  home-manager,
+  ...
+}: let
+  user = "me";
+  sharedFiles = import ../shared/files.nix {inherit config pkgs;};
+in {
   imports = [
-   ./dock
+    ./dock
   ];
 
   # It me
@@ -36,14 +39,19 @@ in
     # This message is safe to ignore. (https://github.com/dustinlyons/nixos-config/issues/83)
 
     #masApps = {
-      # "wireguard" = 1451685025;
+    # "wireguard" = 1451685025;
     #};
   };
 
   # Enable home-manager
   home-manager = {
     useGlobalPkgs = true;
-    users.${user} = { pkgs, config, lib, ... }:{
+    users.${user} = {
+      pkgs,
+      config,
+      lib,
+      ...
+    }: {
       home = {
         packages = pkgs.callPackage ./packages.nix {};
         file = lib.mkMerge [
@@ -52,7 +60,7 @@ in
 
         stateVersion = "25.11";
       };
-      programs = {} // import ../shared/home-manager.nix { inherit config pkgs lib; };
+      programs = {} // import ../shared/home-manager.nix {inherit config pkgs lib;};
 
       # Marked broken Oct 20, 2022 check later to remove this
       # https://github.com/nix-community/home-manager/issues/3344
@@ -67,13 +75,13 @@ in
       username = user;
       entries = [
         #{ path = "/Applications/Safari.app/"; }
-        { path = "/System/Applications/Messages.app/"; }
+        {path = "/System/Applications/Messages.app/";}
         #{ path = "/System/Applications/Notes.app/"; }
         #{ path = "${pkgs.ghostty}/Applications/Ghostty.app/"; }
         #{ path = "/System/Applications/Music.app/"; }
         #{ path = "/System/Applications/Photos.app/"; }
         #{ path = "/System/Applications/Photo Booth.app/"; }
-        { path = "/System/Applications/System Settings.app/"; }
+        {path = "/System/Applications/System Settings.app/";}
         {
           path = "${config.users.users.${user}.home}/Downloads";
           section = "others";
