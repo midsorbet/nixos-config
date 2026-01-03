@@ -54,7 +54,7 @@
     in {
       default = with pkgs;
         mkShell {
-          nativeBuildInputs = with pkgs; [bashInteractive git age];
+          nativeBuildInputs = with pkgs; [bashInteractive git age nixd];
         };
     };
     mkApp = scriptName: system: {
