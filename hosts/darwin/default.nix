@@ -63,6 +63,14 @@ in {
       enable-normalization-flatten-containers = false;
       enable-normalization-opposite-orientation-for-nested-containers = false;
       on-focus-changed = ["move-mouse window-lazy-center"];
+      gaps = {
+        inner.horizontal = 10;
+        inner.vertical = 10;
+        outer.left = 5;
+        outer.right = 5;
+        outer.top = 5;
+        outer.bottom = 5;
+      };
       workspace-to-monitor-force-assignment = {
         "1" = "main";
         "2" = "main";
