@@ -177,7 +177,7 @@ in {
   launchd.user.agents = {
     nixos-vm = {
       serviceConfig = {
-        Label = "com.user.nixos-vim";
+        Label = "com.user.nixos-vm";
         ProgramArguments = ["/Applications/UTM.app/Contents/MacOS/utmctl" "start" "mini-nix"];
         RunAtLoad = true;
         StandardOutPath = "/tmp/utm/nixos-vim.log";
