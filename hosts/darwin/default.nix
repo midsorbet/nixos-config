@@ -194,7 +194,7 @@ in {
               --no-perms \
               --no-group \
               --no-owner \
-              "backup@mini-nix:borg-immich" \
+              "backup@192.168.64.3:borg-immich" \
               "/Volumes/Samsung T3/backups/"; then
               ${pkgs.ntfy-sh}/bin/ntfy publish \
                 --title "Backup Failed" \
