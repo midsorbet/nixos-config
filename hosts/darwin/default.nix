@@ -188,14 +188,22 @@ in {
       serviceConfig = {
         Label = "com.user.immich-backup-sync";
         ProgramArguments = [
-          "${pkgs.rsync}/bin/rsync"
-          "-rv"
-          "--omit-dir-times"
-          "--no-perms"
-          "--no-group"
-          "--no-owner"
-          "backup@mini-nix:borg-immich"
-          "/Volumes/Samsung T3/backups/"
+          "${pkgs.writeShellScript "immich-backup-sync" ''
+            if ! ${pkgs.rsync}/bin/rsync -rv \
+              --omit-dir-times \
+              --no-perms \
+              --no-group \
+              --no-owner \
+              "backup@mini-nix:borg-immich" \
+              "/Volumes/Samsung T3/backups/"; then
+              ${pkgs.ntfy-sh}/bin/ntfy publish \
+                --title "Backup Failed" \
+                --priority high \
+                --tags warning \
+                "http://mini-nix:8080/backups" "immich-backup-sync failed on mini-me"
+              exit 1
+            fi
+          ''}"
         ];
         StartCalendarInterval = [
           {
