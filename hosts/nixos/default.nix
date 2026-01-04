@@ -51,7 +51,7 @@ in {
       enable = true;
       trustedInterfaces = ["tailscale0"];
       allowedUDPPorts = [config.services.tailscale.port];
-      allowedTCPPorts = [22 2283];
+      allowedTCPPorts = [22];
     };
   };
 
@@ -126,6 +126,64 @@ in {
 
     tailscale = {
       enable = true;
+    };
+
+    # Notification service (accessible via Tailscale)
+    ntfy-sh = {
+      enable = true;
+      settings = {
+        base-url = "http://mini-nix:8080";
+        listen-http = ":8080";
+      };
+    };
+  };
+
+  # Notification and monitoring systemd units
+  systemd = {
+    services = {
+      # Template service for failure notifications
+      "ntfy-failure@" = {
+        description = "Send failure notification for %i";
+        serviceConfig.Type = "oneshot";
+        scriptArgs = "%i";
+        script = ''
+          ${pkgs.ntfy-sh}/bin/ntfy publish \
+            --title "Service Failed" \
+            --priority high \
+            --tags warning \
+            http://localhost:8080/system "$1 failed on mini-nix"
+        '';
+      };
+
+      # Attach failure notifications to critical services
+      "borgbackup-job-immich".unitConfig.OnFailure = "ntfy-failure@%n";
+      "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
+      "immich-machine-learning".unitConfig.OnFailure = "ntfy-failure@%n";
+
+      # Disk space monitoring
+      "disk-space-check" = {
+        description = "Check disk space on /mnt/data";
+        serviceConfig.Type = "oneshot";
+        script = ''
+          usage=$(${pkgs.coreutils}/bin/df /mnt/data --output=pcent | ${pkgs.coreutils}/bin/tail -1 | ${pkgs.coreutils}/bin/tr -d ' %')
+          if [ "$usage" -gt 85 ]; then
+            ${pkgs.ntfy-sh}/bin/ntfy publish \
+              --title "Disk Space Warning" \
+              --priority high \
+              --tags warning \
+              http://localhost:8080/system "/mnt/data is at ''${usage}% capacity"
+          fi
+        '';
+      };
+    };
+
+    timers."disk-space-check" = {
+      description = "Daily disk space check";
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnCalendar = "daily";
+        Persistent = true;
+      };
     };
   };
 
