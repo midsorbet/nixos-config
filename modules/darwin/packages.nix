@@ -6,5 +6,4 @@ in
   ++ [
     dockutil
     fswatch
-    rsync
   ]

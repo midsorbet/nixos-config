@@ -188,7 +188,9 @@ in {
       serviceConfig = {
         Label = "com.user.immich-backup-sync";
         ProgramArguments = [
-          "${pkgs.writeShellScript "immich-backup-sync" ''
+          "/bin/bash"
+          "-c"
+          ''
             if ! ${pkgs.rsync}/bin/rsync -rv \
               --omit-dir-times \
               --no-perms \
@@ -203,7 +205,7 @@ in {
                 "http://mini-nix:8080/backups" "immich-backup-sync failed on mini-me"
               exit 1
             fi
-          ''}"
+          ''
         ];
         StartCalendarInterval = [
           {
