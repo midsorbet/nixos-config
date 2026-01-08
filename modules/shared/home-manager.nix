@@ -84,6 +84,17 @@ in {
     };
   };
 
+  zellij = {
+    enable = true;
+    enableZshIntegration = true;
+    attachExistingSession = true;
+    settings = {
+      session_serialization = true;
+      pane_viewport_serialization = true;
+      scrollback_lines_to_serialize = 1000;
+    };
+  };
+
   # Shared shell configuration
   zsh = {
     enable = true;
