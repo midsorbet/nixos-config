@@ -73,7 +73,7 @@ in {
   # Manages keys and such
   programs = {
     gnupg.agent.enable = true;
-
+    nix-ld.enable = true;
     # My shell
     zsh.enable = true;
   };
