@@ -1,4 +1,6 @@
 _: [
+  "chatgpt"
+
   "firefox"
 
   "ghostty"

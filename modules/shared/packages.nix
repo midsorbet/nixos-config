@@ -4,7 +4,6 @@ with pkgs; [
   aspell
   aspellDicts.en
 
-  claude-code
   codex
   coreutils
   curl

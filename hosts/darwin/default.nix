@@ -94,12 +94,12 @@ in {
           run = "move-node-to-workspace A";
         }
         {
-          "if".app-id = "com.anthropic.claudefordesktop";
-          run = "move-node-to-workspace C";
+          "if".app-id = "com.microsoft.VSCode";
+          run = "move-node-to-workspace B";
         }
         {
-          "if".app-id = "com.mitchellh.ghostty";
-          run = "move-node-to-workspace 1";
+          "if".app-id = "com.openai.chat";
+          run = "move-node-to-workspace C";
         }
       ];
       mode.main.binding = {
