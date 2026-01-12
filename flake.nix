@@ -31,6 +31,7 @@
       url = "git+ssh://git@github.com/midsorbet/nix-secrets.git";
       flake = false;
     };
+    vscode-server.url = "github:nix-community/nixos-vscode-server";
   };
   outputs = {
     self,
@@ -44,6 +45,7 @@
     disko,
     agenix,
     secrets,
+    vscode-server,
   } @ inputs: let
     user = "me";
     linuxSystems = ["x86_64-linux" "aarch64-linux"];
@@ -122,6 +124,10 @@
         inherit system;
         specialArgs = inputs;
         modules = [
+          vscode-server.nixosModules.default
+          {
+            services.vscode-server.enable = true;
+          }
           disko.nixosModules.disko
           home-manager.nixosModules.home-manager
           {
