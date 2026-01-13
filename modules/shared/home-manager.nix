@@ -87,6 +87,7 @@ in {
   zellij = {
     enable = true;
     enableZshIntegration = true;
+    attachExisitingSession = true;
     settings = {
       session_serialization = true;
       pane_viewport_serialization = true;
