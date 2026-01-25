@@ -84,14 +84,32 @@ in {
     };
   };
 
-  zellij = {
+  oh-my-posh = {
     enable = true;
     enableZshIntegration = true;
-    settings = {
-      session_serialization = true;
-      pane_viewport_serialization = true;
-      scrollback_lines_to_serialize = 1000;
-    };
+    settings = let
+      base = builtins.fromJSON (
+        builtins.unsafeDiscardStringContext (
+          builtins.readFile "${pkgs.oh-my-posh}/share/oh-my-posh/themes/catppuccin_frappe.omp.json"
+        )
+      );
+      zmxBlock = {
+        type = "prompt";
+        alignment = "left";
+        segments = [
+          {
+            type = "text";
+            style = "plain";
+            foreground = "p:mauve";
+            template = "{{ if .Env.ZMX_SESSION }} {{ .Env.ZMX_SESSION }} {{ end }}";
+          }
+        ];
+      };
+    in
+      base
+      // {
+        blocks = [zmxBlock] ++ base.blocks;
+      };
   };
 
   # Shared shell configuration
