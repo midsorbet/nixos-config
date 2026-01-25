@@ -19,4 +19,8 @@ in {
     owner = "${user}";
     group = "wheel";
   };
+
+  age.secrets."readeck-env" = {
+    file = "${secrets}/readeck.age";
+  };
 }

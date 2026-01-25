@@ -7,6 +7,7 @@
 }: let
   user = "me";
   keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
+  readeckConfig = (pkgs.formats.toml { }).generate "readeck.toml" config.services.readeck.settings;
 in {
   imports = [
     ../../modules/nixos/secrets.nix
@@ -51,7 +52,7 @@ in {
       enable = true;
       trustedInterfaces = ["tailscale0"];
       allowedUDPPorts = [config.services.tailscale.port];
-      allowedTCPPorts = [22];
+      allowedTCPPorts = [22 8000];
     };
   };
 
@@ -80,7 +81,22 @@ in {
 
   services = {
     borgbackup.jobs."immich" = {
-      paths = "/mnt/data/immich";
+      paths = [
+        "/mnt/data/immich"
+        "/mnt/data/backups/readeck-export.zip"
+      ];
+      readWritePaths = [
+        "/mnt/data/backups"
+      ];
+      preHook = ''
+        set -eu
+        cd /var/lib/readeck
+        . ${config.age.secrets.readeck-env.path}
+        ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} /mnt/data/backups/readeck-export.zip
+      '';
+      postHook = ''
+        ${pkgs.coreutils}/bin/rm -f /mnt/data/backups/readeck-export.zip
+      '';
       repo = "/mnt/data/backups/borg-immich";
       startAt = "daily";
       compression = "zstd";
@@ -98,6 +114,15 @@ in {
       mediaLocation = "/mnt/data/immich";
       openFirewall = true;
       machine-learning.enable = true;
+    };
+    readeck = {
+      enable = true;
+      environmentFile = config.age.secrets.readeck-env.path;
+      settings = {
+        main.log_level = "info";
+        server.host = "0.0.0.0";
+        server.port = 8000;
+      };
     };
 
     # Let's be able to SSH into this machine
