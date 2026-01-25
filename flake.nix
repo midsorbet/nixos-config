@@ -101,6 +101,7 @@
           modules = [
             home-manager.darwinModules.home-manager
             nix-homebrew.darwinModules.nix-homebrew
+            ./overlays
             {
               nix-homebrew = {
                 inherit user;
@@ -130,6 +131,7 @@
           }
           disko.nixosModules.disko
           home-manager.nixosModules.home-manager
+          ./overlays
           {
             home-manager = {
               useGlobalPkgs = true;

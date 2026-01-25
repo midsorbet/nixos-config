@@ -36,4 +36,5 @@ with pkgs; [
   wget
 
   zip
+  zmx
 ]
