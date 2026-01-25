@@ -7,7 +7,7 @@
 }: let
   user = "me";
   keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
-  readeckConfig = (pkgs.formats.toml { }).generate "readeck.toml" config.services.readeck.settings;
+  readeckConfig = (pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings;
 in {
   imports = [
     ../../modules/nixos/secrets.nix
