@@ -255,11 +255,11 @@ in {
     ];
   };
 
-  environment.systemPackages = with pkgs; [
-    agenix.packages."${pkgs.system}".default
-    gitFull
-    inetutils
-  ];
+  environment.systemPackages = with pkgs;
+    [
+      agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
+    ]
+    ++ (import ./packages.nix {inherit pkgs;});
 
   fileSystems."/mnt/data" = {
     device = "/dev/disk/by-uuid/e39bd467-65ea-4b73-b985-60abe07a4047";

@@ -4,6 +4,8 @@ with pkgs; let
 in
   shared-packages
   ++ [
+    gitFull
+
     ghostty
 
     # Security and authentication
@@ -19,6 +21,7 @@ in
     unixtools.netstat
 
     # File and system utilities
+    inetutils
     inotify-tools # inotifywait, inotifywatch - For file system events
     libnotify
     xdg-utils
