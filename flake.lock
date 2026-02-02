@@ -175,11 +175,11 @@
     "homebrew-core": {
       "flake": false,
       "locked": {
-        "lastModified": 1770058042,
-        "narHash": "sha256-nej7aRMx/vToZLaZKrR9jlu31oJ7iMKP9p859cii9+4=",
+        "lastModified": 1770075422,
+        "narHash": "sha256-ifTctMZj2qNXmw7V5Fwr0YIGF1NSqYSbNZVJbw/X41Y=",
         "owner": "homebrew",
         "repo": "homebrew-core",
-        "rev": "356447511cf7f2d207379607292564ec6528dd39",
+        "rev": "5421f77cbf04943cabfb5433db5f27bd9852ca69",
         "type": "github"
       },
       "original": {
@@ -270,11 +270,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1770073893,
-        "narHash": "sha256-00CB6KcU6p1zLFPTYbWDZP0/G2PEdMj8RtImexEmqkM=",
+        "lastModified": 1770075681,
+        "narHash": "sha256-AmrRpSFvm5A9vFCLLCXNaYbatDn8WEvbM/Vljpv2jNo=",
         "ref": "refs/heads/main",
-        "rev": "63f86c46e169f79cf5144f1f21e6cc68eb2c93d7",
-        "revCount": 8,
+        "rev": "d94447af0fe2a35c9219382c68dcfb5b7156f29c",
+        "revCount": 10,
         "type": "git",
         "url": "ssh://git@github.com/midsorbet/nix-secrets.git"
       },
