@@ -5,7 +5,6 @@ with pkgs; [
   aspellDicts.en
 
   bat
-  codex
   coreutils
   curl
 

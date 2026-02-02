@@ -24,6 +24,7 @@ in {
     casks = [
       "calibre"
       "chatgpt"
+      "codex"
       "firefox"
       "ghostty"
       "karabiner-elements"
