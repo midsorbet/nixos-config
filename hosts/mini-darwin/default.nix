@@ -7,7 +7,6 @@
   user = "me";
 in {
   imports = [
-    ./dock
     ./secrets.nix
     ../../modules/shared
     agenix.darwinModules.default
@@ -206,28 +205,6 @@ in {
     enable = true;
     active_color = "gradient(top_left=0xffbd93f9,bottom_right=0xffff79c6)";
     width = 5.0;
-  };
-
-  local = {
-    dock = {
-      enable = true;
-      username = user;
-      entries = [
-        #{ path = "/Applications/Safari.app/"; }
-        {path = "/System/Applications/Messages.app/";}
-        #{ path = "/System/Applications/Notes.app/"; }
-        #{ path = "${pkgs.ghostty}/Applications/Ghostty.app/"; }
-        #{ path = "/System/Applications/Music.app/"; }
-        #{ path = "/System/Applications/Photos.app/"; }
-        #{ path = "/System/Applications/Photo Booth.app/"; }
-        {path = "/System/Applications/System Settings.app/";}
-        {
-          path = "${config.users.users.${user}.home}/Downloads";
-          section = "others";
-          options = "--sort name --view grid --display stack";
-        }
-      ];
-    };
   };
 
   launchd.user.agents = {

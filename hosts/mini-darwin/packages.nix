@@ -4,6 +4,5 @@ with pkgs; let
 in
   shared-packages
   ++ [
-    dockutil
     fswatch
   ]
