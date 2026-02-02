@@ -7,11 +7,32 @@
   user = "me";
 in {
   imports = [
-    ../../modules/darwin/secrets.nix
-    ../../modules/darwin/home-manager.nix
+    ./dock
+    ./secrets.nix
     ../../modules/shared
     agenix.darwinModules.default
   ];
+
+  users.users.${user} = {
+    name = "${user}";
+    home = "/Users/${user}";
+    isHidden = false;
+    shell = pkgs.zsh;
+  };
+
+  homebrew = {
+    enable = true;
+    casks = [
+      "calibre"
+      "chatgpt"
+      "firefox"
+      "ghostty"
+      "karabiner-elements"
+      "utm"
+      "visual-studio-code"
+    ];
+    onActivation.autoUpdate = true;
+  };
 
   # Setup user, packages, programs
   nix = {
@@ -48,13 +69,23 @@ in {
     [
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
     ]
-    ++ (import ../../modules/shared/packages.nix {inherit pkgs;});
+    ++ (import ./packages.nix {inherit pkgs;});
 
   networking.knownNetworkServices = [
     "Ethernet"
     "Thunderbolt Bridge"
     "Wi-Fi"
   ];
+
+  programs.ssh.extraConfig = ''
+    Host *
+      SendEnv LANG LC_*
+      HashKnownHosts yes
+
+    Host github.com
+      IdentitiesOnly yes
+      IdentityFile /Users/${user}/.ssh/id_github
+  '';
 
   services.aerospace = {
     enable = true;
@@ -174,11 +205,33 @@ in {
     width = 5.0;
   };
 
+  local = {
+    dock = {
+      enable = true;
+      username = user;
+      entries = [
+        #{ path = "/Applications/Safari.app/"; }
+        {path = "/System/Applications/Messages.app/";}
+        #{ path = "/System/Applications/Notes.app/"; }
+        #{ path = "${pkgs.ghostty}/Applications/Ghostty.app/"; }
+        #{ path = "/System/Applications/Music.app/"; }
+        #{ path = "/System/Applications/Photos.app/"; }
+        #{ path = "/System/Applications/Photo Booth.app/"; }
+        {path = "/System/Applications/System Settings.app/";}
+        {
+          path = "${config.users.users.${user}.home}/Downloads";
+          section = "others";
+          options = "--sort name --view grid --display stack";
+        }
+      ];
+    };
+  };
+
   launchd.user.agents = {
     nixos-vm = {
       serviceConfig = {
         Label = "com.user.nixos-vm";
-        ProgramArguments = ["/Applications/UTM.app/Contents/MacOS/utmctl" "start" "mini-nix"];
+        ProgramArguments = ["/Applications/UTM.app/Contents/MacOS/utmctl" "start" "baymax"];
         RunAtLoad = true;
         StandardOutPath = "/tmp/utm/nixos-vim.log";
         StandardErrorPath = "/tmp/utm/nixos-vim.err";
@@ -202,7 +255,7 @@ in {
                 --title "Backup Failed" \
                 --priority high \
                 --tags warning \
-                "http://mini-nix:8080/backups" "immich-backup-sync failed on mini-me"
+                "http://baymax:8080/backups" "immich-backup-sync failed on mini-me"
               exit 1
             fi
           ''

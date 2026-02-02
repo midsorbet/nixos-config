@@ -1,8 +1,8 @@
 _: {
   disko.devices = {
     disk = {
-      vda = {
-        device = "/dev/vda";
+      system = {
+        device = "/dev/disk/by-id/ata-512GB_SSD_MQ23W96605594";
         type = "disk";
         content = {
           type = "gpt";

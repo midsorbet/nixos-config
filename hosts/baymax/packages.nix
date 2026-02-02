@@ -1,6 +1,6 @@
 {pkgs}:
 with pkgs; let
-  shared-packages = import ../shared/packages.nix {inherit pkgs;};
+  shared-packages = import ../../modules/shared/packages.nix {inherit pkgs;};
 in
   shared-packages
   ++ [
@@ -12,7 +12,6 @@ in
     # App and package management
     gnumake
     cmake
-    home-manager
 
     # Text and terminal utilities
     tree

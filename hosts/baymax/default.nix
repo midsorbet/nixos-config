@@ -10,8 +10,8 @@
   readeckConfig = (pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings;
 in {
   imports = [
-    ../../modules/nixos/secrets.nix
-    ../../modules/nixos/disk-config.nix
+    ./secrets.nix
+    ./disk-config.nix
     ../../modules/shared
     agenix.nixosModules.default
   ];
@@ -32,27 +32,22 @@ in {
       "usbhid"
       "usb_storage"
       "sd_mod"
-      # VirtIO modules for better VM performance
-      "virtio_pci"
-      "virtio_blk"
-      "virtio_scsi"
-      "virtio_net"
     ];
     kernelPackages = pkgs.linuxPackages_latest;
-    kernelModules = ["uinput" "virtio_balloon" "virtio_console" "virtio_rng"];
+    kernelModules = ["uinput"];
   };
 
   # Set your time zone.
   time.timeZone = "America/Los_Angeles";
 
   networking = {
-    hostName = "mini-nix";
+    hostName = "baymax";
     useDHCP = true;
     firewall = {
       enable = true;
       trustedInterfaces = ["tailscale0"];
       allowedUDPPorts = [config.services.tailscale.port];
-      allowedTCPPorts = [22 8000];
+      allowedTCPPorts = [22 2283 8000 8080];
     };
   };
 
@@ -75,6 +70,15 @@ in {
   programs = {
     gnupg.agent.enable = true;
     nix-ld.enable = true;
+    ssh.extraConfig = ''
+      Host *
+        SendEnv LANG LC_*
+        HashKnownHosts yes
+
+      Host github.com
+        IdentitiesOnly yes
+        IdentityFile /home/${user}/.ssh/id_github
+    '';
     # My shell
     zsh.enable = true;
   };
@@ -107,6 +111,7 @@ in {
         monthly = 6;
       };
     };
+
     immich = {
       enable = true;
       host = "0.0.0.0";
@@ -115,6 +120,27 @@ in {
       openFirewall = true;
       machine-learning.enable = true;
     };
+
+    # Notification service
+    ntfy-sh = {
+      enable = true;
+      settings = {
+        base-url = "http://baymax:8080";
+        listen-http = ":8080";
+      };
+    };
+
+    # Let's be able to SSH into this machine
+    openssh = {
+      enable = true;
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+        PermitRootLogin = "no";
+        AllowUsers = [user];
+      };
+    };
+
     readeck = {
       enable = true;
       environmentFile = config.age.secrets.readeck-env.path;
@@ -125,42 +151,12 @@ in {
       };
     };
 
-    # Let's be able to SSH into this machine
-    openssh.enable = true;
-
-    # QEMU guest agent for better host integration (graceful shutdown, etc.)
-    qemuGuest.enable = true;
-
-    # Sync state between machines
-    syncthing = {
-      enable = true;
-      openDefaultPorts = true;
-      dataDir = "/home/${user}/.local/share/syncthing";
-      configDir = "/home/${user}/.config/syncthing";
-      user = "${user}";
-      group = "users";
-      guiAddress = "127.0.0.1:8384";
-      overrideFolders = true;
-      overrideDevices = true;
-
-      settings = {
-        devices = {};
-        options.globalAnnounceEnabled = false; # Only sync on LAN
-      };
-    };
-
     tailscale = {
       enable = true;
     };
 
-    # Notification service (accessible via Tailscale)
-    ntfy-sh = {
-      enable = true;
-      settings = {
-        base-url = "http://mini-nix:8080";
-        listen-http = ":8080";
-      };
-    };
+    # Auto mount devices
+    udisks2.enable = true;
   };
 
   # Notification and monitoring systemd units
@@ -176,7 +172,7 @@ in {
             --title "Service Failed" \
             --priority high \
             --tags warning \
-            http://localhost:8080/system "$1 failed on mini-nix"
+            http://localhost:8080/system "$1 failed on baymax"
         '';
       };
 

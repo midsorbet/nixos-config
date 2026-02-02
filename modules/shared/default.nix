@@ -3,6 +3,11 @@
   pkgs,
   ...
 }: {
+  imports = [
+    ./shell-config.nix
+    ./wrapper-manager.nix
+  ];
+
   nixpkgs = {
     config = {
       allowUnfree = true;

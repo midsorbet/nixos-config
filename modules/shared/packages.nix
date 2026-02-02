@@ -4,11 +4,15 @@ with pkgs; [
   aspell
   aspellDicts.en
 
+  bat
   codex
   coreutils
   curl
 
+  direnv
   dust
+  fd
+  fzf
 
   git-crypt
   glow
@@ -26,8 +30,12 @@ with pkgs; [
 
   ncdu
 
+  oh-my-posh
+  pandoc
+  jq
   tree
 
+  ripgrep
   unrar
   unzip
 

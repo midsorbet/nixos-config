@@ -3,7 +3,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     agenix.url = "github:ryantm/agenix";
-    home-manager.url = "github:nix-community/home-manager";
+    wrapper-manager.url = "github:viperML/wrapper-manager";
     darwin = {
       url = "github:LnL7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -40,7 +40,7 @@
     homebrew-bundle,
     homebrew-core,
     homebrew-cask,
-    home-manager,
+    wrapper-manager,
     nixpkgs,
     disko,
     agenix,
@@ -48,81 +48,49 @@
     vscode-server,
   } @ inputs: let
     user = "me";
-    linuxSystems = ["x86_64-linux" "aarch64-linux"];
-    darwinSystems = ["aarch64-darwin" "x86_64-darwin"];
+    linuxSystems = ["aarch64-linux"];
+    darwinSystems = ["aarch64-darwin"];
     forAllSystems = f: nixpkgs.lib.genAttrs (linuxSystems ++ darwinSystems) f;
     devShell = system: let
       pkgs = nixpkgs.legacyPackages.${system};
     in {
       default = with pkgs;
         mkShell {
-          nativeBuildInputs = with pkgs; [bashInteractive git age nixd nodejs uv];
+          nativeBuildInputs = with pkgs; [bashInteractive git age nixd];
         };
-    };
-    mkApp = scriptName: system: {
-      type = "app";
-      program = "${(nixpkgs.legacyPackages.${system}.writeScriptBin scriptName ''
-        #!/usr/bin/env bash
-        PATH=${nixpkgs.legacyPackages.${system}.git}/bin:$PATH
-        echo "Running ${scriptName} for ${system}"
-        exec ${self}/apps/${system}/${scriptName}
-      '')}/bin/${scriptName}";
-    };
-    mkLinuxApps = system: {
-      "apply" = mkApp "apply" system;
-      "build-switch" = mkApp "build-switch" system;
-      "clean" = mkApp "clean" system;
-      "copy-keys" = mkApp "copy-keys" system;
-      "create-keys" = mkApp "create-keys" system;
-      "check-keys" = mkApp "check-keys" system;
-      "install" = mkApp "install" system;
-      "install-with-secrets" = mkApp "install-with-secrets" system;
-    };
-    mkDarwinApps = system: {
-      "apply" = mkApp "apply" system;
-      "build" = mkApp "build" system;
-      "build-switch" = mkApp "build-switch" system;
-      "clean" = mkApp "clean" system;
-      "copy-keys" = mkApp "copy-keys" system;
-      "create-keys" = mkApp "create-keys" system;
-      "check-keys" = mkApp "check-keys" system;
-      "rollback" = mkApp "rollback" system;
     };
   in {
     devShells = forAllSystems devShell;
-    apps = nixpkgs.lib.genAttrs linuxSystems mkLinuxApps // nixpkgs.lib.genAttrs darwinSystems mkDarwinApps;
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
 
-    darwinConfigurations = nixpkgs.lib.genAttrs darwinSystems (
-      system:
-        darwin.lib.darwinSystem {
-          inherit system;
-          specialArgs = inputs;
-          modules = [
-            home-manager.darwinModules.home-manager
-            nix-homebrew.darwinModules.nix-homebrew
-            ./overlays
-            {
-              nix-homebrew = {
-                inherit user;
-                enable = true;
-                taps = {
-                  "homebrew/homebrew-core" = homebrew-core;
-                  "homebrew/homebrew-cask" = homebrew-cask;
-                  "homebrew/homebrew-bundle" = homebrew-bundle;
-                };
-                mutableTaps = false;
-                autoMigrate = true;
+    darwinConfigurations = {
+      mini-darwin = darwin.lib.darwinSystem {
+        system = "aarch64-darwin";
+        specialArgs = inputs;
+        modules = [
+          nix-homebrew.darwinModules.nix-homebrew
+          ./overlays
+          {
+            nix-homebrew = {
+              inherit user;
+              enable = true;
+              taps = {
+                "homebrew/homebrew-core" = homebrew-core;
+                "homebrew/homebrew-cask" = homebrew-cask;
+                "homebrew/homebrew-bundle" = homebrew-bundle;
               };
-            }
-            ./hosts/darwin
-          ];
-        }
-    );
+              mutableTaps = false;
+              autoMigrate = true;
+            };
+          }
+          ./hosts/mini-darwin
+        ];
+      };
+    };
 
-    nixosConfigurations = nixpkgs.lib.genAttrs linuxSystems (system:
-      nixpkgs.lib.nixosSystem {
-        inherit system;
+    nixosConfigurations = {
+      baymax = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
         specialArgs = inputs;
         modules = [
           vscode-server.nixosModules.default
@@ -130,17 +98,10 @@
             services.vscode-server.enable = true;
           }
           disko.nixosModules.disko
-          home-manager.nixosModules.home-manager
           ./overlays
-          {
-            home-manager = {
-              useGlobalPkgs = true;
-              useUserPackages = true;
-              users.${user} = import ./modules/nixos/home-manager.nix;
-            };
-          }
-          ./hosts/nixos
+          ./hosts/baymax
         ];
-      });
+      };
+    };
   };
 }
