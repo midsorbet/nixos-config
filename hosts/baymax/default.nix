@@ -261,7 +261,7 @@ in {
         "wheel" # Enable ‘sudo’ for the user.
         "docker"
       ];
-      shell = pkgs.zsh;
+      shell = pkgs.zsh-wrapped;
       openssh.authorizedKeys.keys = keys;
     };
 

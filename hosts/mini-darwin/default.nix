@@ -16,7 +16,7 @@ in {
     name = "${user}";
     home = "/Users/${user}";
     isHidden = false;
-    shell = pkgs.zsh;
+    shell = pkgs.zsh-wrapped;
   };
 
   homebrew = {
@@ -67,7 +67,7 @@ in {
   # Turn off NIX_PATH warnings now that we're using flakes
 
   # Load configuration that is shared across systems
-  environment.systemPackages = with pkgs;
+  environment.systemPackages =
     [
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
     ]

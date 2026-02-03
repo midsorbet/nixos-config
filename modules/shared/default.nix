@@ -4,14 +4,19 @@
   ...
 }: {
   imports = [
-    ./shell-config.nix
     ./wrapper-manager.nix
   ];
 
-  nixpkgs = {
-    config = {
-      allowUnfree = true;
-      allowInsecure = false;
+  environment.shells = [pkgs.zsh-wrapped];
+
+  programs = {
+    direnv = {
+      enable = true;
+      nix-direnv.enable = true;
+    };
+
+    zsh = {
+      enable = true;
     };
   };
 }

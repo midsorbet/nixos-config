@@ -66,10 +66,17 @@
     darwinConfigurations = {
       mini-darwin = darwin.lib.darwinSystem {
         system = "aarch64-darwin";
+        pkgs = import ./packages {
+          inherit inputs;
+          system = "aarch64-darwin";
+          config = {
+            allowUnfree = true;
+            allowInsecure = false;
+          };
+        };
         specialArgs = inputs;
         modules = [
           nix-homebrew.darwinModules.nix-homebrew
-          ./overlays
           {
             nix-homebrew = {
               inherit user;
@@ -91,6 +98,14 @@
     nixosConfigurations = {
       baymax = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+        pkgs = import ./packages {
+          inherit inputs;
+          system = "x86_64-linux";
+          config = {
+            allowUnfree = true;
+            allowInsecure = false;
+          };
+        };
         specialArgs = inputs;
         modules = [
           vscode-server.nixosModules.default
@@ -98,7 +113,6 @@
             services.vscode-server.enable = true;
           }
           disko.nixosModules.disko
-          ./overlays
           ./hosts/baymax
         ];
       };
