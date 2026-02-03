@@ -132,6 +132,41 @@ in {
       };
     };
 
+    borgbackup.jobs."hetzner" = {
+      paths = [
+        "/mnt/data/immich"
+        "/mnt/data/backups/readeck-export.zip"
+      ];
+      readWritePaths = [
+        "/mnt/data/backups"
+      ];
+      preHook = ''
+        set -eu
+        cd /var/lib/readeck
+        . ${config.age.secrets.readeck-env.path}
+        ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} /mnt/data/backups/readeck-export.zip
+      '';
+      postHook = ''
+        ${pkgs.coreutils}/bin/rm -f /mnt/data/backups/readeck-export.zip
+      '';
+      repo = "ssh://u541275@u541275.your-storagebox.de:23/./borg-repo";
+      startAt = "03:00";
+      compression = "zstd";
+      encryption = {
+        mode = "repokey-blake2";
+        passCommand = "cat ${config.age.secrets.hetzner-borg-pass.path}";
+      };
+      environment = {
+        BORG_RSH = "ssh -i ${config.age.secrets.hetzner-borg-key.path} -p 23 -o StrictHostKeyChecking=accept-new";
+        BORG_REMOTE_PATH = "borg-1.4";
+      };
+      prune.keep = {
+        daily = 7;
+        weekly = 4;
+        monthly = 6;
+      };
+    };
+
     immich = {
       enable = true;
       host = "0.0.0.0";
@@ -198,6 +233,7 @@ in {
 
       # Attach failure notifications to critical services
       "borgbackup-job-immich".unitConfig.OnFailure = "ntfy-failure@%n";
+      "borgbackup-job-hetzner".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-machine-learning".unitConfig.OnFailure = "ntfy-failure@%n";
 

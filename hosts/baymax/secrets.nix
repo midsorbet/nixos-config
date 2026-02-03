@@ -23,4 +23,18 @@ in {
   age.secrets."readeck-env" = {
     file = "${secrets}/readeck.age";
   };
+
+  age.secrets."hetzner-borg-key" = {
+    file = "${secrets}/hetzner-borg-key.age";
+    mode = "600";
+    owner = "root";
+    group = "root";
+  };
+
+  age.secrets."hetzner-borg-pass" = {
+    file = "${secrets}/hetzner-borg-pass.age";
+    mode = "600";
+    owner = "root";
+    group = "root";
+  };
 }
