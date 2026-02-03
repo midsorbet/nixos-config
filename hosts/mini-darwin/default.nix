@@ -28,7 +28,6 @@ in {
       "firefox"
       "ghostty"
       "karabiner-elements"
-      "utm"
       "visual-studio-code"
     ];
     onActivation.autoUpdate = true;
@@ -209,15 +208,6 @@ in {
   };
 
   launchd.user.agents = {
-    nixos-vm = {
-      serviceConfig = {
-        Label = "com.user.nixos-vm";
-        ProgramArguments = ["/Applications/UTM.app/Contents/MacOS/utmctl" "start" "baymax"];
-        RunAtLoad = true;
-        StandardOutPath = "/tmp/utm/nixos-vim.log";
-        StandardErrorPath = "/tmp/utm/nixos-vim.err";
-      };
-    };
     immich-backup-sync = {
       serviceConfig = {
         Label = "com.user.immich-backup-sync";
