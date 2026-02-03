@@ -48,7 +48,7 @@
     vscode-server,
   } @ inputs: let
     user = "me";
-    linuxSystems = ["aarch64-linux"];
+    linuxSystems = ["x86_64-linux"];
     darwinSystems = ["aarch64-darwin"];
     forAllSystems = f: nixpkgs.lib.genAttrs (linuxSystems ++ darwinSystems) f;
     devShell = system: let
