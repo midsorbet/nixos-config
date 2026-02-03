@@ -90,6 +90,23 @@ in {
     borgbackup.jobs."immich" = {
       paths = [
         "/mnt/data/immich"
+      ];
+      preHook = ''
+        set -eu
+      '';
+      repo = "/mnt/data/backups/borg-immich";
+      startAt = "daily";
+      compression = "zstd";
+      encryption.mode = "none";
+      prune.keep = {
+        daily = 7;
+        weekly = 4;
+        monthly = 6;
+      };
+    };
+
+    borgbackup.jobs."readeck" = {
+      paths = [
         "/mnt/data/backups/readeck-export.zip"
       ];
       readWritePaths = [
@@ -104,7 +121,7 @@ in {
       postHook = ''
         ${pkgs.coreutils}/bin/rm -f /mnt/data/backups/readeck-export.zip
       '';
-      repo = "/mnt/data/backups/borg-immich";
+      repo = "/mnt/data/backups/borg-readeck";
       startAt = "daily";
       compression = "zstd";
       encryption.mode = "none";
