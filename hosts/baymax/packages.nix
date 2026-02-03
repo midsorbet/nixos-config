@@ -5,24 +5,15 @@ in
   shared-packages
   ++ [
     gitFull
-
     ghostty
-
-    # Security and authentication
+    inetutils
+    inotify-tools
     keepassxc
-
-    # App and package management
-    gnumake
-    cmake
-
-    # Text and terminal utilities
+    libnotify
+    smartmontools
     tree
     unixtools.ifconfig
     unixtools.netstat
-
-    # File and system utilities
-    inetutils
-    inotify-tools # inotifywait, inotifywatch - For file system events
-    libnotify
+    usbutils
     xdg-utils
   ]
