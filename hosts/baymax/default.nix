@@ -87,26 +87,9 @@ in {
   };
 
   services = {
-    borgbackup.jobs."immich" = {
+    borgbackup.jobs."local" = {
       paths = [
         "/mnt/data/immich"
-      ];
-      preHook = ''
-        set -eu
-      '';
-      repo = "/mnt/data/backups/borg-immich";
-      startAt = "daily";
-      compression = "zstd";
-      encryption.mode = "none";
-      prune.keep = {
-        daily = 7;
-        weekly = 4;
-        monthly = 6;
-      };
-    };
-
-    borgbackup.jobs."readeck" = {
-      paths = [
         "/mnt/data/backups/readeck-export.zip"
       ];
       readWritePaths = [
@@ -122,7 +105,7 @@ in {
       postHook = ''
         ${pkgs.coreutils}/bin/rm -f /mnt/data/backups/readeck-export.zip
       '';
-      repo = "/mnt/data/backups/borg-readeck";
+      repo = "/mnt/data/backups/borg-local";
       startAt = "daily";
       compression = "zstd";
       encryption.mode = "none";
@@ -234,7 +217,7 @@ in {
       };
 
       # Attach failure notifications to critical services
-      "borgbackup-job-immich".unitConfig.OnFailure = "ntfy-failure@%n";
+      "borgbackup-job-local".unitConfig.OnFailure = "ntfy-failure@%n";
       "borgbackup-job-hetzner".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-machine-learning".unitConfig.OnFailure = "ntfy-failure@%n";
