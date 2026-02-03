@@ -207,42 +207,6 @@ in {
     width = 5.0;
   };
 
-  launchd.user.agents = {
-    immich-backup-sync = {
-      serviceConfig = {
-        Label = "com.user.immich-backup-sync";
-        ProgramArguments = [
-          "/bin/bash"
-          "-c"
-          ''
-            if ! ${pkgs.rsync}/bin/rsync -rv \
-              --omit-dir-times \
-              --no-perms \
-              --no-group \
-              --no-owner \
-              "backup@192.168.64.3:borg-immich" \
-              "/Volumes/Samsung T3/backups/"; then
-              ${pkgs.ntfy-sh}/bin/ntfy publish \
-                --title "Backup Failed" \
-                --priority high \
-                --tags warning \
-                "http://baymax:8080/backups" "immich-backup-sync failed on mini-me"
-              exit 1
-            fi
-          ''
-        ];
-        StartCalendarInterval = [
-          {
-            Hour = 19;
-            Minute = 0;
-          }
-        ];
-        StandardOutPath = "/tmp/immich-backup-sync.log";
-        StandardErrorPath = "/tmp/immich-backup-sync.err";
-      };
-    };
-  };
-
   system = {
     checks.verifyNixPath = false;
     primaryUser = user;
