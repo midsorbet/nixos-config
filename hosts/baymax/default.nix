@@ -114,9 +114,10 @@ in {
       ];
       preHook = ''
         set -eu
-        cd /var/lib/readeck
-        . ${config.age.secrets.readeck-env.path}
-        ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} /mnt/data/backups/readeck-export.zip
+        ${pkgs.systemd}/bin/systemd-run --wait --pipe --quiet \
+          --property=EnvironmentFile=${config.age.secrets.readeck-env.path} \
+          --property=WorkingDirectory=/var/lib/readeck \
+          ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} /mnt/data/backups/readeck-export.zip
       '';
       postHook = ''
         ${pkgs.coreutils}/bin/rm -f /mnt/data/backups/readeck-export.zip
@@ -142,9 +143,10 @@ in {
       ];
       preHook = ''
         set -eu
-        cd /var/lib/readeck
-        . ${config.age.secrets.readeck-env.path}
-        ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} /mnt/data/backups/readeck-export.zip
+        ${pkgs.systemd}/bin/systemd-run --wait --pipe --quiet \
+          --property=EnvironmentFile=${config.age.secrets.readeck-env.path} \
+          --property=WorkingDirectory=/var/lib/readeck \
+          ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} /mnt/data/backups/readeck-export.zip
       '';
       postHook = ''
         ${pkgs.coreutils}/bin/rm -f /mnt/data/backups/readeck-export.zip
