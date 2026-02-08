@@ -300,7 +300,7 @@ in {
       extraGroups = [
         "wheel" # Enable ‘sudo’ for the user.
       ];
-      shell = pkgs.zsh-wrapped;
+      shell = pkgs.wrapperPackages.zsh;
       openssh.authorizedKeys.keys = keys;
     };
 

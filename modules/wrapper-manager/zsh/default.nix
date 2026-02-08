@@ -36,7 +36,7 @@
 
   zshDotDir = pkgs.writeTextDir ".zshrc" zshrc;
 in {
-  wrappers.zsh-wrapped = {
+  wrappers.zsh = {
     basePackage = pkgs.zsh;
     env.ZDOTDIR.value = zshDotDir;
   };

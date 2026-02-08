@@ -7,7 +7,7 @@
     ./wrapper-manager.nix
   ];
 
-  environment.shells = [pkgs.zsh-wrapped];
+  environment.shells = [pkgs.wrapperPackages.zsh];
 
   programs = {
     direnv = {

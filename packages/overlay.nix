@@ -8,8 +8,7 @@
       map (name: ../modules/wrapper-manager/${name}) (builtins.attrNames entries);
   };
   wrapperPackages = builtins.mapAttrs (_: value: value.wrapped) evald.config.wrappers;
-in
-  wrapperPackages
-  // {
-    zmx = final.callPackage ./zmx {};
-  }
+in {
+  wrapperPackages = wrapperPackages;
+  zmx = final.callPackage ./zmx {};
+}
