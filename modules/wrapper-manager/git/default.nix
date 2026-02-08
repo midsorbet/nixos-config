@@ -9,7 +9,7 @@
   '';
 in {
   wrappers.git = {
-    basePackage = pkgs.git;
+    basePackage = pkgs.gitFull;
     env.GIT_CONFIG_GLOBAL.value = gitConfig;
   };
 }

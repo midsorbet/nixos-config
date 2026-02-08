@@ -4,7 +4,6 @@ with pkgs; let
 in
   shared-packages
   ++ [
-    gitFull
     ghostty
     inetutils
     inotify-tools
