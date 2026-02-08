@@ -8,6 +8,12 @@
   user = "me";
   keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
   readeckConfig = (pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings;
+  userGroup = config.users.users.${user}.group;
+  userUid = config.users.users.${user}.uid;
+  userGid = config.users.groups.${userGroup}.gid;
+  cwaConfigDir = "/mnt/data/cwa/config";
+  cwaLibraryDir = "/mnt/data/cwa/library";
+  cwaIngestDir = "/mnt/data/cwa/ingest";
 in {
   imports = [
     ./secrets.nix
@@ -47,7 +53,7 @@ in {
       enable = true;
       trustedInterfaces = ["tailscale0"];
       allowedUDPPorts = [config.services.tailscale.port];
-      allowedTCPPorts = [22 2283 8000 8080];
+      allowedTCPPorts = [22 2283 8000 8080 8081 8083];
     };
   };
 
@@ -191,6 +197,16 @@ in {
       };
     };
 
+    miniflux = {
+      enable = true;
+      createDatabaseLocally = true;
+      adminCredentialsFile = config.age.secrets.miniflux-admin.path;
+      config = {
+        LISTEN_ADDR = "0.0.0.0:8081";
+        BASE_URL = "http://baymax:8081";
+      };
+    };
+
     tailscale = {
       enable = true;
     };
@@ -247,11 +263,35 @@ in {
         Persistent = true;
       };
     };
+
+    tmpfiles.rules = [
+      "d ${cwaConfigDir} 0755 ${user} ${userGroup} - -"
+      "d ${cwaIngestDir} 0755 ${user} ${userGroup} - -"
+      "d ${cwaLibraryDir} 0755 ${user} ${userGroup} - -"
+    ];
   };
 
-  # Add docker daemon
-  virtualisation.docker.enable = true;
-  virtualisation.docker.logDriver = "json-file";
+  # Run CWA via Podman (no Docker daemon).
+  virtualisation.podman.enable = true;
+  virtualisation.oci-containers = {
+    backend = "podman";
+    containers = {
+      calibre-web-automated = {
+        image = "crocodilestick/calibre-web-automated:v4.0.4";
+        ports = ["0.0.0.0:8083:8083"];
+        volumes = [
+          "${cwaConfigDir}:/config"
+          "${cwaIngestDir}:/cwa-book-ingest"
+          "${cwaLibraryDir}:/calibre-library"
+        ];
+        environment = {
+          PUID = toString userUid;
+          PGID = toString userGid;
+          TZ = config.time.timeZone;
+        };
+      };
+    };
+  };
 
   # It's me, it's you, it's everyone
   users.users = {
@@ -259,7 +299,6 @@ in {
       isNormalUser = true;
       extraGroups = [
         "wheel" # Enable ‘sudo’ for the user.
-        "docker"
       ];
       shell = pkgs.zsh-wrapped;
       openssh.authorizedKeys.keys = keys;
