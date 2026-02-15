@@ -30,7 +30,10 @@ in {
       "karabiner-elements"
       "visual-studio-code"
     ];
-    onActivation.autoUpdate = true;
+    onActivation = {
+      autoUpdate = true;
+      upgrade = true;
+    };
   };
 
   # Setup user, packages, programs
