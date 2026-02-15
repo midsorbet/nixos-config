@@ -24,10 +24,6 @@ in {
     file = "${secrets}/readeck.age";
   };
 
-  age.secrets."miniflux-admin" = {
-    file = "${secrets}/miniflux-admin.age";
-  };
-
   age.secrets."hetzner-borg-key" = {
     file = "${secrets}/hetzner-borg-key.age";
     mode = "600";

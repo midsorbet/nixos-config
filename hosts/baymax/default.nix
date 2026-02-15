@@ -54,7 +54,7 @@ in {
       allowedUDPPorts = [config.services.tailscale.port];
       # Keep SSH reachable on LAN; expose app ports only over Tailscale.
       allowedTCPPorts = [22];
-      interfaces.tailscale0.allowedTCPPorts = [2283 8000 8080 8081 8083];
+      interfaces.tailscale0.allowedTCPPorts = [2283 8000 8080];
     };
   };
 
@@ -199,9 +199,10 @@ in {
     };
 
     miniflux = {
-      enable = true;
+      # Temporarily disabled.
+      enable = false;
       createDatabaseLocally = true;
-      adminCredentialsFile = config.age.secrets.miniflux-admin.path;
+      # adminCredentialsFile = config.age.secrets.miniflux-admin.path;
       config = {
         LISTEN_ADDR = "0.0.0.0:8081";
         BASE_URL = "http://baymax:8081";
@@ -278,6 +279,8 @@ in {
     backend = "podman";
     containers = {
       calibre-web-automated = {
+        # Temporarily disabled.
+        autoStart = false;
         image = "crocodilestick/calibre-web-automated:v4.0.4";
         ports = ["0.0.0.0:8083:8083"];
         volumes = [
