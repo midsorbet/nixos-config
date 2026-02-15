@@ -51,9 +51,10 @@ in {
     useDHCP = true;
     firewall = {
       enable = true;
-      trustedInterfaces = ["tailscale0"];
       allowedUDPPorts = [config.services.tailscale.port];
-      allowedTCPPorts = [22 2283 8000 8080 8081 8083];
+      # Keep SSH reachable on LAN; expose app ports only over Tailscale.
+      allowedTCPPorts = [22];
+      interfaces.tailscale0.allowedTCPPorts = [2283 8000 8080 8081 8083];
     };
   };
 
@@ -163,7 +164,7 @@ in {
       host = "0.0.0.0";
       port = 2283;
       mediaLocation = "/mnt/data/immich";
-      openFirewall = true;
+      openFirewall = false;
       machine-learning.enable = true;
     };
 
