@@ -22,6 +22,7 @@ in {
   homebrew = {
     enable = true;
     casks = [
+      "anki"
       "calibre"
       "chatgpt"
       "codex"
