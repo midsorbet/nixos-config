@@ -37,6 +37,11 @@ in {
     };
   };
 
+  services.emacs = {
+    enable = true;
+    package = pkgs.emacs;
+  };
+
   # Setup user, packages, programs
   nix = {
     package = pkgs.nix;
