@@ -8,6 +8,7 @@
   user = "me";
   keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
   readeckConfig = (pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings;
+  readeckExport = "/mnt/data/backups/readeck-export.zip";
   userGroup = config.users.users.${user}.group;
   userUid = config.users.users.${user}.uid;
   userGid = config.users.groups.${userGroup}.gid;
@@ -97,21 +98,11 @@ in {
     borgbackup.jobs."local" = {
       paths = [
         "/mnt/data/immich"
-        "/mnt/data/backups/readeck-export.zip"
+        readeckExport
       ];
       readWritePaths = [
         "/mnt/data/backups"
       ];
-      preHook = ''
-        set -eu
-        ${pkgs.systemd}/bin/systemd-run --wait --pipe --quiet \
-          --property=EnvironmentFile=${config.age.secrets.readeck-env.path} \
-          --property=WorkingDirectory=/var/lib/readeck \
-          ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} /mnt/data/backups/readeck-export.zip
-      '';
-      postHook = ''
-        ${pkgs.coreutils}/bin/rm -f /mnt/data/backups/readeck-export.zip
-      '';
       repo = "/mnt/data/backups/borg-local";
       startAt = "daily";
       compression = "zstd";
@@ -129,23 +120,14 @@ in {
     borgbackup.jobs."hetzner" = {
       paths = [
         "/mnt/data/immich"
-        "/mnt/data/backups/readeck-export.zip"
+        readeckExport
       ];
       readWritePaths = [
         "/mnt/data/backups"
       ];
-      preHook = ''
-        set -eu
-        ${pkgs.systemd}/bin/systemd-run --wait --pipe --quiet \
-          --property=EnvironmentFile=${config.age.secrets.readeck-env.path} \
-          --property=WorkingDirectory=/var/lib/readeck \
-          ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} /mnt/data/backups/readeck-export.zip
-      '';
-      postHook = ''
-        ${pkgs.coreutils}/bin/rm -f /mnt/data/backups/readeck-export.zip
-      '';
       repo = "ssh://u541275@u541275.your-storagebox.de:23/./borg-repo";
-      startAt = "03:00";
+      # Triggered via borgbackup-job-local OnSuccess; no independent timer.
+      startAt = [];
       compression = "zstd";
       encryption = {
         mode = "repokey-blake2";
@@ -223,6 +205,21 @@ in {
   # Notification and monitoring systemd units
   systemd = {
     services = {
+      # Export Readeck once before the local Borg job, then local success chains hetzner.
+      "readeck-export" = {
+        description = "Export Readeck payload for Borg jobs";
+        serviceConfig = {
+          Type = "oneshot";
+          EnvironmentFile = config.age.secrets.readeck-env.path;
+          WorkingDirectory = "/var/lib/readeck";
+        };
+        script = ''
+          set -eu
+          ${pkgs.coreutils}/bin/rm -f ${readeckExport}
+          ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} ${readeckExport}
+        '';
+      };
+
       # Template service for failure notifications
       "ntfy-failure@" = {
         description = "Send failure notification for %i";
@@ -238,6 +235,10 @@ in {
       };
 
       # Attach failure notifications to critical services
+      "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
+      "borgbackup-job-local".requires = ["readeck-export.service"];
+      "borgbackup-job-local".after = ["readeck-export.service"];
+      "borgbackup-job-local".onSuccess = ["borgbackup-job-hetzner.service"];
       "borgbackup-job-local".unitConfig.OnFailure = "ntfy-failure@%n";
       "borgbackup-job-hetzner".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
