@@ -23,4 +23,6 @@ in {
   age.secrets."readeck-env".file = "${secrets}/readeck.age";
   age.secrets."hetzner-borg-key".file = "${secrets}/hetzner-borg-key.age";
   age.secrets."hetzner-borg-pass".file = "${secrets}/hetzner-borg-pass.age";
+  age.secrets."baymax-borg-pass".file = "${secrets}/baymax-borg-pass.age";
+  age.secrets."hetzner-borg-hosts".file = "${secrets}/hetzner-borg-hosts.age";
 }

@@ -115,7 +115,10 @@ in {
       repo = "/mnt/data/backups/borg-local";
       startAt = "daily";
       compression = "zstd";
-      encryption.mode = "none";
+      encryption = {
+        mode = "repokey-blake2";
+        passCommand = "cat ${config.age.secrets.baymax-borg-pass.path}";
+      };
       prune.keep = {
         daily = 7;
         weekly = 4;
@@ -149,7 +152,7 @@ in {
         passCommand = "cat ${config.age.secrets.hetzner-borg-pass.path}";
       };
       environment = {
-        BORG_RSH = "ssh -i ${config.age.secrets.hetzner-borg-key.path} -p 23 -o StrictHostKeyChecking=accept-new";
+        BORG_RSH = "ssh -i ${config.age.secrets.hetzner-borg-key.path} -p 23 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${config.age.secrets.hetzner-borg-hosts.path}";
         BORG_REMOTE_PATH = "borg-1.4";
       };
       prune.keep = {
