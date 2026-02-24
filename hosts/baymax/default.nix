@@ -53,9 +53,8 @@ in {
     firewall = {
       enable = true;
       allowedUDPPorts = [config.services.tailscale.port];
-      # Keep SSH reachable on LAN; expose app ports only over Tailscale.
-      allowedTCPPorts = [22];
-      interfaces.tailscale0.allowedTCPPorts = [2283 8000 8080];
+      interfaces.tailscale0.allowedTCPPorts = [22 2283 8000 8080];
+      interfaces.enp1s0.allowedTCPPorts = [22 2283 8000];
     };
   };
 
