@@ -96,13 +96,16 @@ in {
   services = {
     borgbackup.jobs."local" = {
       paths = [
-        "/mnt/data/immich"
-        readeckExport
+        "/mnt/data"
+        "/home"
       ];
       readWritePaths = [
         "/mnt/data/backups"
       ];
-      repo = "/mnt/data/backups/borg-local";
+      repo = "/mnt/backup/borg-local";
+      removableDevice = true;
+      doInit = false;
+      persistentTimer = true;
       startAt = "daily";
       compression = "zstd";
       encryption = {
@@ -118,8 +121,8 @@ in {
 
     borgbackup.jobs."hetzner" = {
       paths = [
-        "/mnt/data/immich"
-        readeckExport
+        "/mnt/data"
+        "/home"
       ];
       readWritePaths = [
         "/mnt/data/backups"
@@ -245,17 +248,21 @@ in {
 
       # Disk space monitoring
       "disk-space-check" = {
-        description = "Check disk space on /mnt/data";
+        description = "Check mounted disks' space";
         serviceConfig.Type = "oneshot";
         script = ''
-          usage=$(${pkgs.coreutils}/bin/df /mnt/data --output=pcent | ${pkgs.coreutils}/bin/tail -1 | ${pkgs.coreutils}/bin/tr -d ' %')
-          if [ "$usage" -gt 85 ]; then
-            ${pkgs.ntfy-sh}/bin/ntfy publish \
-              --title "Disk Space Warning" \
-              --priority high \
-              --tags warning \
-              http://localhost:8080/system "/mnt/data is at ''${usage}% capacity"
-          fi
+          set -eu
+
+          for path in /mnt/data /mnt/backup; do
+            usage=$(${pkgs.coreutils}/bin/df "$path" --output=pcent | ${pkgs.coreutils}/bin/tail -1 | ${pkgs.coreutils}/bin/tr -d ' %')
+            if [ "$usage" -gt 85 ]; then
+              ${pkgs.ntfy-sh}/bin/ntfy publish \
+                --title "Disk Space Warning" \
+                --priority high \
+                --tags warning \
+                http://localhost:8080/system "$path is at ''${usage}% capacity"
+            fi
+          done
         '';
       };
     };
@@ -347,6 +354,12 @@ in {
 
   fileSystems."/mnt/data" = {
     device = "/dev/disk/by-uuid/e39bd467-65ea-4b73-b985-60abe07a4047";
+    fsType = "ext4";
+    options = ["nofail"];
+  };
+
+  fileSystems."/mnt/backup" = {
+    device = "/dev/disk/by-uuid/22b41279-319f-4a61-903f-6532f7c2525c";
     fsType = "ext4";
     options = ["nofail"];
   };
