@@ -199,6 +199,27 @@ in {
       };
     };
 
+    smartd = {
+      enable = true;
+      autodetect = false;
+      extraOptions = ["--interval=1800"];
+      defaults.monitored = "-a -o on -S on -s (S/../.././03|L/../../7/04)";
+      devices = [
+        {
+          device = "/dev/disk/by-id/usb-ADATA_HV611_457293242024-0:0";
+          options = "-d sat -d removable";
+        }
+        {
+          device = "/dev/disk/by-id/usb-Seagate_Portable_NT3F4401-0:0";
+          options = "-d sat -d removable";
+        }
+      ];
+      notifications = {
+        mail.enable = false;
+        wall.enable = false;
+      };
+    };
+
     tailscale = {
       enable = true;
     };
@@ -248,6 +269,7 @@ in {
       "borgbackup-job-hetzner".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-machine-learning".unitConfig.OnFailure = "ntfy-failure@%n";
+      "smartd".unitConfig.OnFailure = "ntfy-failure@%n";
 
       # Disk space monitoring
       "disk-space-check" = {
