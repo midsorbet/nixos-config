@@ -10,11 +10,6 @@
   readeckConfig = (pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings;
   readeckExport = "/mnt/data/readeck/readeck-export.zip";
   userGroup = config.users.users.${user}.group;
-  userUid = config.users.users.${user}.uid;
-  userGid = config.users.groups.${userGroup}.gid;
-  cwaConfigDir = "/mnt/data/cwa/config";
-  cwaLibraryDir = "/mnt/data/cwa/library";
-  cwaIngestDir = "/mnt/data/cwa/ingest";
 in {
   imports = [
     ./secrets.nix
@@ -357,35 +352,6 @@ in {
       };
     };
 
-    tmpfiles.rules = [
-      "d ${cwaConfigDir} 0755 ${user} ${userGroup} - -"
-      "d ${cwaIngestDir} 0755 ${user} ${userGroup} - -"
-      "d ${cwaLibraryDir} 0755 ${user} ${userGroup} - -"
-    ];
-  };
-
-  # Run CWA via Podman (no Docker daemon).
-  virtualisation.podman.enable = true;
-  virtualisation.oci-containers = {
-    backend = "podman";
-    containers = {
-      calibre-web-automated = {
-        # Temporarily disabled.
-        autoStart = false;
-        image = "crocodilestick/calibre-web-automated:v4.0.4";
-        ports = ["0.0.0.0:8083:8083"];
-        volumes = [
-          "${cwaConfigDir}:/config"
-          "${cwaIngestDir}:/cwa-book-ingest"
-          "${cwaLibraryDir}:/calibre-library"
-        ];
-        environment = {
-          PUID = toString userUid;
-          PGID = toString userGid;
-          TZ = config.time.timeZone;
-        };
-      };
-    };
   };
 
   # It's me, it's you, it's everyone
