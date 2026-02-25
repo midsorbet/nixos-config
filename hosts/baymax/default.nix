@@ -8,7 +8,7 @@
   user = "me";
   keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
   readeckConfig = (pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings;
-  readeckExport = "/mnt/data/backups/readeck-export.zip";
+  readeckExport = "/mnt/data/readeck/readeck-export.zip";
   userGroup = config.users.users.${user}.group;
   userUid = config.users.users.${user}.uid;
   userGid = config.users.groups.${userGroup}.gid;
@@ -102,9 +102,6 @@ in {
         "/mnt/data"
         "/home"
       ];
-      readWritePaths = [
-        "/mnt/data/backups"
-      ];
       repo = "/mnt/backup/borg-local";
       removableDevice = true;
       doInit = false;
@@ -126,9 +123,6 @@ in {
       paths = [
         "/mnt/data"
         "/home"
-      ];
-      readWritePaths = [
-        "/mnt/data/backups"
       ];
       repo = "ssh://u541275@u541275.your-storagebox.de:23/./borg-repo";
       # Triggered via borgbackup-job-local OnSuccess; no independent timer.
@@ -237,10 +231,13 @@ in {
           Type = "oneshot";
           EnvironmentFile = config.age.secrets.readeck-env.path;
           WorkingDirectory = "/var/lib/readeck";
+          ExecStartPre = [
+            "${pkgs.coreutils}/bin/mkdir -p /mnt/data/readeck"
+            "${pkgs.coreutils}/bin/rm -f ${readeckExport}"
+          ];
         };
         script = ''
           set -eu
-          ${pkgs.coreutils}/bin/rm -f ${readeckExport}
           ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} ${readeckExport}
         '';
       };
