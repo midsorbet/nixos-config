@@ -246,6 +246,28 @@ in {
         '';
       };
 
+      "borg-check-local-repo-meta" = {
+        description = "Run repository-only Borg integrity check for local repo";
+        serviceConfig.Type = "oneshot";
+        script = ''
+          set -eu
+          export BORG_REPO=/mnt/backup/borg-local
+          export BORG_PASSCOMMAND="cat ${config.age.secrets.baymax-borg-pass.path}"
+          ${config.services.borgbackup.package}/bin/borg check --repository-only
+        '';
+      };
+
+      "borg-check-local-repo-data" = {
+        description = "Run full-data Borg integrity check for local repo";
+        serviceConfig.Type = "oneshot";
+        script = ''
+          set -eu
+          export BORG_REPO=/mnt/backup/borg-local
+          export BORG_PASSCOMMAND="cat ${config.age.secrets.baymax-borg-pass.path}"
+          ${config.services.borgbackup.package}/bin/borg check --verify-data
+        '';
+      };
+
       # Template service for failure notifications
       "ntfy-failure@" = {
         description = "Send failure notification for %i";
@@ -262,6 +284,8 @@ in {
 
       # Attach failure notifications to critical services
       "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
+      "borg-check-local-repo-meta".unitConfig.OnFailure = "ntfy-failure@%n";
+      "borg-check-local-repo-data".unitConfig.OnFailure = "ntfy-failure@%n";
       "borgbackup-job-local".requires = ["readeck-export.service"];
       "borgbackup-job-local".after = ["readeck-export.service"];
       "borgbackup-job-local".onSuccess = ["borgbackup-job-hetzner.service"];
@@ -297,6 +321,24 @@ in {
       wantedBy = ["timers.target"];
       timerConfig = {
         OnCalendar = "daily";
+        Persistent = true;
+      };
+    };
+
+    timers."borg-check-local-repo-meta" = {
+      description = "Weekly Borg metadata check for local repo";
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnCalendar = "weekly";
+        Persistent = true;
+      };
+    };
+
+    timers."borg-check-local-repo-data" = {
+      description = "Monthly Borg full-data check for local repo";
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnCalendar = "monthly";
         Persistent = true;
       };
     };
