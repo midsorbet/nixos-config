@@ -56,7 +56,7 @@
     in {
       default = with pkgs;
         mkShell {
-          nativeBuildInputs = with pkgs; [bashInteractive git age nixd];
+          nativeBuildInputs = with pkgs; [bashInteractive git age nixd uv];
         };
     };
   in {
