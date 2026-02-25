@@ -316,7 +316,7 @@ in {
       description = "Daily disk space check";
       wantedBy = ["timers.target"];
       timerConfig = {
-        OnCalendar = "daily";
+        OnCalendar = "*-*-* 00:20:00";
         Persistent = true;
       };
     };
@@ -325,7 +325,7 @@ in {
       description = "Weekly Borg metadata check for local repo";
       wantedBy = ["timers.target"];
       timerConfig = {
-        OnCalendar = "weekly";
+        OnCalendar = "Mon *-*-* 03:00:00";
         Persistent = true;
       };
     };
@@ -334,7 +334,7 @@ in {
       description = "Monthly Borg full-data check for local repo";
       wantedBy = ["timers.target"];
       timerConfig = {
-        OnCalendar = "monthly";
+        OnCalendar = "*-*-01 04:00:00";
         Persistent = true;
       };
     };
