@@ -56,7 +56,7 @@ in {
     firewall = {
       enable = true;
       allowedUDPPorts = [config.services.tailscale.port];
-      interfaces.tailscale0.allowedTCPPorts = [22 2283 8000 8080 8081];
+      interfaces.tailscale0.allowedTCPPorts = [22 2283 8000 8080 8081 28981];
       interfaces.enp1s0.allowedTCPPorts = [22 2283 8000];
     };
   };
@@ -192,6 +192,23 @@ in {
       };
     };
 
+    paperless = {
+      enable = true;
+      address = "0.0.0.0";
+      dataDir = "/mnt/data/paperless";
+      passwordFile = config.age.secrets.paperless.path;
+      configureTika = true;
+      settings = {
+        PAPERLESS_URL = "http://baymax:28981";
+        PAPERLESS_CONSUMER_RECURSIVE = true;
+        PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = true;
+      };
+      exporter = {
+        enable = true;
+        onCalendar = "Sun *-*-* 23:30:00";
+      };
+    };
+
     smartd = {
       enable = true;
       autodetect = false;
@@ -280,6 +297,7 @@ in {
 
       # Attach failure notifications to critical services
       "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
+      "paperless-exporter".unitConfig.OnFailure = "ntfy-failure@%n";
       "borg-check-local-repo-meta".unitConfig.OnFailure = "ntfy-failure@%n";
       "borg-check-local-repo-data".unitConfig.OnFailure = "ntfy-failure@%n";
       "borgbackup-job-local".requires = ["readeck-export.service"];
