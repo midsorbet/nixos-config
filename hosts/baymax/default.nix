@@ -385,13 +385,6 @@ in {
       openssh.authorizedKeys.keys = keys;
     };
 
-    backup = {
-      isNormalUser = true;
-      openssh.authorizedKeys.keys = [
-        ''command="${pkgs.rrsync}/bin/rrsync -ro /mnt/data/backups",restrict ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC me@mini-me.local''
-      ];
-    };
-
     root = {
       openssh.authorizedKeys.keys = keys;
     };
