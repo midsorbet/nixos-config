@@ -56,7 +56,7 @@ in {
     firewall = {
       enable = true;
       allowedUDPPorts = [config.services.tailscale.port];
-      interfaces.tailscale0.allowedTCPPorts = [22 2283 8000 8080];
+      interfaces.tailscale0.allowedTCPPorts = [22 2283 8000 8080 8081];
       interfaces.enp1s0.allowedTCPPorts = [22 2283 8000];
     };
   };
@@ -189,10 +189,9 @@ in {
     };
 
     miniflux = {
-      # Temporarily disabled.
-      enable = false;
+      enable = true;
       createDatabaseLocally = true;
-      # adminCredentialsFile = config.age.secrets.miniflux-admin.path;
+      adminCredentialsFile = config.age.secrets.miniflux-admin.path;
       config = {
         LISTEN_ADDR = "0.0.0.0:8081";
         BASE_URL = "http://baymax:8081";
