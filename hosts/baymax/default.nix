@@ -42,6 +42,9 @@ in {
     ];
     kernelPackages = pkgs.linuxPackages_latest;
     kernelModules = ["uinput"];
+    # Seagate 0bc2:2344: force usb-storage for SMART; Seagate UAS enclosures block ATA pass-through.
+    # https://www.mcgarrah.org/usb-drive-smart/
+    kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
   };
 
   # Set your time zone.
