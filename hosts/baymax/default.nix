@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   pkgs,
   agenix,
   ...
@@ -9,7 +8,6 @@
   keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
   readeckConfig = (pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings;
   readeckExport = "/mnt/data/readeck/readeck-export.zip";
-  userGroup = config.users.users.${user}.group;
 in {
   imports = [
     ./secrets.nix
@@ -34,12 +32,25 @@ in {
       "usbhid"
       "usb_storage"
       "sd_mod"
+      "igc"
     ];
-    kernelPackages = pkgs.linuxPackages_latest;
+    initrd.network = {
+      enable = true;
+      ssh = {
+        enable = true;
+        port = 2222;
+        authorizedKeys = keys;
+        hostKeys = ["/persist/secrets/initrd/ssh_host_ed25519_key"];
+      };
+      postCommands = ''
+        zpool import -N -d /dev/disk/by-id rpool
+        echo 'zfs load-key -L prompt rpool && killall zfs; exit' > /root/.profile
+      '';
+    };
+    supportedFilesystems = ["zfs"];
     kernelModules = ["uinput"];
-    # Seagate 0bc2:2344: force usb-storage for SMART; Seagate UAS enclosures block ATA pass-through.
-    # https://www.mcgarrah.org/usb-drive-smart/
-    kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
+    # Force usb-storage (disable UAS) for both external enclosures to avoid reset/timeouts.
+    kernelParams = ["usb-storage.quirks=0bc2:2344:u,125f:a36a:u"];
   };
 
   # Set your time zone.
@@ -47,6 +58,7 @@ in {
 
   networking = {
     hostName = "baymax";
+    hostId = "378a1cd8";
     useDHCP = true;
     firewall = {
       enable = true;
@@ -92,6 +104,8 @@ in {
   };
 
   services = {
+    zfs.autoScrub.enable = true;
+
     borgbackup.jobs."local" = {
       paths = [
         "/mnt/data"
@@ -228,9 +242,6 @@ in {
     tailscale = {
       enable = true;
     };
-
-    # Auto mount devices
-    udisks2.enable = true;
   };
 
   # Notification and monitoring systemd units
@@ -244,7 +255,6 @@ in {
           EnvironmentFile = config.age.secrets.readeck-env.path;
           WorkingDirectory = "/var/lib/readeck";
           ExecStartPre = [
-            "${pkgs.coreutils}/bin/mkdir -p /mnt/data/readeck"
             "${pkgs.coreutils}/bin/rm -f ${readeckExport}"
           ];
         };
@@ -352,6 +362,18 @@ in {
       };
     };
 
+    tmpfiles.settings."20-baymax-data-paths" = {
+      "${config.services.immich.mediaLocation}".d = {
+        user = config.services.immich.user;
+        group = config.services.immich.group;
+        mode = "0700";
+      };
+      "/mnt/data/readeck".d = {
+        user = "root";
+        group = "root";
+        mode = "0750";
+      };
+    };
   };
 
   # It's me, it's you, it's everyone
@@ -391,18 +413,6 @@ in {
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
     ]
     ++ (import ./packages.nix {inherit pkgs;});
-
-  fileSystems."/mnt/data" = {
-    device = "/dev/disk/by-uuid/e39bd467-65ea-4b73-b985-60abe07a4047";
-    fsType = "ext4";
-    options = ["nofail"];
-  };
-
-  fileSystems."/mnt/backup" = {
-    device = "/dev/disk/by-uuid/22b41279-319f-4a61-903f-6532f7c2525c";
-    fsType = "ext4";
-    options = ["nofail"];
-  };
 
   system.stateVersion = "25.11"; # Don't change this
 }
