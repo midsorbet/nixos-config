@@ -48,6 +48,7 @@ in {
       '';
     };
     supportedFilesystems = ["zfs"];
+    kernelPackages = pkgs.linuxPackages_6_12;
     kernelModules = ["uinput"];
     # Force usb-storage (disable UAS) for both external enclosures to avoid reset/timeouts.
     kernelParams = ["usb-storage.quirks=0bc2:2344:u,125f:a36a:u"];
