@@ -317,21 +317,23 @@ in {
 
       # Disk space monitoring
       "disk-space-check" = {
-        description = "Check mounted disks' space";
+        description = "Check ZFS pool capacity";
         serviceConfig.Type = "oneshot";
         script = ''
           set -eu
 
-          for path in /mnt/data /mnt/backup; do
-            usage=$(${pkgs.coreutils}/bin/df "$path" --output=pcent | ${pkgs.coreutils}/bin/tail -1 | ${pkgs.coreutils}/bin/tr -d ' %')
-            if [ "$usage" -gt 85 ]; then
-              ${pkgs.ntfy-sh}/bin/ntfy publish \
-                --title "Disk Space Warning" \
-                --priority high \
-                --tags warning \
-                http://localhost:8080/system "$path is at ''${usage}% capacity"
-            fi
-          done
+          alerts="$(
+            ${pkgs.zfs}/bin/zpool list -H -o name,capacity \
+              | ${pkgs.gawk}/bin/awk -F '\t' '$2 + 0 >= 75 { printf "%s is at %s capacity\n", $1, $2 }'
+          )"
+
+          if [ -n "$alerts" ]; then
+            ${pkgs.ntfy-sh}/bin/ntfy publish \
+              --title "ZFS Pool Warning" \
+              --priority high \
+              --tags warning \
+              http://localhost:8080/system "$alerts"
+          fi
         '';
       };
     };
