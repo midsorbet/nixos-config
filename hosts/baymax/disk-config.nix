@@ -120,6 +120,15 @@ in {
             mountpoint = "/persist";
             options.mountpoint = "legacy";
           };
+
+          "reserved" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+              canmount = "off";
+              refreservation = "10G";
+            };
+          };
         };
       };
 
