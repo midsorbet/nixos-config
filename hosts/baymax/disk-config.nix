@@ -61,23 +61,6 @@ in {
           };
         };
       };
-
-      backup = {
-        type = "disk";
-        device = "/dev/disk/by-id/usb-ADATA_HV611_457293242024-0:0";
-        content = {
-          type = "gpt";
-          partitions = {
-            zfs = {
-              size = "100%";
-              content = {
-                type = "zfs";
-                pool = "backup";
-              };
-            };
-          };
-        };
-      };
     };
 
     zpool = {
@@ -143,25 +126,6 @@ in {
             type = "zfs_fs";
             options.mountpoint = "legacy";
             mountpoint = "/mnt/data";
-            mountOptions = [
-              "nofail"
-              "x-systemd.device-timeout=8s"
-            ];
-          };
-        };
-      };
-
-      backup = {
-        type = "zpool";
-        options = {
-          ashift = "12";
-        };
-        rootFsOptions = fsOpts // {keylocation = "file:///persist/secrets/zfs/backup.key";};
-        datasets = {
-          "main" = {
-            type = "zfs_fs";
-            options.mountpoint = "legacy";
-            mountpoint = "/mnt/backup";
             mountOptions = [
               "nofail"
               "x-systemd.device-timeout=8s"

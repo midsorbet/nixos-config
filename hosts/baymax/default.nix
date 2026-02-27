@@ -50,8 +50,8 @@ in {
     supportedFilesystems = ["zfs"];
     kernelPackages = pkgs.linuxPackages_6_12;
     kernelModules = ["uinput"];
-    # Force usb-storage (disable UAS) for both external enclosures to avoid reset/timeouts.
-    kernelParams = ["usb-storage.quirks=0bc2:2344:u,125f:a36a:u"];
+    # Force usb-storage (disable UAS) for the Seagate enclosure to avoid reset/timeouts.
+    kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
   };
 
   # Set your time zone.
@@ -107,36 +107,13 @@ in {
   services = {
     zfs.autoScrub.enable = true;
 
-    borgbackup.jobs."local" = {
-      paths = [
-        "/mnt/data"
-        "/home"
-      ];
-      repo = "/mnt/backup/borg-local";
-      removableDevice = true;
-      doInit = false;
-      persistentTimer = true;
-      startAt = "daily";
-      compression = "zstd";
-      encryption = {
-        mode = "repokey-blake2";
-        passCommand = "cat ${config.age.secrets.baymax-borg-pass.path}";
-      };
-      prune.keep = {
-        daily = 7;
-        weekly = 4;
-        monthly = 6;
-      };
-    };
-
     borgbackup.jobs."hetzner" = {
       paths = [
         "/mnt/data"
         "/home"
       ];
       repo = "ssh://u541275@u541275.your-storagebox.de:23/./borg-repo";
-      # Triggered via borgbackup-job-local OnSuccess; no independent timer.
-      startAt = [];
+      startAt = "daily";
       compression = "zstd";
       encryption = {
         mode = "repokey-blake2";
@@ -226,10 +203,6 @@ in {
       defaults.monitored = "-a -o on -S on -s (S/../.././03|L/../../7/04)";
       devices = [
         {
-          device = "/dev/disk/by-id/usb-ADATA_HV611_457293242024-0:0";
-          options = "-d sat -d removable";
-        }
-        {
           device = "/dev/disk/by-id/usb-Seagate_Portable_NT3F4401-0:0";
           options = "-d sat -d removable";
         }
@@ -265,28 +238,6 @@ in {
         '';
       };
 
-      "borg-check-local-repo-meta" = {
-        description = "Run repository-only Borg integrity check for local repo";
-        serviceConfig.Type = "oneshot";
-        script = ''
-          set -eu
-          export BORG_REPO=/mnt/backup/borg-local
-          export BORG_PASSCOMMAND="cat ${config.age.secrets.baymax-borg-pass.path}"
-          ${config.services.borgbackup.package}/bin/borg check --repository-only
-        '';
-      };
-
-      "borg-check-local-repo-data" = {
-        description = "Run full-data Borg integrity check for local repo";
-        serviceConfig.Type = "oneshot";
-        script = ''
-          set -eu
-          export BORG_REPO=/mnt/backup/borg-local
-          export BORG_PASSCOMMAND="cat ${config.age.secrets.baymax-borg-pass.path}"
-          ${config.services.borgbackup.package}/bin/borg check --verify-data
-        '';
-      };
-
       # Template service for failure notifications
       "ntfy-failure@" = {
         description = "Send failure notification for %i";
@@ -304,12 +255,8 @@ in {
       # Attach failure notifications to critical services
       "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
       "paperless-exporter".unitConfig.OnFailure = "ntfy-failure@%n";
-      "borg-check-local-repo-meta".unitConfig.OnFailure = "ntfy-failure@%n";
-      "borg-check-local-repo-data".unitConfig.OnFailure = "ntfy-failure@%n";
-      "borgbackup-job-local".requires = ["readeck-export.service"];
-      "borgbackup-job-local".after = ["readeck-export.service"];
-      "borgbackup-job-local".onSuccess = ["borgbackup-job-hetzner.service"];
-      "borgbackup-job-local".unitConfig.OnFailure = "ntfy-failure@%n";
+      "borgbackup-job-hetzner".requires = ["readeck-export.service"];
+      "borgbackup-job-hetzner".after = ["readeck-export.service"];
       "borgbackup-job-hetzner".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-machine-learning".unitConfig.OnFailure = "ntfy-failure@%n";
@@ -343,24 +290,6 @@ in {
       wantedBy = ["timers.target"];
       timerConfig = {
         OnCalendar = "*-*-* 00:20:00";
-        Persistent = true;
-      };
-    };
-
-    timers."borg-check-local-repo-meta" = {
-      description = "Weekly Borg metadata check for local repo";
-      wantedBy = ["timers.target"];
-      timerConfig = {
-        OnCalendar = "Mon *-*-* 03:00:00";
-        Persistent = true;
-      };
-    };
-
-    timers."borg-check-local-repo-data" = {
-      description = "Monthly Borg full-data check for local repo";
-      wantedBy = ["timers.target"];
-      timerConfig = {
-        OnCalendar = "*-*-01 04:00:00";
         Persistent = true;
       };
     };

@@ -5,7 +5,7 @@
 Append this to the kernel command line in the boot menu to avoid issues with the Seagate External HDD:
 
 ```text
-usb-storage.quirks=0bc2:2344:u,125f:a36a:u
+usb-storage.quirks=0bc2:2344:u
 ```
 
 - Highlight the ISO boot entry and press `e`.
