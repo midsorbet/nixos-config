@@ -9,6 +9,7 @@ in
     inotify-tools
     keepassxc
     libnotify
+    sbctl
     smartmontools
     tree
     unixtools.ifconfig

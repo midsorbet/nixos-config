@@ -27,6 +27,10 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v1.0.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     secrets = {
       url = "git+ssh://git@github.com/midsorbet/nix-secrets.git";
       flake = false;
@@ -43,6 +47,7 @@
     wrapper-manager,
     nixpkgs,
     disko,
+    lanzaboote,
     agenix,
     secrets,
     vscode-server,
@@ -113,6 +118,7 @@
             services.vscode-server.enable = true;
           }
           disko.nixosModules.disko
+          lanzaboote.nixosModules.lanzaboote
           ./hosts/baymax
         ];
       };

@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  lib,
   agenix,
   ...
 }: let
@@ -16,14 +17,19 @@ in {
     agenix.nixosModules.default
   ];
 
-  # Use the systemd-boot EFI boot loader.
   boot = {
     loader = {
-      systemd-boot = {
-        enable = true;
-        configurationLimit = 42;
-      };
+      systemd-boot.enable = lib.mkForce false;
       efi.canTouchEfiVariables = true;
+    };
+    lanzaboote = {
+      enable = true;
+      # Persist Secure Boot PKI material across rebuilds/reboots.
+      pkiBundle = "/persist/sbctl";
+      # Do not allow unsigned UKIs once keys exist.
+      allowUnsigned = false;
+      autoGenerateKeys.enable = true;
+      autoEnrollKeys.enable = true;
     };
     initrd.availableKernelModules = [
       "xhci_pci"
