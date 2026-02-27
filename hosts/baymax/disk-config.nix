@@ -143,6 +143,10 @@ in {
             type = "zfs_fs";
             options.mountpoint = "legacy";
             mountpoint = "/mnt/data";
+            mountOptions = [
+              "nofail"
+              "x-systemd.device-timeout=8s"
+            ];
           };
         };
       };
@@ -158,6 +162,10 @@ in {
             type = "zfs_fs";
             options.mountpoint = "legacy";
             mountpoint = "/mnt/backup";
+            mountOptions = [
+              "nofail"
+              "x-systemd.device-timeout=8s"
+            ];
           };
         };
       };
