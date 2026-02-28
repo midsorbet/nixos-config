@@ -300,6 +300,28 @@ in {
         ReadWritePaths = [config.services.readeck.settings.main.data_directory];
       };
 
+      "immich-server".serviceConfig = {
+        SystemCallArchitectures = "native";
+        LockPersonality = true;
+        ProtectProc = "invisible";
+        ProcSubset = "pid";
+        RemoveIPC = true;
+      };
+
+      "ntfy-sh".serviceConfig = {
+        SystemCallArchitectures = "native";
+        LockPersonality = true;
+        ProtectClock = true;
+        ProtectHostname = true;
+        ProtectHome = true;
+        ProtectProc = "invisible";
+        ProcSubset = "pid";
+        PrivateUsers = true;
+        RestrictAddressFamilies = ["AF_UNIX" "AF_INET" "AF_INET6"];
+        UMask = "0077";
+        RemoveIPC = true;
+      };
+
       "readeck-export" = {
         description = "Export Readeck payload for Borg jobs";
         serviceConfig = {
