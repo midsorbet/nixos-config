@@ -6,7 +6,14 @@
   ...
 }: let
   user = "me";
-  keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
+  keys = {
+    boot = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"
+    ];
+    login = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"
+    ];
+  };
 in {
   imports = [
     ./secrets.nix
@@ -43,7 +50,7 @@ in {
       ssh = {
         enable = true;
         port = 2222;
-        authorizedKeys = keys;
+        authorizedKeys = keys.boot;
         hostKeys = ["/persist/secrets/initrd/ssh_host_ed25519_key"];
       };
       postCommands = ''
@@ -378,11 +385,7 @@ in {
         ];
         hashedPasswordFile = "/persist/secrets/users/me-password-hash";
         shell = pkgs.wrapperPackages.zsh;
-        openssh.authorizedKeys.keys = keys;
-      };
-
-      root = {
-        openssh.authorizedKeys.keys = keys;
+        openssh.authorizedKeys.keys = keys.login;
       };
 
       readeck = {
