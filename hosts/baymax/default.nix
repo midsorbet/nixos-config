@@ -284,6 +284,20 @@ in {
         DynamicUser = lib.mkForce false;
         User = lib.mkForce "readeck";
         Group = lib.mkForce "readeck";
+        NoNewPrivileges = true;
+        RestrictSUIDSGID = true;
+        SystemCallArchitectures = "native";
+        LockPersonality = true;
+        ProtectClock = true;
+        ProtectHostname = true;
+        ProtectControlGroups = true;
+        ProtectKernelTunables = true;
+        ProtectKernelModules = true;
+        ProtectHome = true;
+        RestrictAddressFamilies = ["AF_UNIX" "AF_INET" "AF_INET6"];
+        CapabilityBoundingSet = [""];
+        AmbientCapabilities = [""];
+        ReadWritePaths = [config.services.readeck.settings.main.data_directory];
       };
 
       "readeck-export" = {
