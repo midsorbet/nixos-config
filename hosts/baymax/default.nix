@@ -417,6 +417,11 @@ in {
         group = "postgres";
         mode = "0700";
       };
+      "${config.services.postgresqlBackup.location}".d = {
+        user = "postgres";
+        group = "postgres";
+        mode = "0700";
+      };
     };
   };
 
