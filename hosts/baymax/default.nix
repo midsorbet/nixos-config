@@ -132,6 +132,15 @@ in {
   };
 
   services = {
+    fail2ban = {
+      enable = true;
+      maxretry = 5;
+      bantime = "1h";
+      jails.DEFAULT.settings = {
+        findtime = "10m";
+      };
+    };
+
     zfs = {
       autoScrub.enable = true;
       trim.enable = true;
