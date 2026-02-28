@@ -410,6 +410,7 @@ in {
 
   security = {
     audit.enable = true;
+    apparmor.enable = true;
 
     # Don't require password for users in `wheel` group for these commands
     sudo = {
