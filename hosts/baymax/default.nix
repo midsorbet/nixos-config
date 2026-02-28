@@ -408,20 +408,27 @@ in {
     mutableUsers = false;
   };
 
-  # Don't require password for users in `wheel` group for these commands
-  security.sudo = {
-    enable = true;
-    extraRules = [
-      {
-        commands = [
-          {
-            command = "${pkgs.systemd}/bin/reboot";
-            options = ["NOPASSWD"];
-          }
-        ];
-        groups = ["wheel"];
-      }
-    ];
+  security = {
+    audit.enable = true;
+
+    # Don't require password for users in `wheel` group for these commands
+    sudo = {
+      enable = true;
+      extraConfig = ''
+        Defaults lecture = never
+      '';
+      extraRules = [
+        {
+          commands = [
+            {
+              command = "${pkgs.systemd}/bin/reboot";
+              options = ["NOPASSWD"];
+            }
+          ];
+          groups = ["wheel"];
+        }
+      ];
+    };
   };
 
   environment.systemPackages = with pkgs;
