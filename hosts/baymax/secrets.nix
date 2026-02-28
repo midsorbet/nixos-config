@@ -8,6 +8,8 @@
   user = "me";
 in {
   age.identityPaths = [
+    "/persist/secrets/initrd/ssh_host_ed25519_key"
+    "/persist/secrets/ssh/ssh_host_ed25519_key"
     "/etc/ssh/ssh_host_ed25519_key"
   ];
 

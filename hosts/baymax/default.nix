@@ -7,8 +7,6 @@
 }: let
   user = "me";
   keys = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOk8iAnIaa1deoc7jw8YACPNVka1ZFJxhnU4G74TmS+p" "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"];
-  readeckConfig = (pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings;
-  readeckExport = "/mnt/data/readeck/readeck-export.zip";
 in {
   imports = [
     ./secrets.nix
@@ -53,12 +51,28 @@ in {
         echo 'zfs load-key -L prompt rpool && killall zfs; exit' > /root/.profile
       '';
     };
+    initrd.postDeviceCommands = lib.mkAfter ''
+      zfs rollback -r rpool/root@blank && echo " >> >> Rollback Complete << <<"
+    '';
     supportedFilesystems = ["zfs"];
     kernelPackages = pkgs.linuxPackages_6_12;
     kernelModules = ["uinput"];
     # Force usb-storage (disable UAS) for the Seagate enclosure to avoid reset/timeouts.
     kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
   };
+
+  fileSystems."/persist".neededForBoot = true;
+  environment.persistence."/persist" = {
+    hideMounts = true;
+
+    directories = [
+      "/var/lib/nixos"
+      "/var/lib/systemd"
+      "/var/lib/tailscale"
+      "/var/log/journal"
+    ];
+  };
+  environment.etc."machine-id".source = "/persist/etc/machine-id";
 
   # Set your time zone.
   time.timeZone = "America/Los_Angeles";
@@ -111,7 +125,10 @@ in {
   };
 
   services = {
-    zfs.autoScrub.enable = true;
+    zfs = {
+      autoScrub.enable = true;
+      trim.enable = true;
+    };
 
     borgbackup.jobs."hetzner" = {
       paths = [
@@ -157,6 +174,12 @@ in {
     # Let's be able to SSH into this machine
     openssh = {
       enable = true;
+      hostKeys = [
+        {
+          path = "/persist/secrets/ssh/ssh_host_ed25519_key";
+          type = "ed25519";
+        }
+      ];
       settings = {
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
@@ -169,11 +192,14 @@ in {
       enable = true;
       environmentFile = config.age.secrets.readeck-env.path;
       settings = {
+        main.data_directory = "/mnt/data/readeck";
         main.log_level = "info";
         server.host = "0.0.0.0";
         server.port = 8000;
       };
     };
+
+    postgresql.dataDir = "/mnt/data/postgresql/${config.services.postgresql.package.psqlSchema}";
 
     miniflux = {
       enable = true;
@@ -227,20 +253,26 @@ in {
   # Notification and monitoring systemd units
   systemd = {
     services = {
+      readeck.serviceConfig = {
+        DynamicUser = lib.mkForce false;
+        User = lib.mkForce "readeck";
+        Group = lib.mkForce "readeck";
+      };
+
       # Export Readeck once before the local Borg job, then local success chains hetzner.
       "readeck-export" = {
         description = "Export Readeck payload for Borg jobs";
         serviceConfig = {
           Type = "oneshot";
           EnvironmentFile = config.age.secrets.readeck-env.path;
-          WorkingDirectory = "/var/lib/readeck";
+          WorkingDirectory = config.services.readeck.settings.main.data_directory;
           ExecStartPre = [
-            "${pkgs.coreutils}/bin/rm -f ${readeckExport}"
+            "${pkgs.coreutils}/bin/rm -f ${config.services.readeck.settings.main.data_directory}/readeck-export.zip"
           ];
         };
         script = ''
           set -eu
-          ${config.services.readeck.package}/bin/readeck export -config ${readeckConfig} ${readeckExport}
+          ${config.services.readeck.package}/bin/readeck export -config ${(pkgs.formats.toml {}).generate "readeck.toml" config.services.readeck.settings} ${config.services.readeck.settings.main.data_directory}/readeck-export.zip
         '';
       };
 
@@ -306,28 +338,45 @@ in {
         group = config.services.immich.group;
         mode = "0700";
       };
-      "/mnt/data/readeck".d = {
-        user = "root";
-        group = "root";
-        mode = "0750";
+      "${config.services.readeck.settings.main.data_directory}".d = {
+        user = "readeck";
+        group = "readeck";
+        mode = "0700";
+      };
+      "${config.services.postgresql.dataDir}".d = {
+        user = "postgres";
+        group = "postgres";
+        mode = "0700";
       };
     };
   };
 
   # It's me, it's you, it's everyone
-  users.users = {
-    ${user} = {
-      isNormalUser = true;
-      extraGroups = [
-        "wheel" # Enable ‘sudo’ for the user.
-      ];
-      shell = pkgs.wrapperPackages.zsh;
-      openssh.authorizedKeys.keys = keys;
+  users = {
+    users = {
+      ${user} = {
+        isNormalUser = true;
+        extraGroups = [
+          "wheel" # Enable ‘sudo’ for the user.
+        ];
+        hashedPasswordFile = "/persist/secrets/users/me-password-hash";
+        shell = pkgs.wrapperPackages.zsh;
+        openssh.authorizedKeys.keys = keys;
+      };
+
+      root = {
+        openssh.authorizedKeys.keys = keys;
+      };
+
+      readeck = {
+        isSystemUser = true;
+        group = "readeck";
+      };
     };
 
-    root = {
-      openssh.authorizedKeys.keys = keys;
-    };
+    groups.readeck = {};
+
+    mutableUsers = false;
   };
 
   # Don't require password for users in `wheel` group for these commands
