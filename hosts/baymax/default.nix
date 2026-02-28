@@ -267,7 +267,7 @@ in {
       };
       exporter = {
         enable = true;
-        onCalendar = "Sun *-*-* 23:30:00";
+        onCalendar = null;
       };
     };
 
@@ -373,10 +373,12 @@ in {
       "postgresqlBackup".unitConfig.OnFailure = "ntfy-failure@%n";
       "paperless-exporter".unitConfig.OnFailure = "ntfy-failure@%n";
       "borgbackup-job-hetzner".requires = [
+        "paperless-exporter.service"
         "readeck-export.service"
         "postgresqlBackup.service"
       ];
       "borgbackup-job-hetzner".after = [
+        "paperless-exporter.service"
         "readeck-export.service"
         "postgresqlBackup.service"
       ];
