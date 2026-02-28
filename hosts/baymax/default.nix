@@ -409,7 +409,10 @@ in {
   };
 
   security = {
-    audit.enable = true;
+    audit = {
+      enable = true;
+      backlogLimit = 8192;
+    };
     apparmor.enable = true;
 
     # Don't require password for users in `wheel` group for these commands
