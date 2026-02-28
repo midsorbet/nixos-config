@@ -134,9 +134,13 @@ in {
       paths = [
         "/mnt/data"
         "/home"
+        "/persist/secrets"
+        "/persist/sbctl"
+        "/persist/etc/machine-id"
       ];
       repo = "ssh://u541275@u541275.your-storagebox.de:23/./borg-repo";
       startAt = "daily";
+      persistentTimer = true;
       compression = "zstd";
       encryption = {
         mode = "repokey-blake2";
@@ -153,6 +157,15 @@ in {
       };
     };
 
+    postgresqlBackup = {
+      enable = true;
+      backupAll = true;
+      compression = "zstd";
+      compressionLevel = 6;
+      location = "/mnt/data/postgresql/dumps";
+      startAt = [];
+    };
+
     immich = {
       enable = true;
       host = "0.0.0.0";
@@ -162,7 +175,6 @@ in {
       machine-learning.enable = true;
     };
 
-    # Notification service
     ntfy-sh = {
       enable = true;
       settings = {
@@ -171,7 +183,6 @@ in {
       };
     };
 
-    # Let's be able to SSH into this machine
     openssh = {
       enable = true;
       hostKeys = [
@@ -259,7 +270,6 @@ in {
         Group = lib.mkForce "readeck";
       };
 
-      # Export Readeck once before the local Borg job, then local success chains hetzner.
       "readeck-export" = {
         description = "Export Readeck payload for Borg jobs";
         serviceConfig = {
@@ -292,9 +302,16 @@ in {
 
       # Attach failure notifications to critical services
       "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
+      "postgresqlBackup".unitConfig.OnFailure = "ntfy-failure@%n";
       "paperless-exporter".unitConfig.OnFailure = "ntfy-failure@%n";
-      "borgbackup-job-hetzner".requires = ["readeck-export.service"];
-      "borgbackup-job-hetzner".after = ["readeck-export.service"];
+      "borgbackup-job-hetzner".requires = [
+        "readeck-export.service"
+        "postgresqlBackup.service"
+      ];
+      "borgbackup-job-hetzner".after = [
+        "readeck-export.service"
+        "postgresqlBackup.service"
+      ];
       "borgbackup-job-hetzner".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-machine-learning".unitConfig.OnFailure = "ntfy-failure@%n";
