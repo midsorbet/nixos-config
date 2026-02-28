@@ -196,6 +196,8 @@ in {
       settings = {
         base-url = "http://baymax:8080";
         listen-http = ":8080";
+        auth-default-access = "deny-all";
+        auth-access = ["*:system:read-write"];
       };
     };
 
