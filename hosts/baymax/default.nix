@@ -136,8 +136,22 @@ in {
       enable = true;
       maxretry = 5;
       bantime = "1h";
-      jails.DEFAULT.settings = {
-        findtime = "10m";
+      jails = {
+        # Watches paperless-web journald logs for repeated failed logins.
+        paperless-auth = {
+          filter.Definition = {
+            failregex = "Login failed for user `.*` from (?:IP|private IP) `<HOST>`\\.$";
+            ignoreregex = "";
+          };
+          settings = {
+            backend = "systemd";
+            journalmatch = "_SYSTEMD_UNIT=paperless-web.service";
+            port = "28981";
+            maxretry = 5;
+            findtime = "10m";
+            bantime = "1h";
+          };
+        };
       };
     };
 
