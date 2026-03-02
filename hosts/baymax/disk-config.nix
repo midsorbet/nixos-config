@@ -47,7 +47,7 @@ in {
 
       data = {
         type = "disk";
-        device = "/dev/disk/by-id/usb-Seagate_Portable_NT3F4401-0:0";
+        device = "/dev/disk/by-id/nvme-SPCC_M.2_PCIe_SSD_20250501B1514";
         content = {
           type = "gpt";
           partitions = {
@@ -56,6 +56,23 @@ in {
               content = {
                 type = "zfs";
                 pool = "data";
+              };
+            };
+          };
+        };
+      };
+
+      archive = {
+        type = "disk";
+        device = "/dev/disk/by-id/wwn-0x5000c500eb0059f5";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "archive";
               };
             };
           };
@@ -104,6 +121,15 @@ in {
             options.mountpoint = "legacy";
           };
 
+          "persistHost" = {
+            type = "zfs_fs";
+            mountpoint = "/persist/host";
+            options = {
+              mountpoint = "legacy";
+              "com.sun:auto-snapshot" = "false";
+            };
+          };
+
           "reserved" = {
             type = "zfs_fs";
             options = {
@@ -119,13 +145,76 @@ in {
         type = "zpool";
         options = {
           ashift = "12";
+          autotrim = "on";
         };
-        rootFsOptions = fsOpts // {keylocation = "file:///persist/secrets/zfs/data.key";};
+        rootFsOptions = fsOpts // {keylocation = "file:///persist/host/secrets/zfs/data.key";};
         datasets = {
-          "apps" = {
+          "reserved" = {
             type = "zfs_fs";
-            options.mountpoint = "legacy";
-            mountpoint = "/mnt/data";
+            options = {
+              mountpoint = "none";
+              canmount = "off";
+              refreservation = "20G";
+            };
+          };
+
+          "persistSave" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "legacy";
+              "com.sun:auto-snapshot" = "false";
+            };
+            mountpoint = "/persist/save";
+          };
+
+          "cache" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "legacy";
+              "com.sun:auto-snapshot" = "false";
+            };
+            mountpoint = "/persist/cache";
+          };
+        };
+      };
+
+      archive = {
+        type = "zpool";
+        options = {
+          ashift = "12";
+          autotrim = "off";
+        };
+        rootFsOptions = fsOpts // {keylocation = "file:///persist/host/secrets/zfs/data.key";};
+        datasets = {
+          "reserved" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "none";
+              canmount = "off";
+              refreservation = "20G";
+            };
+          };
+
+          "media" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "legacy";
+              "com.sun:auto-snapshot" = "false";
+            };
+            mountpoint = "/archive";
+            mountOptions = [
+              "nofail"
+              "x-systemd.device-timeout=8s"
+            ];
+          };
+
+          "replica" = {
+            type = "zfs_fs";
+            options = {
+              mountpoint = "legacy";
+              "com.sun:auto-snapshot" = "false";
+            };
+            mountpoint = "/archive/replica";
             mountOptions = [
               "nofail"
               "x-systemd.device-timeout=8s"

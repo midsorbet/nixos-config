@@ -30,7 +30,7 @@ in {
     lanzaboote = {
       enable = true;
       # Persist Secure Boot PKI material across rebuilds/reboots.
-      pkiBundle = "/persist/sbctl";
+      pkiBundle = "/persist/host/sbctl";
       # Do not allow unsigned UKIs once keys exist.
       allowUnsigned = false;
       autoGenerateKeys.enable = true;
@@ -51,7 +51,7 @@ in {
         enable = true;
         port = 2222;
         authorizedKeys = keys.boot;
-        hostKeys = ["/persist/secrets/initrd/ssh_host_ed25519_key"];
+        hostKeys = ["/persist/host/secrets/initrd/ssh_host_ed25519_key"];
       };
       postCommands = ''
         zpool import -N -d /dev/disk/by-id rpool
@@ -79,7 +79,7 @@ in {
       "/var/log/journal"
     ];
   };
-  environment.etc."machine-id".source = "/persist/etc/machine-id";
+  environment.etc."machine-id".source = "/persist/host/etc/machine-id";
 
   # Set your time zone.
   time.timeZone = "America/Los_Angeles";
@@ -160,13 +160,69 @@ in {
       trim.enable = true;
     };
 
+    sanoid = {
+      enable = true;
+      datasets = {
+        "rpool/persistHost" = {
+          autosnap = true;
+          autoprune = true;
+          hourly = 0;
+          daily = 30;
+          weekly = 12;
+          monthly = 12;
+        };
+        "data/persistSave" = {
+          autosnap = true;
+          autoprune = true;
+          hourly = 24;
+          daily = 14;
+          weekly = 8;
+          monthly = 6;
+        };
+        "archive/media" = {
+          autosnap = true;
+          autoprune = true;
+          hourly = 0;
+          daily = 14;
+          weekly = 12;
+          monthly = 12;
+        };
+        "archive/replica" = {
+          autosnap = false;
+          autoprune = true;
+          hourly = 0;
+          daily = 30;
+          weekly = 0;
+          monthly = 6;
+          yearly = 0;
+        };
+      };
+    };
+
+    syncoid = {
+      enable = true;
+      user = "root";
+      group = "root";
+      interval = "daily";
+      commonArgs = ["--no-sync-snap"];
+      commands."baymax-persist-save" = {
+        source = "data/persistSave";
+        target = "archive/replica/baymax-persistSave";
+        recursive = true;
+      };
+      commands."baymax-persist-host" = {
+        source = "rpool/persistHost";
+        target = "archive/replica/baymax-persistHost";
+        recursive = true;
+      };
+    };
+
     borgbackup.jobs."hetzner" = {
       paths = [
-        "/mnt/data"
+        "/persist/save"
+        "/persist/host"
         "/home"
-        "/persist/secrets"
-        "/persist/sbctl"
-        "/persist/etc/machine-id"
+        "/archive/immich"
       ];
       repo = "ssh://u541275@u541275.your-storagebox.de:23/./borg-repo";
       startAt = "daily";
@@ -182,8 +238,8 @@ in {
       };
       prune.keep = {
         daily = 7;
-        weekly = 4;
-        monthly = 6;
+        weekly = 8;
+        monthly = 12;
       };
     };
 
@@ -192,7 +248,7 @@ in {
       backupAll = true;
       compression = "zstd";
       compressionLevel = 6;
-      location = "/mnt/data/postgresql/dumps";
+      location = "/persist/save/postgresql/dumps";
       startAt = [];
     };
 
@@ -200,7 +256,13 @@ in {
       enable = true;
       host = "0.0.0.0";
       port = 2283;
-      mediaLocation = "/mnt/data/immich";
+      mediaLocation = "/archive/immich";
+      environment = {
+        THUMB_LOCATION = "/persist/cache/immich/thumbs";
+        ENCODED_VIDEO_LOCATION = "/persist/cache/immich/encoded-video";
+        PROFILE_LOCATION = "/persist/save/immich/profile";
+        BACKUP_LOCATION = "/persist/save/immich/backups";
+      };
       openFirewall = false;
       machine-learning.enable = true;
     };
@@ -219,7 +281,7 @@ in {
       enable = true;
       hostKeys = [
         {
-          path = "/persist/secrets/ssh/ssh_host_ed25519_key";
+          path = "/persist/host/secrets/ssh/ssh_host_ed25519_key";
           type = "ed25519";
         }
       ];
@@ -235,14 +297,14 @@ in {
       enable = true;
       environmentFile = config.age.secrets.readeck-env.path;
       settings = {
-        main.data_directory = "/mnt/data/readeck";
+        main.data_directory = "/persist/save/readeck";
         main.log_level = "info";
         server.host = "0.0.0.0";
         server.port = 8000;
       };
     };
 
-    postgresql.dataDir = "/mnt/data/postgresql/${config.services.postgresql.package.psqlSchema}";
+    postgresql.dataDir = "/persist/save/postgresql/${config.services.postgresql.package.psqlSchema}";
 
     miniflux = {
       enable = true;
@@ -257,7 +319,7 @@ in {
     paperless = {
       enable = true;
       address = "0.0.0.0";
-      dataDir = "/mnt/data/paperless";
+      dataDir = "/persist/save/paperless";
       passwordFile = config.age.secrets.paperless.path;
       configureTika = true;
       settings = {
@@ -278,7 +340,15 @@ in {
       defaults.monitored = "-a -o on -S on -s (S/../.././03|L/../../7/04)";
       devices = [
         {
-          device = "/dev/disk/by-id/usb-Seagate_Portable_NT3F4401-0:0";
+          device = "/dev/disk/by-id/ata-512GB_SSD_MQ23W96605594";
+          options = "";
+        }
+        {
+          device = "/dev/disk/by-id/nvme-SPCC_M.2_PCIe_SSD_20250501B1514";
+          options = "-d nvme";
+        }
+        {
+          device = "/dev/disk/by-id/wwn-0x5000c500eb0059f5";
           options = "-d sat -d removable";
         }
       ];
@@ -314,14 +384,6 @@ in {
         CapabilityBoundingSet = [""];
         AmbientCapabilities = [""];
         ReadWritePaths = [config.services.readeck.settings.main.data_directory];
-      };
-
-      "immich-server".serviceConfig = {
-        SystemCallArchitectures = "native";
-        LockPersonality = true;
-        ProtectProc = "invisible";
-        ProcSubset = "pid";
-        RemoveIPC = true;
       };
 
       "ntfy-sh".serviceConfig = {
@@ -419,28 +481,47 @@ in {
       };
     };
 
-    tmpfiles.settings."20-baymax-data-paths" = {
-      "${config.services.immich.mediaLocation}".d = {
-        user = config.services.immich.user;
-        group = config.services.immich.group;
-        mode = "0700";
+    tmpfiles.settings."20-baymax-data-paths" = let
+      mkTmpDirEntries = dirUser: dirGroup: dirMode: dirs:
+        lib.genAttrs dirs (_dir: {
+          d = {
+            user = dirUser;
+            group = dirGroup;
+            mode = dirMode;
+          };
+        });
+    in
+      (mkTmpDirEntries "root" "root" "0750" [
+        "/persist/host"
+        "/persist/cache"
+      ])
+      // (mkTmpDirEntries "root" "root" "0700" [
+        "/persist/host/secrets"
+        "/persist/host/secrets/zfs"
+        "/persist/host/sbctl"
+      ])
+      // (mkTmpDirEntries "root" "root" "0755" [
+        "/persist/host/etc"
+      ])
+      // (mkTmpDirEntries config.services.immich.user config.services.immich.group "0700" [
+        config.services.immich.mediaLocation
+        config.services.immich.environment.THUMB_LOCATION
+        config.services.immich.environment.ENCODED_VIDEO_LOCATION
+        config.services.immich.environment.PROFILE_LOCATION
+        config.services.immich.environment.BACKUP_LOCATION
+      ])
+      // {
+        "${config.services.readeck.settings.main.data_directory}".d = {
+          user = "readeck";
+          group = "readeck";
+          mode = "0700";
+        };
+        "${config.services.postgresql.dataDir}".d = {
+          user = "postgres";
+          group = "postgres";
+          mode = "0700";
+        };
       };
-      "${config.services.readeck.settings.main.data_directory}".d = {
-        user = "readeck";
-        group = "readeck";
-        mode = "0700";
-      };
-      "${config.services.postgresql.dataDir}".d = {
-        user = "postgres";
-        group = "postgres";
-        mode = "0700";
-      };
-      "${config.services.postgresqlBackup.location}".d = {
-        user = "postgres";
-        group = "postgres";
-        mode = "0700";
-      };
-    };
   };
 
   # It's me, it's you, it's everyone
@@ -451,7 +532,7 @@ in {
         extraGroups = [
           "wheel" # Enable ‘sudo’ for the user.
         ];
-        hashedPasswordFile = "/persist/secrets/users/me-password-hash";
+        hashedPasswordFile = "/persist/host/secrets/users/me-password-hash";
         shell = pkgs.wrapperPackages.zsh;
         openssh.authorizedKeys.keys = keys.login;
       };
