@@ -36,7 +36,6 @@ with pkgs; [
   tree
 
   ripgrep
-  unrar
   unzip
 
   vim
