@@ -143,6 +143,10 @@ in {
           "if".app-id = "com.openai.chat";
           run = "move-node-to-workspace C";
         }
+        {
+          "if".app-id = "com.renpho.health";
+          run = "layout floating";
+        }
       ];
       mode.main.binding = {
         alt-h = "focus left";
