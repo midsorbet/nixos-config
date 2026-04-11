@@ -79,8 +79,13 @@ in {
   environment.systemPackages =
     [
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
+      pkgs.nh
     ]
     ++ (import ./packages.nix {inherit pkgs;});
+
+  environment.variables = {
+    NH_FLAKE = "/Users/${user}/.config/nixos-config";
+  };
 
   networking.knownNetworkServices = [
     "Ethernet"
