@@ -53,6 +53,9 @@ in {
       KbdInteractiveAuthentication no
       PermitRootLogin no
       AllowUsers ${user}
+      TCPKeepAlive yes
+      ClientAliveInterval 30
+      ClientAliveCountMax 6
     '';
   };
 
@@ -111,6 +114,9 @@ in {
     Host *
       SendEnv LANG LC_*
       HashKnownHosts yes
+      ServerAliveInterval 30
+      ServerAliveCountMax 6
+      TCPKeepAlive yes
 
     Host github.com
       IdentitiesOnly yes
