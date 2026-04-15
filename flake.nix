@@ -112,8 +112,11 @@
           inherit inputs;
           system = "x86_64-linux";
           config = {
-            allowUnfree = true;
-            allowInsecure = false;
+            allowUnfreePredicate = pkg:
+              builtins.elem (nixpkgs.lib.getName pkg) [
+                "cloudflare-warp"
+                "cloudflare-warp-headless"
+              ];
           };
         };
         specialArgs = inputs;
@@ -134,6 +137,13 @@
         pkgs = import ./packages {
           inherit inputs;
           system = "x86_64-linux";
+          config = {
+            allowUnfreePredicate = pkg:
+              builtins.elem (nixpkgs.lib.getName pkg) [
+                "cloudflare-warp"
+                "cloudflare-warp-headless"
+              ];
+          };
         };
         specialArgs = inputs;
         modules = [

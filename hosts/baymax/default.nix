@@ -63,7 +63,10 @@ in {
     '';
     supportedFilesystems = ["zfs"];
     kernelPackages = pkgs.linuxPackages_6_12;
-    kernelModules = ["uinput"];
+    kernelModules = [
+      "uinput"
+      "tun"
+    ];
     # Force usb-storage (disable UAS) for the Seagate enclosure to avoid reset/timeouts.
     kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
   };
@@ -75,7 +78,7 @@ in {
     directories = [
       "/var/lib/nixos"
       "/var/lib/systemd"
-      "/var/lib/tailscale"
+      "/var/lib/cloudflare-warp"
       "/var/log/journal"
     ];
   };
@@ -90,8 +93,7 @@ in {
     useDHCP = true;
     firewall = {
       enable = true;
-      allowedUDPPorts = [config.services.tailscale.port];
-      interfaces.tailscale0.allowedTCPPorts = [22 2283 8000 8080 8081 28981];
+      interfaces.CloudflareWARP.allowedTCPPorts = [22 2283 8000 8080 8081 28981];
       interfaces.enp1s0.allowedTCPPorts = [22 2283 8000];
     };
   };
@@ -358,8 +360,9 @@ in {
       };
     };
 
-    tailscale = {
+    "cloudflare-warp" = {
       enable = true;
+      package = pkgs.cloudflare-warp.override {headless = true;};
     };
   };
 

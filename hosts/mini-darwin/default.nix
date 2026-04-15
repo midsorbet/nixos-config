@@ -25,6 +25,7 @@ in {
       "anki"
       "calibre"
       "chatgpt"
+      "cloudflare-warp"
       "codex"
       "firefox"
       "ghostty"
@@ -213,11 +214,6 @@ in {
 
   # Broken: https://github.com/nix-darwin/nix-darwin/issues/1041
   # services.karabiner-elements.enable = true;
-
-  services.tailscale = {
-    enable = true;
-    overrideLocalDns = true;
-  };
 
   services.jankyborders = {
     enable = true;

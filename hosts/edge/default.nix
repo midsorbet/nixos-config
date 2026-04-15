@@ -16,6 +16,8 @@ in {
     agenix.nixosModules.default
   ];
 
+  boot.kernelModules = ["tun"];
+
   time.timeZone = "UTC";
 
   networking = {
@@ -27,9 +29,7 @@ in {
     nftables.enable = true;
     firewall = {
       enable = true;
-      trustedInterfaces = [config.services.tailscale.interfaceName];
       allowedTCPPorts = [22];
-      allowedUDPPorts = [config.services.tailscale.port];
       allowedUDPPortRanges = [
         {
           from = 60020;
@@ -91,12 +91,9 @@ in {
       '';
     };
 
-    tailscale = {
+    "cloudflare-warp" = {
       enable = true;
-      authKeyFile = config.age.secrets.edge-tailscale-key.path;
-      extraUpFlags = [
-        "--accept-dns=true"
-      ];
+      package = pkgs.cloudflare-warp.override {headless = true;};
     };
   };
 
@@ -131,9 +128,6 @@ in {
       ];
       networkConfig.IPv6PrivacyExtensions = "kernel";
     };
-    services.tailscaled.serviceConfig.Environment = [
-      "TS_DEBUG_FIREWALL_MODE=nftables"
-    ];
   };
 
   boot.initrd.systemd.network.wait-online.enable = false;
