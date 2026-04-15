@@ -53,10 +53,6 @@ in {
       KbdInteractiveAuthentication no
       PermitRootLogin no
       AllowUsers ${user}
-
-      # Only accept SSH over Cloudflare Mesh or localhost.
-      Match Address *,!100.96.0.0/12,!2606:4700:0cf1:1000::/64,!127.0.0.1,!::1
-        RefuseConnection yes
     '';
   };
 
