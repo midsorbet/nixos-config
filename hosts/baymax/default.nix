@@ -3,8 +3,10 @@
   pkgs,
   lib,
   agenix,
+  secrets,
   ...
 }: let
+  domain = (import ../../secrets.local.nix).domain;
   user = "me";
   keys = {
     boot = [
@@ -17,9 +19,12 @@
     ];
   };
 in {
+  disabledModules = ["services/networking/cloudflared.nix"];
+
   imports = [
     ./secrets.nix
     ./disk-config.nix
+    ./cloudflared-module.nix
     ../../modules/shared
     agenix.nixosModules.default
   ];
@@ -95,8 +100,8 @@ in {
     useDHCP = true;
     firewall = {
       enable = true;
-      interfaces.CloudflareWARP.allowedTCPPorts = [22 2283 8000 8080 8081 28981];
-      interfaces.enp1s0.allowedTCPPorts = [22 2283 8000];
+      interfaces.CloudflareWARP.allowedTCPPorts = [22 2283];
+      interfaces.enp1s0.allowedTCPPorts = [22 2283];
     };
   };
 
@@ -274,8 +279,8 @@ in {
     ntfy-sh = {
       enable = true;
       settings = {
-        base-url = "http://baymax:8080";
-        listen-http = ":8080";
+        base-url = "https://ntfy.${domain}";
+        listen-http = "127.0.0.1:8080";
         auth-default-access = "deny-all";
         auth-access = ["*:system:read-write"];
       };
@@ -303,7 +308,9 @@ in {
       settings = {
         main.data_directory = "/persist/save/readeck";
         main.log_level = "info";
-        server.host = "0.0.0.0";
+        server.base_url = "https://readeck.${domain}";
+        server.allowed_hosts = ["readeck.${domain}"];
+        server.host = "127.0.0.1";
         server.port = 8000;
       };
     };
@@ -315,19 +322,19 @@ in {
       createDatabaseLocally = true;
       adminCredentialsFile = config.age.secrets.miniflux-admin.path;
       config = {
-        LISTEN_ADDR = "0.0.0.0:8081";
-        BASE_URL = "http://baymax:8081";
+        LISTEN_ADDR = "127.0.0.1:8081";
+        BASE_URL = "https://rss.${domain}";
       };
     };
 
     paperless = {
       enable = true;
-      address = "0.0.0.0";
+      address = "127.0.0.1";
       dataDir = "/persist/save/paperless";
       passwordFile = config.age.secrets.paperless.path;
       configureTika = true;
       settings = {
-        PAPERLESS_URL = "http://baymax:28981";
+        PAPERLESS_URL = "https://paperless.${domain}";
         PAPERLESS_CONSUMER_RECURSIVE = true;
         PAPERLESS_CONSUMER_SUBDIRS_AS_TAGS = true;
       };
@@ -365,6 +372,11 @@ in {
     "cloudflare-warp" = {
       enable = true;
       package = pkgs.cloudflare-warp.override {headless = true;};
+    };
+
+    cloudflared = {
+      enable = true;
+      tunnels."baymax-apps".tokenFile = config.age.secrets."baymax-tunnel".path;
     };
   };
 
