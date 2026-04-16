@@ -458,7 +458,7 @@ in
             if tunnel.token != null then
               "${cfg.package}/bin/cloudflared tunnel run --token ${lib.escapeShellArg tunnel.token}"
             else if tunnel.tokenFile != null then
-              ''${cfg.package}/bin/cloudflared tunnel run --token-file "$CREDENTIALS_DIRECTORY/credentials.json"''
+              "${cfg.package}/bin/cloudflared tunnel run --token-file %d/credentials.json"
             else if tunnel.credentialsFile != null then
               "${cfg.package}/bin/cloudflared tunnel --config=${mkConfigFile} --no-autoupdate run"
             else
