@@ -10,5 +10,6 @@
   wrapperPackages = builtins.mapAttrs (_: value: value.wrapped) evald.config.wrappers;
 in {
   wrapperPackages = wrapperPackages;
+  readeck = final.callPackage ./readeck.nix {};
   zmx = final.callPackage ./zmx {};
 }
