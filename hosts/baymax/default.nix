@@ -60,14 +60,30 @@ in {
         authorizedKeys = keys.boot;
         hostKeys = ["/persist/host/secrets/initrd/ssh_host_ed25519_key"];
       };
-      postCommands = ''
-        zpool import -N -d /dev/disk/by-id rpool
-        echo 'zfs load-key -L prompt rpool && killall zfs; exit' > /root/.profile
-      '';
     };
-    initrd.postDeviceCommands = lib.mkAfter ''
-      zfs rollback -r rpool/root@blank && echo " >> >> Rollback Complete << <<"
-    '';
+    initrd.systemd = {
+      initrdBin = [
+        (pkgs.writeShellScriptBin "initrd-ask-password" ''
+          exec ${config.boot.initrd.systemd.package}/bin/systemd-tty-ask-password-agent --watch
+        '')
+      ];
+      users.root.shell = "/bin/initrd-ask-password";
+      services.zfs-rollback-root = {
+        description = "Rollback ephemeral root dataset";
+        requiredBy = ["sysroot.mount"];
+        after = ["zfs-import-rpool.service"];
+        before = ["sysroot.mount"];
+        unitConfig.DefaultDependencies = false;
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+        };
+        script = ''
+          ${config.boot.zfs.package}/sbin/zfs rollback -r rpool/root@blank
+          echo " >> >> Rollback Complete << <<"
+        '';
+      };
+    };
     supportedFilesystems = ["zfs"];
     kernelPackages = pkgs.linuxPackages_6_12;
     kernelModules = [

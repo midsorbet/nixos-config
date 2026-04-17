@@ -24,6 +24,7 @@ sudo chmod 644 /persist/secrets/initrd/ssh_host_ed25519_key.pub
 ```
 
 - Do not reuse other keys for initrd unlock
+- With systemd initrd, SSH login during early boot runs the password agent directly instead of dropping into a shell.
 
 ## Secure Boot
 
