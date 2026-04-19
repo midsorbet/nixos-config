@@ -169,6 +169,10 @@ in {
           run = "move-node-to-workspace C";
         }
         {
+          "if".app-id = "com.apple.systempreferences";
+          run = "layout floating";
+        }
+        {
           "if".app-id = "com.renpho.health";
           run = "layout floating";
         }
