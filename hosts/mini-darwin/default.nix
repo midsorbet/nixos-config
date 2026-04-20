@@ -123,6 +123,11 @@ in {
       IdentityFile /Users/${user}/.ssh/id_github
   '';
 
+  programs.tmux = {
+    enable = true;
+    enableMouse = true;
+  };
+
   services.aerospace = {
     enable = true;
     settings = {
