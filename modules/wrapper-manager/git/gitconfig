@@ -3,3 +3,6 @@
 [core]
   editor = vim
   autocrlf = input
+[user]
+  name = midsorbet
+  email = 6295956+midsorbet@users.noreply.github.com

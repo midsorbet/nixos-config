@@ -6,7 +6,7 @@
   secrets,
   ...
 }: let
-  domain = (import ../../secrets.local.nix).domain;
+  domain = "midsorbet.me";
   user = "me";
   keys = {
     boot = [
