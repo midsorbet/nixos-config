@@ -1,6 +1,7 @@
 {
   agenix,
   config,
+  lib,
   pkgs,
   ...
 }: let
@@ -103,6 +104,23 @@ in {
   environment.variables = {
     NH_FLAKE = "/Users/${user}/.config/nixos-config";
   };
+
+  environment.interactiveShellInit = lib.mkAfter ''
+    # On SSH sessions, prefer terminal-native Codex notifications over the local
+    # desktop completion hook configured in ~/.codex/config.toml.
+    codex() {
+      if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; then
+        command codex \
+          -c 'notify=["/usr/bin/true"]' \
+          -c 'tui.notifications=["agent-turn-complete"]' \
+          -c 'tui.notification_condition="always"' \
+          -c 'tui.notification_method="osc9"' \
+          "$@"
+      else
+        command codex "$@"
+      fi
+    }
+  '';
 
   networking.knownNetworkServices = [
     "Ethernet"
