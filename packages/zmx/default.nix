@@ -1,6 +1,11 @@
 {
   stdenvNoCC,
   fetchurl,
+  fzf,
+  gawk,
+  lib,
+  makeWrapper,
+  writeScriptBin,
 }: let
   version = "0.5.0";
   tarballs = {
@@ -18,6 +23,12 @@
     };
   };
   tarball = tarballs.${stdenvNoCC.hostPlatform.system};
+  zmxSelect = (writeScriptBin "zmx-select" (builtins.readFile ./zmx-select.sh)).overrideAttrs (old: {
+    buildCommand = ''
+      ${old.buildCommand}
+      patchShebangs $out
+    '';
+  });
 in
   stdenvNoCC.mkDerivation {
     pname = "zmx";
@@ -26,10 +37,13 @@ in
       inherit (tarball) url hash;
     };
     sourceRoot = ".";
+    nativeBuildInputs = [makeWrapper];
     unpackPhase = ''
       tar -xzf "$src"
     '';
     installPhase = ''
       install -Dm755 zmx "$out/bin/zmx"
+      makeWrapper ${zmxSelect}/bin/zmx-select "$out/bin/zmx-select" \
+        --prefix PATH : "$out/bin:${lib.makeBinPath [fzf gawk]}"
     '';
   }

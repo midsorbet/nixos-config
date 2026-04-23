@@ -35,6 +35,16 @@
     fi
     cdpath=(~/Projects)
 
+    if command -v zmx >/dev/null 2>&1; then
+      eval "$(zmx completions zsh)"
+    fi
+
+    if [[ -z "$ZMX_SESSION" ]] \
+      && command -v zmx-select >/dev/null 2>&1 \
+      && [[ -n "$SSH_CONNECTION" || -n "$SSH_TTY" || -n "$MOSH_IP" || -n "$MOSH_PORT" ]]; then
+      zmx-select && exit
+    fi
+
     eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ${ohMyPoshConfig})"
   '';
 
