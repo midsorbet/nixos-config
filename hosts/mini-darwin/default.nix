@@ -109,19 +109,19 @@ in {
   };
 
   environment.interactiveShellInit = lib.mkAfter ''
-    # On SSH sessions, prefer terminal-native Codex notifications over the local
-    # desktop completion hook configured in ~/.codex/config.toml.
-    codex() {
-      if [ -n "$SSH_CONNECTION" ] || [ -n "$SSH_TTY" ]; then
-        command codex \
-          -c 'notify=["/usr/bin/true"]' \
-          -c 'tui.notifications=["agent-turn-complete"]' \
-          -c 'tui.notification_condition="always"' \
-          -c 'tui.notification_method="osc9"' \
-          "$@"
-      else
-        command codex "$@"
-      fi
+    codex_args=(
+      -c 'notify=["/usr/bin/true"]'
+      -c 'tui.notifications=["agent-turn-complete"]'
+      -c 'tui.notification_condition="always"'
+      -c 'tui.notification_method="osc9"'
+    )
+
+    ca() {
+      command codex "''${codex_args[@]}" "$@"
+    }
+
+    cax() {
+      nix shell nixpkgs#nodejs -c npx -y @openai/codex "''${codex_args[@]}" "$@"
     }
   '';
 
