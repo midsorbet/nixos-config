@@ -2,11 +2,11 @@
   stdenvNoCC,
   fetchurl,
 }: let
-  version = "0.3.0";
+  version = "0.5.0";
   tarballs = {
     "aarch64-darwin" = {
       url = "https://zmx.sh/a/zmx-${version}-macos-aarch64.tar.gz";
-      hash = "sha256-yjgZvb47NA/XG+u7UFpSk9gjzOIqmYa0qIChLRX9m/k=";
+      hash = "sha256-O5N58P8M8Qf3+HBI0sRfb76r7ViNZ2rYasIYvtko0Qc=";
     };
     "aarch64-linux" = {
       url = "https://zmx.sh/a/zmx-${version}-linux-aarch64.tar.gz";
@@ -14,7 +14,7 @@
     };
     "x86_64-linux" = {
       url = "https://zmx.sh/a/zmx-${version}-linux-x86_64.tar.gz";
-      hash = "sha256-/K/xWB61pqPll4Gq13qMoGm0Q1vC/sQT3TI7RaTf3zI=";
+      hash = "sha256-TMH2uFTczcq65MuRvQN5oj5vghAEivXYHgZh5ZSlDCg=";
     };
   };
   tarball = tarballs.${stdenvNoCC.hostPlatform.system};
