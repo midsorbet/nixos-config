@@ -28,7 +28,11 @@
       . /nix/var/nix/profiles/default/etc/profile.d/nix.sh
     fi
 
-    typeset -U cdpath
+    typeset -U path cdpath
+    # Prefer the declaratively managed system profile over the mutable per-user profile.
+    if [[ -d /run/current-system/sw/bin ]]; then
+      path=(/run/current-system/sw/bin $path)
+    fi
     cdpath=(~/Projects)
 
     eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ${ohMyPoshConfig})"
