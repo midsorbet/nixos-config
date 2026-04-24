@@ -59,7 +59,23 @@ in
       runHook postInstall
     '';
 
-    meta = mdfriedUnwrapped.meta;
+    meta =
+      mdfriedUnwrapped.meta
+      // {
+        description = "A markdown viewer for the terminal that renders images and big headers";
+        longDescription = ''
+          mdfried renders Markdown in the terminal with large headers and inline
+          images. It can use terminal graphics protocols such as Sixel, Kitty,
+          and iTerm2, Kitty's text sizing protocol, or Chafa as a fallback on
+          terminals without graphics support.
+        '';
+        homepage = "https://github.com/benjajaja/mdfried";
+        changelog = "https://github.com/benjajaja/mdfried/blob/v${mdfriedUnwrapped.version}/CHANGELOG.md";
+        downloadPage = "https://github.com/benjajaja/mdfried/releases";
+        license = lib.licenses.gpl3Plus;
+        mainProgram = "mdfried";
+        platforms = lib.platforms.darwin ++ lib.platforms.linux;
+      };
     passthru = {
       inherit configFile configHome defaultSettings;
       unwrapped = mdfriedUnwrapped;
