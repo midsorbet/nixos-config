@@ -11,6 +11,9 @@
   zmxPackages = import ./zmx {inherit inputs;} final prev;
 in {
   wrapperPackages = wrapperPackages;
+  mdfried = final.callPackage ./mdfried.nix {
+    mdfriedInput = inputs.mdfried;
+  };
   readeck = final.callPackage ./readeck.nix {};
   inherit (zmxPackages) zmx zmx-select;
 }

@@ -45,6 +45,10 @@
     };
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     zmx.url = "github:neurosnap/zmx/v0.5.0";
+    mdfried = {
+      url = "github:benjajaja/mdfried";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs = {
     darwin,

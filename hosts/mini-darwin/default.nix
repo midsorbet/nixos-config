@@ -110,6 +110,7 @@ in {
   environment.systemPackages =
     [
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
+      pkgs.mdfried
       pkgs.nh
     ]
     ++ (import ./packages.nix {inherit pkgs;});
