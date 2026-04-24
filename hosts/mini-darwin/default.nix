@@ -15,11 +15,8 @@ in {
     agenix.darwinModules.default
   ];
 
-  users.knownUsers = [user];
-
   users.users.${user} = {
     name = "${user}";
-    uid = 501;
     home = "/Users/${user}";
     isHidden = false;
     shell = pkgs.wrapperPackages.zsh;
