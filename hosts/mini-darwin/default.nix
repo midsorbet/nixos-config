@@ -103,6 +103,7 @@ in {
 
   environment.variables = {
     NH_FLAKE = "/Users/${user}/.config/nixos-config";
+    CODEX_JS_REPL_NODE_PATH = "${pkgs.nodejs}/bin/node";
   };
 
   environment.interactiveShellInit = lib.mkAfter ''
