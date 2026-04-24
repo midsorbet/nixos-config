@@ -50,7 +50,7 @@ main() {
   key=${lines[1]:-}
   selected=${lines[2]:-}
 
-  if [[ "$key" != "ctrl-n" ]]; then
+  if [[ "$key" != "ctrl-n" && -z "$selected" ]]; then
     selected="$key"
   fi
 
