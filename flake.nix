@@ -40,6 +40,7 @@
       flake = false;
     };
     vscode-server.url = "github:nix-community/nixos-vscode-server";
+    zmx.url = "github:neurosnap/zmx/v0.5.0";
   };
   outputs = {
     self,
@@ -56,6 +57,7 @@
     agenix,
     secrets,
     vscode-server,
+    zmx,
   } @ inputs: let
     user = "me";
     linuxSystems = ["x86_64-linux"];

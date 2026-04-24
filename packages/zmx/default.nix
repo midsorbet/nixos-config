@@ -46,4 +46,5 @@ in
       makeWrapper ${zmxSelect}/bin/zmx-select "$out/bin/zmx-select" \
         --prefix PATH : "$out/bin:${lib.makeBinPath [fzf gawk]}"
     '';
+    meta.mainProgram = "zmx";
   }
