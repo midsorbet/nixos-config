@@ -3,8 +3,7 @@
   lib,
   pkgs,
   ...
-}:
-let
+}: let
   cfg = config.services.cloudflared;
 
   certificateFile = lib.mkOption {
@@ -138,8 +137,7 @@ let
     };
 
     proxyType = lib.mkOption {
-      type =
-        with lib.types;
+      type = with lib.types;
         nullOr (enum [
           ""
           "socks"
@@ -154,10 +152,10 @@ let
       '';
     };
   };
-in
-{
+in {
   imports = [
-    (lib.mkRemovedOptionModule
+    (
+      lib.mkRemovedOptionModule
       [
         "services"
         "cloudflared"
@@ -170,7 +168,8 @@ in
       ''
     )
 
-    (lib.mkRemovedOptionModule
+    (
+      lib.mkRemovedOptionModule
       [
         "services"
         "cloudflared"
@@ -189,7 +188,7 @@ in
 
     enable = lib.mkEnableOption "Cloudflare Tunnel client daemon (formerly Argo Tunnel)";
 
-    package = lib.mkPackageOption pkgs "cloudflared" { };
+    package = lib.mkPackageOption pkgs "cloudflared" {};
 
     tunnels = lib.mkOption {
       description = ''
@@ -197,8 +196,7 @@ in
       '';
       type = lib.types.attrsOf (
         lib.types.submodule (
-          { ... }:
-          {
+          {...}: {
             options = {
               inherit certificateFile originRequest;
 
@@ -294,13 +292,11 @@ in
               };
 
               ingress = lib.mkOption {
-                type =
-                  with lib.types;
+                type = with lib.types;
                   attrsOf (
                     either str (
                       submodule (
-                        { ... }:
-                        {
+                        {...}: {
                           options = {
                             inherit originRequest;
 
@@ -330,7 +326,7 @@ in
                       )
                     )
                   );
-                default = { };
+                default = {};
                 description = ''
                   Ingress rules.
 
@@ -346,7 +342,7 @@ in
         )
       );
 
-      default = { };
+      default = {};
       example = {
         "00000000-0000-0000-0000-000000000000" = {
           credentialsFile = "/tmp/test";
@@ -365,113 +361,120 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    warnings =
-      lib.flatten (
-        lib.mapAttrsToList (
-          name: tunnel:
+    warnings = lib.flatten (
+      lib.mapAttrsToList (
+        name: tunnel:
           lib.optional (tunnel.token != null) "[cloudflared-service | ${name}] Tunnel is using raw token value, which is world-readable!"
-        ) cfg.tunnels
-      );
+      )
+      cfg.tunnels
+    );
 
-    assertions = lib.mapAttrsToList (name: tunnel: {
-      assertion =
-        (lib.count (x: !builtins.isNull x) [
-          tunnel.token
-          tunnel.tokenFile
-          tunnel.credentialsFile
-        ])
-        <= 1;
-      message = "[cloudflared-service | ${name}] You must specify AT MOST ONE of 'token', 'tokenFile', or 'credentialsFile'.";
-    }) cfg.tunnels;
+    assertions =
+      lib.mapAttrsToList (name: tunnel: {
+        assertion =
+          (lib.count (x: !builtins.isNull x) [
+            tunnel.token
+            tunnel.tokenFile
+            tunnel.credentialsFile
+          ])
+          <= 1;
+        message = "[cloudflared-service | ${name}] You must specify AT MOST ONE of 'token', 'tokenFile', or 'credentialsFile'.";
+      })
+      cfg.tunnels;
 
-    systemd.targets = lib.mapAttrs' (
-      name: _tunnel:
-      lib.nameValuePair "cloudflared-tunnel-${name}" {
-        description = "Cloudflare tunnel '${name}' target";
-        requires = [ "cloudflared-tunnel-${name}.service" ];
-        after = [ "cloudflared-tunnel-${name}.service" ];
-        unitConfig.StopWhenUnneeded = true;
-      }
-    ) cfg.tunnels;
+    systemd.targets =
+      lib.mapAttrs' (
+        name: _tunnel:
+          lib.nameValuePair "cloudflared-tunnel-${name}" {
+            description = "Cloudflare tunnel '${name}' target";
+            requires = ["cloudflared-tunnel-${name}.service"];
+            after = ["cloudflared-tunnel-${name}.service"];
+            unitConfig.StopWhenUnneeded = true;
+          }
+      )
+      cfg.tunnels;
 
-    systemd.services = lib.mapAttrs' (
-      name: tunnel:
-      let
-        filterConfig = lib.attrsets.filterAttrsRecursive (
-          _: v:
-          !builtins.elem v [
-            null
-            [ ]
-            { }
-          ]
-        );
+    systemd.services =
+      lib.mapAttrs' (
+        name: tunnel: let
+          filterConfig = lib.attrsets.filterAttrsRecursive (
+            _: v:
+              !builtins.elem v [
+                null
+                []
+                {}
+              ]
+          );
 
-        filterIngressSet = lib.filterAttrs (_: v: builtins.typeOf v == "set");
-        filterIngressStr = lib.filterAttrs (_: v: builtins.typeOf v == "string");
+          filterIngressSet = lib.filterAttrs (_: v: builtins.typeOf v == "set");
+          filterIngressStr = lib.filterAttrs (_: v: builtins.typeOf v == "string");
 
-        ingressesSet = filterIngressSet tunnel.ingress;
-        ingressesStr = filterIngressStr tunnel.ingress;
+          ingressesSet = filterIngressSet tunnel.ingress;
+          ingressesStr = filterIngressStr tunnel.ingress;
 
-        fullConfig = filterConfig {
-          tunnel = name;
-          credentials-file = "/run/credentials/cloudflared-tunnel-${name}.service/credentials.json";
-          warp-routing = filterConfig tunnel.warp-routing;
-          originRequest = filterConfig tunnel.originRequest;
-          ingress =
-            (map (
-              key:
-              {
+          fullConfig = filterConfig {
+            tunnel = name;
+            credentials-file = "/run/credentials/cloudflared-tunnel-${name}.service/credentials.json";
+            warp-routing = filterConfig tunnel.warp-routing;
+            originRequest = filterConfig tunnel.originRequest;
+            ingress =
+              (map (
+                key:
+                  {
+                    hostname = key;
+                  }
+                  // lib.getAttr key (filterConfig (filterConfig ingressesSet))
+              ) (lib.attrNames ingressesSet))
+              ++ (map (key: {
                 hostname = key;
-              }
-              // lib.getAttr key (filterConfig (filterConfig ingressesSet))
-            ) (lib.attrNames ingressesSet))
-            ++ (map (key: {
-              hostname = key;
-              service = lib.getAttr key ingressesStr;
-            }) (lib.attrNames ingressesStr))
-            ++ [{ service = tunnel.default; }];
-        };
+                service = lib.getAttr key ingressesStr;
+              }) (lib.attrNames ingressesStr))
+              ++ [{service = tunnel.default;}];
+          };
 
-        mkConfigFile = pkgs.writeText "cloudflared.yml" (builtins.toJSON fullConfig);
-        certFile = if tunnel.certificateFile != null then tunnel.certificateFile else cfg.certificateFile;
-      in
-      lib.nameValuePair "cloudflared-tunnel-${name}" {
-        after = [
-          "network.target"
-          "network-online.target"
-        ];
-        wants = [
-          "network.target"
-          "network-online.target"
-        ];
-        wantedBy = ["multi-user.target"];
-        serviceConfig = {
-          RuntimeDirectory = "cloudflared-tunnel-${name}";
-          RuntimeDirectoryMode = "0400";
-          LoadCredential = lib.concatLists [
-            (lib.optional (tunnel.credentialsFile != null) "credentials.json:${tunnel.credentialsFile}")
-            (lib.optional (tunnel.tokenFile != null) "credentials.json:${tunnel.tokenFile}")
-            (lib.optional (certFile != null) "cert.pem:${certFile}")
-          ];
-          EnvironmentFile = lib.optional (tunnel.environmentFile != null) tunnel.environmentFile;
-          ExecStart =
-            if tunnel.token != null then
-              "${cfg.package}/bin/cloudflared tunnel run --token ${lib.escapeShellArg tunnel.token}"
-            else if tunnel.tokenFile != null then
-              "${cfg.package}/bin/cloudflared tunnel run --token-file %d/credentials.json"
-            else if tunnel.credentialsFile != null then
-              "${cfg.package}/bin/cloudflared tunnel --config=${mkConfigFile} --no-autoupdate run"
-            else
-              "${cfg.package}/bin/cloudflared tunnel run";
-          Restart = "on-failure";
-          DynamicUser = true;
-        };
+          mkConfigFile = pkgs.writeText "cloudflared.yml" (builtins.toJSON fullConfig);
+          certFile =
+            if tunnel.certificateFile != null
+            then tunnel.certificateFile
+            else cfg.certificateFile;
+        in
+          lib.nameValuePair "cloudflared-tunnel-${name}" {
+            after = [
+              "network.target"
+              "network-online.target"
+            ];
+            wants = [
+              "network.target"
+              "network-online.target"
+            ];
+            wantedBy = ["multi-user.target"];
+            serviceConfig = {
+              RuntimeDirectory = "cloudflared-tunnel-${name}";
+              RuntimeDirectoryMode = "0400";
+              LoadCredential = lib.concatLists [
+                (lib.optional (tunnel.credentialsFile != null) "credentials.json:${tunnel.credentialsFile}")
+                (lib.optional (tunnel.tokenFile != null) "credentials.json:${tunnel.tokenFile}")
+                (lib.optional (certFile != null) "cert.pem:${certFile}")
+              ];
+              EnvironmentFile = lib.optional (tunnel.environmentFile != null) tunnel.environmentFile;
+              ExecStart =
+                if tunnel.token != null
+                then "${cfg.package}/bin/cloudflared tunnel run --token ${lib.escapeShellArg tunnel.token}"
+                else if tunnel.tokenFile != null
+                then "${cfg.package}/bin/cloudflared tunnel run --token-file %d/credentials.json"
+                else if tunnel.credentialsFile != null
+                then "${cfg.package}/bin/cloudflared tunnel --config=${mkConfigFile} --no-autoupdate run"
+                else "${cfg.package}/bin/cloudflared tunnel run";
+              Restart = "on-failure";
+              DynamicUser = true;
+            };
 
-        environment = {
-          TUNNEL_ORIGIN_CERT = lib.mkIf (certFile != null) "%d/cert.pem";
-          TUNNEL_EDGE_IP_VERSION = tunnel.edgeIPVersion;
-        };
-      }
-    ) cfg.tunnels;
+            environment = {
+              TUNNEL_ORIGIN_CERT = lib.mkIf (certFile != null) "%d/cert.pem";
+              TUNNEL_EDGE_IP_VERSION = tunnel.edgeIPVersion;
+            };
+          }
+      )
+      cfg.tunnels;
   };
 }

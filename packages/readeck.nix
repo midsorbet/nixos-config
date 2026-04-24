@@ -9,7 +9,6 @@
   python3,
   nix-update-script,
 }:
-
 buildGoLatestModule (finalAttrs: {
   pname = "readeck";
   version = "0.22.2";
