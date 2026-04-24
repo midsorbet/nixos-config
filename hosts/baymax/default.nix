@@ -3,7 +3,6 @@
   pkgs,
   lib,
   agenix,
-  secrets,
   ...
 }: let
   domain = "midsorbet.me";

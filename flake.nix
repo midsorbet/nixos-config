@@ -47,22 +47,18 @@
     zmx.url = "github:neurosnap/zmx/v0.5.0";
   };
   outputs = {
-    self,
     darwin,
     nix-homebrew,
     homebrew-bundle,
     homebrew-core,
     homebrew-cask,
-    wrapper-manager,
     nixpkgs,
     disko,
     nix-index-database,
     impermanence,
     lanzaboote,
-    agenix,
-    secrets,
     vscode-server,
-    zmx,
+    ...
   } @ inputs: let
     user = "me";
     linuxSystems = ["x86_64-linux"];

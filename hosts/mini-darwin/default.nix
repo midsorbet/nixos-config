@@ -1,6 +1,5 @@
 {
   agenix,
-  config,
   lib,
   pkgs,
   ...

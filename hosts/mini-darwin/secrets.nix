@@ -1,7 +1,4 @@
 {
-  config,
-  pkgs,
-  agenix,
   secrets,
   ...
 }: let
