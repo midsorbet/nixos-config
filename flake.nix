@@ -27,6 +27,10 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     impermanence = {
       url = "github:nix-community/impermanence";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -52,6 +56,7 @@
     wrapper-manager,
     nixpkgs,
     disko,
+    nix-index-database,
     impermanence,
     lanzaboote,
     agenix,
@@ -88,6 +93,10 @@
         };
         specialArgs = inputs;
         modules = [
+          nix-index-database.darwinModules.nix-index
+          {
+            programs.nix-index-database.comma.enable = true;
+          }
           nix-homebrew.darwinModules.nix-homebrew
           {
             nix-homebrew = {
@@ -123,6 +132,10 @@
         };
         specialArgs = inputs;
         modules = [
+          nix-index-database.nixosModules.nix-index
+          {
+            programs.nix-index-database.comma.enable = true;
+          }
           vscode-server.nixosModules.default
           {
             services.vscode-server.enable = true;
