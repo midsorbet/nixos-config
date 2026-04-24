@@ -63,15 +63,5 @@ in {
     paths = [zmx-select-script zmx prev.fzf prev.gawk prev.gnused];
     nativeBuildInputs = [prev.makeWrapper];
     postBuild = "wrapProgram $out/bin/${name} --prefix PATH : $out/bin";
-    meta = {
-      description = "Interactive session picker for zmx";
-      longDescription = ''
-        zmx-select wraps zmx with fzf so existing sessions can be selected,
-        previewed through scrollback history, or created from a single prompt.
-      '';
-      homepage = "https://zmx.sh/#session-picker";
-      mainProgram = "zmx-select";
-      platforms = zmxPlatforms;
-    };
   };
 }

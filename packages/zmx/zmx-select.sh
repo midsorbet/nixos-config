@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -o pipefail
 
+# Based on the upstream session picker example:
+# https://github.com/neurosnap/zmx/blob/9d01661fd1bacf9d7e886332af0d94e8c939aed9/README.md#L275-L329
 main() {
   local display output rc query key selected session_name
 
