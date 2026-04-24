@@ -1,6 +1,23 @@
 {inputs}: final: prev: let
   system = prev.stdenvNoCC.hostPlatform.system;
   version = "0.5.0";
+  zmxPlatforms = ["aarch64-darwin" "x86_64-linux" "aarch64-linux"];
+  zmxMeta = {
+    description = "Session persistence for terminal processes";
+    longDescription = ''
+      zmx keeps terminal shell sessions alive across disconnects. It supports
+      attaching and detaching without killing the process, native terminal
+      scrollback, multiple clients, sending commands to sessions, and printing
+      scrollback history as plain text. It intentionally does not provide
+      windows, tabs, or splits.
+    '';
+    homepage = "https://zmx.sh/";
+    changelog = "https://github.com/neurosnap/zmx/blob/v${version}/CHANGELOG.md";
+    downloadPage = "https://zmx.sh/#install";
+    license = prev.lib.licenses.mit;
+    mainProgram = "zmx";
+    platforms = zmxPlatforms;
+  };
   tarballs = {
     "aarch64-darwin" = {
       url = "https://zmx.sh/a/zmx-${version}-macos-aarch64.tar.gz";
@@ -23,17 +40,15 @@
       install -Dm755 zmx "$out/bin/zmx"
     '';
 
-    meta = {
-      homepage = "https://zmx.sh/";
-      changelog = "https://github.com/neurosnap/zmx/blob/v${version}/CHANGELOG.md";
-      mainProgram = "zmx";
-      platforms = builtins.attrNames tarballs;
-    };
+    meta = zmxMeta;
   };
   zmx =
     if builtins.hasAttr system tarballs
     then zmx-tarball
-    else inputs.zmx.packages.${system}.zmx;
+    else
+      inputs.zmx.packages.${system}.zmx.overrideAttrs (old: {
+        meta = (old.meta or {}) // zmxMeta;
+      });
   zmx-select-script = (prev.writeScriptBin "zmx-select" (builtins.readFile ./zmx-select.sh)).overrideAttrs (old: {
     buildCommand = ''
       ${old.buildCommand}
@@ -48,5 +63,15 @@ in {
     paths = [zmx-select-script zmx prev.fzf prev.gawk prev.gnused];
     nativeBuildInputs = [prev.makeWrapper];
     postBuild = "wrapProgram $out/bin/${name} --prefix PATH : $out/bin";
+    meta = {
+      description = "Interactive session picker for zmx";
+      longDescription = ''
+        zmx-select wraps zmx with fzf so existing sessions can be selected,
+        previewed through scrollback history, or created from a single prompt.
+      '';
+      homepage = "https://zmx.sh/#session-picker";
+      mainProgram = "zmx-select";
+      platforms = zmxPlatforms;
+    };
   };
 }
