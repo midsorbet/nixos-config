@@ -1,7 +1,4 @@
-{
-  secrets,
-  ...
-}: let
+{secrets, ...}: let
   user = "me";
 in {
   age.identityPaths = [
