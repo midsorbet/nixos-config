@@ -9,8 +9,10 @@
   };
   wrapperPackages = builtins.mapAttrs (_: value: value.wrapped) evald.config.wrappers;
   system = final.stdenv.hostPlatform.system;
+  localZmx = final.callPackage ./zmx {};
 in {
   wrapperPackages = wrapperPackages;
   readeck = final.callPackage ./readeck.nix {};
-  zmx = inputs.zmx.packages.${system}.zmx or (final.callPackage ./zmx {});
+  zmx = inputs.zmx.packages.${system}.zmx or localZmx.zmx;
+  zmx-select = localZmx.zmx-select;
 }

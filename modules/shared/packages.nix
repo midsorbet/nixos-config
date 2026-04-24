@@ -44,4 +44,5 @@ with pkgs; [
 
   zip
   zmx
+  zmx-select
 ]
