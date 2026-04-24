@@ -22,6 +22,15 @@ in {
     group = "staff";
   };
 
+  age.secrets."baymax-builder-ssh-key" = {
+    symlink = false;
+    path = "/etc/nix/baymax-builder-ed25519";
+    file = "${secrets}/baymax-builder-ssh-key.age";
+    mode = "600";
+    owner = "root";
+    group = "wheel";
+  };
+
   # age.secrets."github-signing-key" = {
   #   symlink = false;
   #   path = "/Users/${user}/.ssh/pgp_github.key";

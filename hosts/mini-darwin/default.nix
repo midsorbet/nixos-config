@@ -88,6 +88,20 @@ in {
       extra-platforms = x86_64-darwin aarch64-darwin
     '';
 
+    buildMachines = [
+      {
+        hostName = "192.168.4.200";
+        protocol = "ssh-ng";
+        systems = ["x86_64-linux"];
+        sshUser = "me";
+        sshKey = "/etc/nix/baymax-builder-ed25519";
+        maxJobs = 4;
+        speedFactor = 2;
+        supportedFeatures = ["kvm" "benchmark" "big-parallel"];
+        publicHostKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSUF4MWdTUkF5cFQvbnEzUEtsSzU0bEdUSkRQTk0yUWVLMjVRb0J0MFVOUEQK";
+      }
+    ];
+
     linux-builder.enable = true;
   };
 
