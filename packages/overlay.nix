@@ -14,6 +14,11 @@ in {
   mdfried = final.callPackage ./mdfried.nix {
     mdfriedInput = inputs.mdfried;
   };
+  mdfriedWithConfig = settings:
+    final.callPackage ./mdfried-with-config.nix {
+      inherit settings;
+      mdfried = final.mdfried;
+    };
   readeck = final.callPackage ./readeck.nix {};
   inherit (zmxPackages) zmx zmx-select;
 }
