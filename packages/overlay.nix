@@ -12,5 +12,5 @@
 in {
   wrapperPackages = wrapperPackages;
   readeck = final.callPackage ./readeck.nix {};
-  zmx = inputs.zmx.packages.${system}.zmx or final.callPackage ./zmx {};
+  zmx = inputs.zmx.packages.${system}.zmx or (final.callPackage ./zmx {});
 }
