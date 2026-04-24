@@ -8,11 +8,9 @@
       map (name: ../modules/wrapper-manager/${name}) (builtins.attrNames entries);
   };
   wrapperPackages = builtins.mapAttrs (_: value: value.wrapped) evald.config.wrappers;
-  system = final.stdenv.hostPlatform.system;
-  localZmx = final.callPackage ./zmx {};
+  zmxPackages = import ./zmx {inherit inputs;} final prev;
 in {
   wrapperPackages = wrapperPackages;
   readeck = final.callPackage ./readeck.nix {};
-  zmx = inputs.zmx.packages.${system}.zmx or localZmx.zmx;
-  zmx-select = localZmx.zmx-select;
+  inherit (zmxPackages) zmx zmx-select;
 }
