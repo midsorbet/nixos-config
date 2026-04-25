@@ -8,9 +8,13 @@ main() {
 
   display=$(
     zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients _created dir; do
+      name=${name#"→ "}
+      name=${name#"  "}
+      name=${name#name=}
       name=${name#session_name=}
       pid=${pid#pid=}
       clients=${clients#clients=}
+      dir=${dir#start_dir=}
       dir=${dir#started_in=}
       printf "%-20s  pid:%-8s  clients:%-2s  %s\n" "$name" "$pid" "$clients" "$dir"
     done
