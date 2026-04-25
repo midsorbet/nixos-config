@@ -8,16 +8,16 @@ main() {
 
   display=$(
     zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients _created dir; do
-      name=${name#session_name=}
+      name=${name#*name=}
       pid=${pid#pid=}
       clients=${clients#clients=}
-      dir=${dir#started_in=}
+      dir=${dir#start_dir=}
       printf "%-20s  pid:%-8s  clients:%-2s  %s\n" "$name" "$pid" "$clients" "$dir"
     done
   )
 
   output=$(
-    { [[ -n "$display" ]] && printf '%s\n' "$display"; } | fzf \
+    { [[ -n "$display" ]] && echo "$display"; } | fzf \
       --print-query \
       --expect=ctrl-n \
       --height=80% \
