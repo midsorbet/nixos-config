@@ -23,6 +23,8 @@ in {
     openssh.authorizedKeys.keys = [moblinKey lizalfosKey bokoblinKey];
   };
 
+  local.wrapperManager.git.commitSigning.enable = true;
+
   homebrew = {
     enable = true;
     casks = [
