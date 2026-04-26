@@ -250,6 +250,7 @@ in {
         "/archive/immich"
       ];
       repo = "ssh://u583523@u583523.your-storagebox.de:23/./borg-repo";
+      extraArgs = ["--remote-path=borg-1.4"];
       startAt = "daily";
       persistentTimer = true;
       compression = "zstd";
@@ -259,7 +260,6 @@ in {
       };
       environment = {
         BORG_RSH = "ssh -i ${config.age.secrets.hetzner-borg-key.path} -p 23 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${config.age.secrets.hetzner-borg-hosts.path}";
-        BORG_REMOTE_PATH = "borg-1.4";
       };
       prune.keep = {
         daily = 7;
