@@ -452,14 +452,24 @@ in {
       # Template service for failure notifications
       "ntfy-failure@" = {
         description = "Send failure notification for %i";
-        serviceConfig.Type = "oneshot";
+        wants = ["ntfy-sh.service"];
+        after = ["ntfy-sh.service"];
+        unitConfig = {
+          StartLimitIntervalSec = 300;
+          StartLimitBurst = 5;
+        };
+        serviceConfig = {
+          Type = "oneshot";
+          Restart = "on-failure";
+          RestartSec = "30s";
+        };
         scriptArgs = "%i";
         script = ''
           ${pkgs.ntfy-sh}/bin/ntfy publish \
             --title "Service Failed" \
             --priority high \
             --tags warning \
-            http://localhost:8080/system "$1 failed on baymax"
+            http://127.0.0.1:8080/system "$1 failed on baymax"
         '';
       };
 
