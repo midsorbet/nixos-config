@@ -249,7 +249,7 @@ in {
         "/home"
         "/archive/immich"
       ];
-      repo = "ssh://u541275@u541275.your-storagebox.de:23/./borg-repo";
+      repo = "ssh://u583523@u583523.your-storagebox.de:23/./borg-repo";
       startAt = "daily";
       persistentTimer = true;
       compression = "zstd";
