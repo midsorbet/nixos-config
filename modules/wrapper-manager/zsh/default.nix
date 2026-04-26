@@ -29,10 +29,9 @@
     fi
 
     typeset -U path cdpath
-    # Prefer the declaratively managed system profile over the mutable per-user profile.
-    if [[ -d /run/current-system/sw/bin ]]; then
-      path=(/run/current-system/sw/bin $path)
-    fi
+    # Prefer the system profile, but keep NixOS privilege wrappers first.
+    [[ -d /run/current-system/sw/bin ]] && path=(/run/current-system/sw/bin $path)
+    [[ -d /run/wrappers/bin ]] && path=(/run/wrappers/bin $path)
     cdpath=(~/Projects)
 
     if command -v zmx >/dev/null 2>&1; then
