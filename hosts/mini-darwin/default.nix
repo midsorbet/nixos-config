@@ -11,6 +11,7 @@
 in {
   imports = [
     ./secrets.nix
+    ./alleycat.nix
     ../../modules/shared
     agenix.darwinModules.default
   ];
