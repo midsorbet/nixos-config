@@ -20,7 +20,7 @@
   '';
 in {
   wrappers.git = {
-    basePackage = pkgs.gitFull;
+    basePackage = pkgs.git;
     env.GIT_CONFIG_GLOBAL.value = gitConfig;
   };
 }
