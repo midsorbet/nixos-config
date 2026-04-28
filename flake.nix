@@ -2,6 +2,7 @@
   description = "Starter Configuration with secrets for MacOS and NixOS";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-master.url = "git+https://github.com/NixOS/nixpkgs.git?ref=master";
     agenix.url = "github:ryantm/agenix";
     wrapper-manager.url = "github:viperML/wrapper-manager";
     darwin = {
