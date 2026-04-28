@@ -436,6 +436,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-master": {
+      "locked": {
+        "lastModified": 1777341570,
+        "narHash": "sha256-nR13P0S0DpNNUYhbJswzn8aiSOnUapgfYru9CQkAAJE=",
+        "ref": "master",
+        "rev": "b04c33e305b2400e6ad3d7c1aacd21bf21bc5856",
+        "revCount": 988225,
+        "type": "git",
+        "url": "https://github.com/NixOS/nixpkgs.git"
+      },
+      "original": {
+        "ref": "master",
+        "type": "git",
+        "url": "https://github.com/NixOS/nixpkgs.git"
+      }
+    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1776877367,
@@ -518,6 +534,7 @@
         "nix-homebrew": "nix-homebrew",
         "nix-index-database": "nix-index-database",
         "nixpkgs": "nixpkgs_2",
+        "nixpkgs-master": "nixpkgs-master",
         "secrets": "secrets",
         "vscode-server": "vscode-server",
         "wrapper-manager": "wrapper-manager",
