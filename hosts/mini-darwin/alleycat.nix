@@ -64,7 +64,7 @@ in {
     };
   };
 
-  system.activationScripts.postActivation.text = lib.mkAfter ''
+  system.activationScripts.extraActivation.text = lib.mkAfter ''
     echo >&2 "Setting up Alleycat config for ${user}..."
     /usr/bin/install -d -m 700 -o ${lib.escapeShellArg user} ${lib.escapeShellArg configDir} ${lib.escapeShellArg logDir}
     /bin/cp ${lib.escapeShellArg configFile} ${lib.escapeShellArg configPath}
