@@ -47,7 +47,7 @@
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     zmx.url = "github:neurosnap/zmx/v0.5.0";
     mdfried = {
-      url = "github:benjajaja/mdfried/v0.19.5";
+      url = "github:benjajaja/mdfried/v0.19.7";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -80,6 +80,10 @@
   in {
     devShells = forAllSystems devShell;
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
+    overlays = import ./packages/overlay.nix {
+      inherit inputs;
+      aggregate = false;
+    };
 
     darwinConfigurations = {
       mini-darwin = darwin.lib.darwinSystem {
