@@ -2,10 +2,20 @@
   inputs,
   aggregate ? true,
 }: let
+  nixpkgsMasterFor = system:
+    import inputs.nixpkgs-master {
+      inherit system;
+    };
+
   overlays = {
+    zsh = final: prev:
+      prev.lib.optionalAttrs prev.stdenv.isDarwin {
+        zsh = (nixpkgsMasterFor prev.stdenv.hostPlatform.system).zsh;
+      };
+
     wrapperPackages = final: prev: let
       evald = inputs.wrapper-manager.lib {
-        pkgs = prev;
+        pkgs = final;
         modules = let
           entries = builtins.readDir ../modules/wrapper-manager;
         in
@@ -15,17 +25,13 @@
       wrapperPackages = builtins.mapAttrs (_: value: value.wrapped) evald.config.wrappers;
     };
 
-    direnv = final: prev: let
-      nixpkgsMaster = import inputs.nixpkgs-master {
-        system = prev.stdenv.hostPlatform.system;
-      };
-    in {
+    direnv = final: prev: {
       direnv = prev.direnv.overrideAttrs (_:
         prev.lib.optionalAttrs prev.stdenv.isDarwin {
           # The zsh in current nixos-unstable hangs during direnv's zsh check on Darwin.
           nativeCheckInputs = [
             prev.fish
-            nixpkgsMaster.zsh
+            final.zsh
             prev.writableTmpDirAsHomeHook
           ];
         });
@@ -45,6 +51,7 @@
   };
 
   overlayList = [
+    overlays.zsh
     overlays.wrapperPackages
     overlays.direnv
     overlays.mdfried
