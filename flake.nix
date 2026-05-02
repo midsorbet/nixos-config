@@ -4,6 +4,10 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-master.url = "git+https://github.com/NixOS/nixpkgs.git?ref=master";
     agenix.url = "github:ryantm/agenix";
+    hjem = {
+      url = "github:feel-co/hjem";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     wrapper-manager.url = "github:viperML/wrapper-manager";
     darwin = {
       url = "github:LnL7/nix-darwin/master";
@@ -53,6 +57,7 @@
   };
   outputs = {
     darwin,
+    hjem,
     nix-homebrew,
     homebrew-bundle,
     homebrew-core,
@@ -98,6 +103,7 @@
         };
         specialArgs = inputs;
         modules = [
+          hjem.darwinModules.default
           nix-index-database.darwinModules.nix-index
           {
             programs.nix-index-database.comma.enable = true;
