@@ -620,5 +620,24 @@ in {
     ]
     ++ (import ./packages.nix {inherit pkgs;});
 
-  system.stateVersion = "25.11"; # Don't change this
+  system = {
+    autoUpgrade = {
+      enable = true;
+      # Follow reviewed commits and their locked inputs. Flake input refreshes
+      # should happen through repo commits, not independently on Baymax.
+      flake = "git+ssh://git@github.com/midsorbet/nixos-config.git#baymax";
+      upgrade = false;
+      dates = "Sun 04:40";
+      randomizedDelaySec = "2h";
+      fixedRandomDelay = true;
+      persistent = false;
+      allowReboot = true;
+      rebootWindow = {
+        lower = "04:00";
+        upper = "07:00";
+      };
+    };
+
+    stateVersion = "25.11"; # Don't change this
+  };
 }
