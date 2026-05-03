@@ -114,6 +114,9 @@ in {
     hostName = "baymax";
     hostId = "378a1cd8";
     useDHCP = true;
+    # dhcpcd failed during the Baymax recovery boot; keep systemd-networkd as
+    # the DHCP backend for this host.
+    useNetworkd = true;
     firewall = {
       enable = true;
       interfaces.CloudflareWARP.allowedTCPPorts = [22 2283];
@@ -317,6 +320,10 @@ in {
         AllowUsers = [user];
       };
     };
+
+    # dbus-broker left systemctl unable to query units during recovery; use the
+    # classic dbus-daemon implementation on Baymax.
+    dbus.implementation = "dbus";
 
     readeck = {
       enable = true;
