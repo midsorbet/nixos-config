@@ -94,7 +94,11 @@ in {
     kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
   };
 
-  fileSystems."/persist".neededForBoot = true;
+  fileSystems = {
+    "/persist".neededForBoot = true;
+    "/persist/host".neededForBoot = true;
+  };
+
   environment.persistence."/persist" = {
     hideMounts = true;
 
@@ -105,7 +109,13 @@ in {
       "/var/log/journal"
     ];
   };
-  environment.etc."machine-id".source = "/persist/host/etc/machine-id";
+
+  # Use impermanence's machine-id handling instead of a manual /etc symlink so
+  # systemd and D-Bus always see a normal readable file early in boot.
+  environment.persistence."/persist/host" = {
+    hideMounts = true;
+    files = ["/etc/machine-id"];
+  };
 
   # Set your time zone.
   time.timeZone = "America/Los_Angeles";
@@ -541,8 +551,10 @@ in {
           };
         });
     in
-      (mkTmpDirEntries "root" "root" "0750" [
+      (mkTmpDirEntries "root" "root" "0751" [
         "/persist/host"
+      ])
+      // (mkTmpDirEntries "root" "root" "0750" [
         "/persist/cache"
       ])
       // (mkTmpDirEntries "root" "root" "0700" [
@@ -553,6 +565,13 @@ in {
       // (mkTmpDirEntries "root" "root" "0755" [
         "/persist/host/etc"
       ])
+      // {
+        "/persist/host/etc/machine-id".z = {
+          user = "root";
+          group = "root";
+          mode = "0444";
+        };
+      }
       // (mkTmpDirEntries config.services.immich.user config.services.immich.group "0700" [
         config.services.immich.mediaLocation
         config.services.immich.environment.THUMB_LOCATION
