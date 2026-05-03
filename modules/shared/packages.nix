@@ -26,7 +26,8 @@ with pkgs; [
   libfido2
   lnav
 
-  mosh
+  trzsz-ssh
+  tsshd
 
   ncdu
 
