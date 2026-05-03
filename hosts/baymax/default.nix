@@ -92,6 +92,7 @@ in {
     ];
     # Force usb-storage (disable UAS) for the Seagate enclosure to avoid reset/timeouts.
     kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
+    zfs.forceImportRoot = false;
   };
 
   fileSystems = {
