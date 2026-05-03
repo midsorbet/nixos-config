@@ -85,7 +85,6 @@ in {
       };
     };
     supportedFilesystems = ["zfs"];
-    kernelPackages = pkgs.linuxPackages_6_12;
     kernelModules = [
       "uinput"
       "tun"
@@ -171,29 +170,6 @@ in {
   };
 
   services = {
-    fail2ban = {
-      enable = true;
-      maxretry = 5;
-      bantime = "1h";
-      jails = {
-        # Watches paperless-web journald logs for repeated failed logins.
-        paperless-auth = {
-          filter.Definition = {
-            failregex = "Login failed for user `.*` from (?:IP|private IP) `<HOST>`\\.$";
-            ignoreregex = "";
-          };
-          settings = {
-            backend = "systemd";
-            journalmatch = "_SYSTEMD_UNIT=paperless-web.service";
-            port = "28981";
-            maxretry = 5;
-            findtime = "10m";
-            bantime = "1h";
-          };
-        };
-      };
-    };
-
     zfs = {
       autoScrub.enable = true;
       trim.enable = true;
@@ -615,11 +591,6 @@ in {
   };
 
   security = {
-    audit = {
-      enable = true;
-      backlogLimit = 8192;
-    };
-    apparmor.enable = true;
     lockKernelModules = true;
     protectKernelImage = true;
 
