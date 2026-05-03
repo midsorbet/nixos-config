@@ -331,10 +331,6 @@ in {
       };
     };
 
-    # dbus-broker left systemctl unable to query units during recovery; use the
-    # classic dbus-daemon implementation on Baymax.
-    dbus.implementation = "dbus";
-
     readeck = {
       enable = true;
       environmentFile = config.age.secrets.readeck-env.path;
