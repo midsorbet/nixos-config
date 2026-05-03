@@ -156,15 +156,21 @@ in {
   programs = {
     gnupg.agent.enable = true;
     nix-ld.enable = true;
-    ssh.extraConfig = ''
-      Host *
-        SendEnv LANG LC_*
-        HashKnownHosts yes
+    ssh = {
+      knownHosts.github = {
+        hostNames = ["github.com"];
+        publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl";
+      };
+      extraConfig = ''
+        Host *
+          SendEnv LANG LC_*
+          HashKnownHosts yes
 
-      Host github.com
-        IdentitiesOnly yes
-        IdentityFile /home/${user}/.ssh/id_github
-    '';
+        Host github.com
+          IdentitiesOnly yes
+          IdentityFile /home/${user}/.ssh/id_github
+      '';
+    };
     # My shell
     zsh.enable = true;
   };
