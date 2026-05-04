@@ -548,6 +548,10 @@ in {
         "/persist/host/etc"
       ])
       // {
+        # Compatibility for older Baymax generations whose initrd secret copy
+        # hooks used /persist/secrets before host-specific state moved under
+        # /persist/host.
+        "/persist/secrets".L.argument = "/persist/host/secrets";
         "/persist/host/etc/machine-id".z = {
           user = "root";
           group = "root";
