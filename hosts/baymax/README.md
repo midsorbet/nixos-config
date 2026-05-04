@@ -17,14 +17,35 @@ usb-storage.quirks=0bc2:2344:u
 One-time setup:
 
 ```bash
-sudo install -d -m 700 /persist/secrets/initrd
-sudo ssh-keygen -t ed25519 -N "" -f /persist/secrets/initrd/ssh_host_ed25519_key
-sudo chmod 600 /persist/secrets/initrd/ssh_host_ed25519_key
-sudo chmod 644 /persist/secrets/initrd/ssh_host_ed25519_key.pub
+sudo install -d -m 700 /persist/host/secrets/initrd
+sudo ssh-keygen -t ed25519 -N "" -f /persist/host/secrets/initrd/ssh_host_ed25519_key
+sudo chmod 600 /persist/host/secrets/initrd/ssh_host_ed25519_key
+sudo chmod 644 /persist/host/secrets/initrd/ssh_host_ed25519_key.pub
 ```
 
 - Do not reuse other keys for initrd unlock
 - With systemd initrd, SSH login during early boot runs the password agent directly instead of dropping into a shell.
+
+Unlock from another machine:
+
+```zsh
+ssh -tt -p 2222 root@192.168.4.200
+```
+
+## Console Rescue
+
+If Baymax boots without an IPv4 address, log in at the console and set the usual LAN address temporarily:
+
+```bash
+sudo ip addr add 192.168.4.200/24 dev enp1s0
+sudo ip route replace default via 192.168.4.1
+```
+
+Then verify from another machine:
+
+```zsh
+ssh me@192.168.4.200
+```
 
 ## Secure Boot
 
@@ -120,6 +141,13 @@ nh os switch . \
   --hostname baymax \
   --target-host me@192.168.4.200 \
   --build-host me@192.168.4.200
+```
+
+After the config is pushed to `main`, Baymax can also deploy the reviewed GitHub flake itself:
+
+```zsh
+zmx run nixos sudo -n systemctl start nixos-upgrade.service
+zmx run nixos systemctl status nixos-upgrade.service --no-pager -l
 ```
 
 4. In Cloudflare, recreate the published application routes under `Networking -> Tunnels -> baymax-apps`.

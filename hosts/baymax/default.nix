@@ -19,6 +19,10 @@
     ];
   };
 in {
+  # The pinned nixpkgs cloudflared module only supports credentials-file
+  # tunnels. Baymax uses a Cloudflare-managed tunnel token from agenix, so keep
+  # the local module until upstream supports tokenFile or the secret is migrated
+  # to a credentials JSON file.
   disabledModules = ["services/networking/cloudflared.nix"];
 
   imports = [
@@ -31,7 +35,6 @@ in {
 
   boot = {
     loader = {
-      systemd-boot.enable = lib.mkForce false;
       efi.canTouchEfiVariables = true;
     };
     lanzaboote = {
@@ -397,8 +400,8 @@ in {
     services = {
       readeck.serviceConfig = {
         DynamicUser = lib.mkForce false;
-        User = lib.mkForce "readeck";
-        Group = lib.mkForce "readeck";
+        User = "readeck";
+        Group = "readeck";
         NoNewPrivileges = true;
         RestrictSUIDSGID = true;
         SystemCallArchitectures = "native";
@@ -611,6 +614,10 @@ in {
           commands = [
             {
               command = "${pkgs.systemd}/bin/reboot";
+              options = ["NOPASSWD"];
+            }
+            {
+              command = "${pkgs.systemd}/bin/systemctl start nixos-upgrade.service";
               options = ["NOPASSWD"];
             }
           ];
