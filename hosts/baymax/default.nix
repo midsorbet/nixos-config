@@ -474,7 +474,11 @@ in {
 
       # Attach failure notifications to critical services
       "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
-      "postgresqlBackup".unitConfig.OnFailure = "ntfy-failure@%n";
+      "postgresqlBackup" = {
+        requires = ["postgresql.service"];
+        after = ["postgresql.service"];
+        unitConfig.OnFailure = "ntfy-failure@%n";
+      };
       "paperless-exporter".unitConfig.OnFailure = "ntfy-failure@%n";
       "borgbackup-job-hetzner".requires = [
         "paperless-exporter.service"
