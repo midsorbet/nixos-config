@@ -49,6 +49,21 @@ ssh me@192.168.4.200
 
 ## Secure Boot
 
+Baymax uses Lanzaboote thin stubs. Do not delete `/boot/EFI/nixos`: the signed
+entries in `/boot/EFI/Linux` can reference kernel and initrd payload files in
+that directory. Treat `sbctl verify` output as a verification signal, not as a
+cleanup list.
+
+Before bootloader, Secure Boot, initrd, or ZFS-root changes, save an ESP backup
+outside the ESP:
+
+```zsh
+sudo tar -C / -czf /persist/host/boot-backup-$(date +%Y%m%d-%H%M%S).tgz boot
+```
+
+Deploy risky boot changes with `boot` first, then reboot and verify before
+running `switch`.
+
 One-time key setup:
 
 ```bash
