@@ -47,6 +47,19 @@
       readeck = final.callPackage ./readeck.nix {};
     };
 
+    tsshd = final: prev: {
+      tsshd = prev.tsshd.overrideAttrs (_: {
+        version = "0.1.7";
+        src = prev.fetchFromGitHub {
+          owner = "trzsz";
+          repo = "tsshd";
+          tag = "v0.1.7";
+          hash = "sha256-9llfXzAAQgAOeaD+o3AVyhP0uL88uQsCNlqAPNfzDVw=";
+        };
+        vendorHash = "sha256-btTWkuLkT2e58TYqe0e/cE/0Try/g8XoahiABSSFaGU=";
+      });
+    };
+
     zmx = final: prev: import ./zmx {inherit inputs;} final prev;
   };
 
@@ -56,6 +69,7 @@
     overlays.direnv
     overlays.mdfried
     overlays.readeck
+    overlays.tsshd
     overlays.zmx
   ];
 
