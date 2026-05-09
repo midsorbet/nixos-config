@@ -399,6 +399,12 @@ in {
   # Notification and monitoring systemd units
   systemd = {
     services = {
+      # systemd 260 tmpfiles --clean exits 73/CANTCREAT when statx(2) hits
+      # Baymax's ZFS-backed /tmp, /var/tmp, /nix, and /var/lib/systemd paths.
+      # Keep the cleanup attempt visible in the journal, but do not leave the
+      # host degraded for this non-fatal compatibility failure.
+      "systemd-tmpfiles-clean".serviceConfig.SuccessExitStatus = "CANTCREAT";
+
       readeck.serviceConfig = {
         DynamicUser = lib.mkForce false;
         User = "readeck";
