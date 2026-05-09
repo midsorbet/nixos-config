@@ -36,6 +36,7 @@ in {
   boot = {
     loader = {
       efi.canTouchEfiVariables = true;
+      systemd-boot.configurationLimit = 20;
     };
     lanzaboote = {
       enable = true;
