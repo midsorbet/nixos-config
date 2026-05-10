@@ -6,14 +6,14 @@
 }: let
   user = config.system.primaryUser;
   home = config.system.primaryUserHome;
-  version = "0.1.0";
+  version = "0.2.8";
   package = pkgs.stdenvNoCC.mkDerivation {
     pname = "kittylitter";
     inherit version;
 
     src = pkgs.fetchurl {
       url = "https://github.com/dnakov/litter/releases/download/v${version}/kittylitter-aarch64-apple-darwin.tar.xz";
-      hash = "sha256-z+Kn/A9taMIYPDnKnUnZ5a8e9e7V2F+MzUCjnaqOJNU=";
+      hash = "sha256-eoT6fOl6rF3GVzot8CzyQhAVRU6H9GB7efPJyr0t9qQ=";
     };
 
     sourceRoot = "kittylitter-aarch64-apple-darwin";
