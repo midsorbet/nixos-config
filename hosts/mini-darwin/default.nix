@@ -239,7 +239,7 @@ in {
         alt-comma = "layout accordion horizontal vertical";
         ctrl-alt-f = "fullscreen";
         alt-shift-space = "layout floating tiling";
-        alt-enter = "exec-and-forget open -na Ghostty";
+        alt-enter = "exec-and-forget /usr/bin/osascript -e 'tell application \"Ghostty\" to new window' -e 'tell application \"Ghostty\" to activate'";
 
         alt-1 = "workspace 1";
         alt-2 = "workspace 2";
