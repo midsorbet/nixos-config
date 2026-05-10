@@ -126,20 +126,6 @@ in {
     CODEX_JS_REPL_NODE_PATH = "${pkgs.nodejs}/bin/node";
   };
 
-  environment.loginShellInit = lib.mkBefore ''
-    zms() {
-      if [ -x "${pkgs.zmx-select}/bin/zmx-select" ]; then
-        PATH="${pkgs.zmx}/bin:$PATH" ${pkgs.zmx-select}/bin/zmx-select "$@"
-      fi
-    }
-
-    if [ -z "''${ZMX_SESSION-}" ] \
-      && [ -t 0 ] \
-      && [ -t 1 ]; then
-      zms && exit
-    fi
-  '';
-
   environment.interactiveShellInit = lib.mkAfter ''
     codex_args=(
       -c 'notify=["/usr/bin/true"]'
@@ -155,6 +141,20 @@ in {
     cax() {
       nix shell nixpkgs#nodejs -c npx -y @openai/codex "''${codex_args[@]}" "$@"
     }
+  '';
+
+  programs.zsh.loginShellInit = lib.mkBefore ''
+    zms() {
+      if [ -x "${pkgs.zmx-select}/bin/zmx-select" ]; then
+        PATH="${pkgs.zmx}/bin:$PATH" ${pkgs.zmx-select}/bin/zmx-select "$@"
+      fi
+    }
+
+    if [ -z "''${ZMX_SESSION-}" ] \
+      && [ -t 0 ] \
+      && [ -t 1 ]; then
+      zms && exit
+    fi
   '';
 
   networking.knownNetworkServices = [
