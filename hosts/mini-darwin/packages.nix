@@ -5,5 +5,6 @@ in
   shared-packages
   ++ [
     fswatch
+    gh
     uv
   ]
