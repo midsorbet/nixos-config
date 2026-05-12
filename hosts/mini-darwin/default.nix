@@ -139,7 +139,9 @@ in {
     }
 
     cax() {
-      nix shell nixpkgs#nodejs -c npx -y @openai/codex "''${codex_args[@]}" "$@"
+      PATH="${pkgs.nodejs}/bin:$PATH" \
+        AUBE_PARANOID=true \
+        ${pkgs.aube}/bin/aube dlx --package @openai/codex codex "''${codex_args[@]}" "$@"
     }
   '';
 
