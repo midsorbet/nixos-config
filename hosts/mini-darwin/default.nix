@@ -141,7 +141,7 @@ in {
     cax() {
       PATH="${pkgs.nodejs}/bin:$PATH" \
         AUBE_PARANOID=true \
-        ${pkgs.aube}/bin/aube dlx --package @openai/codex codex "''${codex_args[@]}" "$@"
+        aube dlx --package @openai/codex codex "''${codex_args[@]}" "$@"
     }
   '';
 
