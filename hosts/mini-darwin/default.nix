@@ -11,7 +11,6 @@
 in {
   imports = [
     ./secrets.nix
-    ./kittylitter.nix
     ../../modules/ghostty.nix
     ../../modules/shared
     agenix.darwinModules.default
