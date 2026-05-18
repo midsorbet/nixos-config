@@ -48,11 +48,6 @@ in {
     };
   };
 
-  services.emacs = {
-    enable = true;
-    package = pkgs.emacs;
-  };
-
   services.openssh = {
     enable = true;
     extraConfig = ''
