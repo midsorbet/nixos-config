@@ -3,12 +3,17 @@
     enable = false;
     keyPath = "~/.ssh/id_github.pub";
   },
+  gitPager ? null,
   lib,
   pkgs,
   ...
 }: let
   gitConfig = pkgs.writeText "gitconfig" ''
     ${builtins.readFile ./gitconfig}
+    ${lib.optionalString (gitPager != null) ''
+      [core]
+        pager = ${gitPager}
+    ''}
     ${lib.optionalString gitCommitSigning.enable ''
       [user]
         signingkey = ${gitCommitSigning.keyPath}

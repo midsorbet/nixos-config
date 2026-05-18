@@ -8,6 +8,10 @@
       url = "github:feel-co/hjem";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    hunk = {
+      url = "github:modem-dev/hunk/v0.13.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     wrapper-manager.url = "github:viperML/wrapper-manager";
     darwin = {
       url = "github:LnL7/nix-darwin/master";

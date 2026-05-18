@@ -13,6 +13,7 @@ in {
     ./secrets.nix
     ../../modules/darwin/grayjay.nix
     ../../modules/ghostty.nix
+    ../../modules/hunk.nix
     ../../modules/shared
     agenix.darwinModules.default
   ];
@@ -28,6 +29,10 @@ in {
   local.wrapperManager.git.commitSigning.enable = true;
   local.grayjay.enable = true;
   local.ghostty.usgc.enable = true;
+  local.hunk = {
+    enable = true;
+    enableGitPager = true;
+  };
 
   homebrew = {
     enable = true;

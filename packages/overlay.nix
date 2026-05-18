@@ -16,6 +16,13 @@
     wrapperPackages = final: prev: let
       evald = inputs.wrapper-manager.lib {
         pkgs = final;
+        specialArgs = {
+          gitCommitSigning = {
+            enable = false;
+            keyPath = "~/.ssh/id_github.pub";
+          };
+          gitPager = null;
+        };
         modules = let
           entries = builtins.readDir ../modules/wrapper-manager;
         in

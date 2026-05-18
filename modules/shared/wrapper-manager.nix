@@ -10,6 +10,7 @@
     inherit pkgs;
     specialArgs = {
       gitCommitSigning = cfg.git.commitSigning;
+      gitPager = cfg.git.pager;
     };
     modules = let
       entries = builtins.readDir ../wrapper-manager;
@@ -25,6 +26,12 @@ in {
       default = "~/.ssh/id_github.pub";
       description = "Public SSH key path passed to Git as user.signingkey when commit signing is enabled.";
     };
+  };
+
+  options.local.wrapperManager.git.pager = lib.mkOption {
+    type = lib.types.nullOr lib.types.str;
+    default = null;
+    description = "Value for Git core.pager in the wrapped Git package.";
   };
 
   config.environment.systemPackages =
