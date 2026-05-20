@@ -44,6 +44,14 @@
         });
     };
 
+    awscli2 = final: prev: {
+      awscli2 = import ./awscli2.nix {pkgs = prev;};
+    };
+
+    github-copilot-cli = final: prev: {
+      github-copilot-cli = import ./github-copilot-cli.nix {pkgs = prev;};
+    };
+
     mdfried = final: prev: {
       mdfried = final.callPackage ./mdfried.nix {
         mdfriedInput = inputs.mdfried;
@@ -74,6 +82,8 @@
     overlays.zsh
     overlays.wrapperPackages
     overlays.direnv
+    overlays.awscli2
+    overlays.github-copilot-cli
     overlays.mdfried
     overlays.readeck
     overlays.tsshd

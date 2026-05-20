@@ -36,6 +36,10 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL/main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -68,6 +72,7 @@
     homebrew-cask,
     nixpkgs,
     disko,
+    nixos-wsl,
     nix-index-database,
     impermanence,
     lanzaboote,
@@ -86,6 +91,35 @@
           nativeBuildInputs = with pkgs; [bashInteractive git age nixd uv];
         };
     };
+    mkNixosPkgs = {
+      system,
+      config ? {},
+    }:
+      import ./packages {
+        inherit inputs system config;
+      };
+    mkWslHost = {
+      hostPath,
+      allowUnfree ? [],
+    }:
+      nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        pkgs = import ./packages {
+          inherit inputs;
+          system = "x86_64-linux";
+          config.allowUnfreePredicate = pkg:
+            builtins.elem (nixpkgs.lib.getName pkg) allowUnfree;
+        };
+        specialArgs = inputs;
+        modules = [
+          nixos-wsl.nixosModules.default
+          nix-index-database.nixosModules.nix-index
+          {
+            programs.nix-index-database.comma.enable = true;
+          }
+          hostPath
+        ];
+      };
   in {
     devShells = forAllSystems devShell;
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
@@ -97,8 +131,7 @@
     darwinConfigurations = {
       mini-darwin = darwin.lib.darwinSystem {
         system = "aarch64-darwin";
-        pkgs = import ./packages {
-          inherit inputs;
+        pkgs = mkNixosPkgs {
           system = "aarch64-darwin";
           config = {
             allowUnfree = true;
@@ -134,8 +167,7 @@
     nixosConfigurations = {
       baymax = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        pkgs = import ./packages {
-          inherit inputs;
+        pkgs = mkNixosPkgs {
           system = "x86_64-linux";
           config = {
             allowUnfreePredicate = pkg:
@@ -160,6 +192,16 @@
           lanzaboote.nixosModules.lanzaboote
           ./hosts/baymax
         ];
+      };
+
+      hp-wsl = mkWslHost {
+        hostPath = ./hosts/hp-wsl;
+        allowUnfree = ["github-copilot-cli"];
+      };
+
+      dell-wsl = mkWslHost {
+        hostPath = ./hosts/dell-wsl;
+        allowUnfree = ["github-copilot-cli"];
       };
     };
   };
