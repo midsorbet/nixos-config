@@ -3,7 +3,7 @@
     ../../modules/nixos/wsl-dev.nix
   ];
 
-  networking.hostName = "dell-wsl";
+  networking.hostName = "delcatty";
   system.stateVersion = "25.11";
 
   local.wslDev = {

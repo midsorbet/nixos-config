@@ -199,8 +199,8 @@
         allowUnfree = ["github-copilot-cli"];
       };
 
-      dell-wsl = mkWslHost {
-        hostPath = ./hosts/dell-wsl;
+      delcatty = mkWslHost {
+        hostPath = ./hosts/delcatty;
         allowUnfree = ["github-copilot-cli"];
       };
     };
