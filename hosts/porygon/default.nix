@@ -3,7 +3,7 @@
     ../../modules/nixos/wsl-dev.nix
   ];
 
-  networking.hostName = "hp-wsl";
+  networking.hostName = "porygon";
   system.stateVersion = "26.05";
 
   local.wslDev = {

@@ -194,8 +194,8 @@
         ];
       };
 
-      hp-wsl = mkWslHost {
-        hostPath = ./hosts/hp-wsl;
+      porygon = mkWslHost {
+        hostPath = ./hosts/porygon;
         allowUnfree = ["github-copilot-cli"];
       };
 
