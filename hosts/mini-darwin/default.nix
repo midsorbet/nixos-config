@@ -11,6 +11,7 @@
 in {
   imports = [
     ./secrets.nix
+    ../../modules/darwin/anki.nix
     ../../modules/darwin/grayjay.nix
     ../../modules/ghostty.nix
     ../../modules/hunk.nix
@@ -27,6 +28,7 @@ in {
   };
 
   local.wrapperManager.git.commitSigning.enable = true;
+  local.anki.enable = true;
   local.grayjay.enable = true;
   local.ghostty.usgc.enable = true;
   local.hunk = {
@@ -37,7 +39,6 @@ in {
   homebrew = {
     enable = true;
     casks = [
-      "anki"
       "calibre"
       "chatgpt"
       "cloudflare-warp"

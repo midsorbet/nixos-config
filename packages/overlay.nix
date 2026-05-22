@@ -48,6 +48,10 @@
       awscli2 = import ./awscli2.nix {pkgs = prev;};
     };
 
+    apyanki = final: prev: {
+      apyanki = final.callPackage ./apyanki.nix {inherit inputs;};
+    };
+
     github-copilot-cli = final: prev: {
       github-copilot-cli = import ./github-copilot-cli.nix {pkgs = prev;};
     };
@@ -87,6 +91,7 @@
     overlays.wrapperPackages
     overlays.direnv
     overlays.awscli2
+    overlays.apyanki
     overlays.github-copilot-cli
     overlays.mdfried
     overlays.readeck
