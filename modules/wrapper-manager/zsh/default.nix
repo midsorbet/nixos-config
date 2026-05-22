@@ -29,6 +29,8 @@
     fi
 
     typeset -U path cdpath
+    setopt hist_verify
+
     # Prefer the system profile, but keep NixOS privilege wrappers first.
     [[ -d /run/current-system/sw/bin ]] && path=(/run/current-system/sw/bin $path)
     [[ -d /run/wrappers/bin ]] && path=(/run/wrappers/bin $path)
