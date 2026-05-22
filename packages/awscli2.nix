@@ -8,12 +8,12 @@ pkgs.awscli2.overridePythonAttrs (old: let
     };
   });
 in rec {
-  version = "2.34.43";
+  version = "2.34.52";
   src = pkgs.fetchFromGitHub {
     owner = "aws";
     repo = "aws-cli";
     tag = version;
-    hash = "sha256-XtHmraDRjzHHoKLHFCTb/Ut3gAzJu+jhiyFK+rcZrss=";
+    hash = "sha256-ux7M1pIb9jMFsuHaWmwOhgZF39hPaNe92M98BcRR2PY=";
   };
 
   dependencies = [awscrt] ++ pkgs.lib.tail old.dependencies;

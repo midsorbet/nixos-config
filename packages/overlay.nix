@@ -52,10 +52,6 @@
       };
     };
 
-    readeck = final: prev: {
-      readeck = final.callPackage ./readeck.nix {};
-    };
-
     tsshd = final: prev: {
       tsshd = prev.tsshd.overrideAttrs (_: {
         version = "0.1.7";
@@ -83,7 +79,6 @@
     overlays.apyanki
     overlays.github-copilot-cli
     overlays.mdfried
-    overlays.readeck
     overlays.tsshd
     overlays.trzsz-go
     overlays.zmx
