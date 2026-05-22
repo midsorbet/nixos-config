@@ -75,6 +75,10 @@
       });
     };
 
+    trzsz-go = final: prev: {
+      trzsz-go = final.callPackage ./trzsz-go.nix {};
+    };
+
     zmx = final: prev: import ./zmx {inherit inputs;} final prev;
   };
 
@@ -87,6 +91,7 @@
     overlays.mdfried
     overlays.readeck
     overlays.tsshd
+    overlays.trzsz-go
     overlays.zmx
   ];
 
