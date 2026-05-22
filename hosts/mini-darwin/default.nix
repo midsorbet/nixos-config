@@ -126,6 +126,9 @@ in {
   environment.variables = {
     NH_FLAKE = "/Users/${user}/.config/nixos-config";
     CODEX_JS_REPL_NODE_PATH = "${pkgs.nodejs}/bin/node";
+    # Let terminals provide TERMINFO and fall back to the system database.
+    # The default profile-based TERMINFO_DIRS entries may not exist on Darwin.
+    TERMINFO_DIRS = lib.mkForce "";
   };
 
   environment.interactiveShellInit = lib.mkAfter ''
