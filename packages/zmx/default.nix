@@ -1,6 +1,6 @@
 {inputs}: final: prev: let
   system = prev.stdenvNoCC.hostPlatform.system;
-  version = "0.5.0";
+  version = "0.6.0";
   zmxMeta = {
     description = "Session persistence for terminal processes";
     longDescription = ''
@@ -20,7 +20,7 @@
   tarballs = {
     "aarch64-darwin" = {
       url = "https://zmx.sh/a/zmx-${version}-macos-aarch64.tar.gz";
-      hash = "sha256-O5N58P8M8Qf3+HBI0sRfb76r7ViNZ2rYasIYvtko0Qc=";
+      hash = "sha256-YhuF8locczmeTuRvSCr8fP+0Y4RG6NDu9ayqV8K3m04=";
     };
   };
   zmx =
