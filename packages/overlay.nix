@@ -2,17 +2,7 @@
   inputs,
   aggregate ? true,
 }: let
-  nixpkgsMasterFor = system:
-    import inputs.nixpkgs-master {
-      inherit system;
-    };
-
   overlays = {
-    zsh = final: prev:
-      prev.lib.optionalAttrs prev.stdenv.isDarwin {
-        zsh = (nixpkgsMasterFor prev.stdenv.hostPlatform.system).zsh;
-      };
-
     wrapperPackages = final: prev: let
       evald = inputs.wrapper-manager.lib {
         pkgs = final;
@@ -87,7 +77,6 @@
   };
 
   overlayList = [
-    overlays.zsh
     overlays.wrapperPackages
     overlays.direnv
     overlays.awscli2
