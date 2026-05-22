@@ -23,7 +23,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hunk = {
-      url = "github:modem-dev/hunk/v0.13.0";
+      url = "github:modem-dev/hunk";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     wrapper-manager.url = "github:viperML/wrapper-manager";
@@ -71,9 +71,9 @@
       flake = false;
     };
     vscode-server.url = "github:nix-community/nixos-vscode-server";
-    zmx.url = "github:neurosnap/zmx/v0.5.0";
+    zmx.url = "github:neurosnap/zmx";
     mdfried = {
-      url = "github:benjajaja/mdfried/v0.19.7";
+      url = "github:benjajaja/mdfried";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

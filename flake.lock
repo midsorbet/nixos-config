@@ -410,7 +410,6 @@
       },
       "original": {
         "owner": "modem-dev",
-        "ref": "v0.13.0",
         "repo": "hunk",
         "type": "github"
       }
@@ -494,7 +493,6 @@
       },
       "original": {
         "owner": "benjajaja",
-        "ref": "v0.19.7",
         "repo": "mdfried",
         "type": "github"
       }
@@ -996,7 +994,6 @@
       },
       "original": {
         "owner": "neurosnap",
-        "ref": "v0.5.0",
         "repo": "zmx",
         "type": "github"
       }
