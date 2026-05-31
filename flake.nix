@@ -26,7 +26,6 @@
       url = "github:modem-dev/hunk/v0.13.2";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    wrapper-manager.url = "github:viperML/wrapper-manager";
     darwin = {
       url = "github:LnL7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";

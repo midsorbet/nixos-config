@@ -747,7 +747,6 @@
         "secrets": "secrets",
         "uv2nix": "uv2nix",
         "vscode-server": "vscode-server",
-        "wrapper-manager": "wrapper-manager",
         "zmx": "zmx"
       }
     },
@@ -945,21 +944,6 @@
       "original": {
         "owner": "nix-community",
         "repo": "nixos-vscode-server",
-        "type": "github"
-      }
-    },
-    "wrapper-manager": {
-      "locked": {
-        "lastModified": 1772780728,
-        "narHash": "sha256-fCm4sOeTDf3kBtYMmU4OHsviI/oF8rMbPkUMcQf6lw4=",
-        "owner": "viperML",
-        "repo": "wrapper-manager",
-        "rev": "51ad0422b925d830bf4af36979fed51209f79c0a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "viperML",
-        "repo": "wrapper-manager",
         "type": "github"
       }
     },

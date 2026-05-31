@@ -3,25 +3,6 @@
   aggregate ? true,
 }: let
   overlays = {
-    wrapperPackages = final: prev: let
-      evald = inputs.wrapper-manager.lib {
-        pkgs = final;
-        specialArgs = {
-          gitCommitSigning = {
-            enable = false;
-            keyPath = "~/.ssh/id_github.pub";
-          };
-          gitPager = null;
-        };
-        modules = let
-          entries = builtins.readDir ../modules/wrapper-manager;
-        in
-          map (name: ../modules/wrapper-manager/${name}) (builtins.attrNames entries);
-      };
-    in {
-      wrapperPackages = builtins.mapAttrs (_: value: value.wrapped) evald.config.wrappers;
-    };
-
     direnv = final: prev: {
       direnv = prev.direnv.overrideAttrs (_:
         prev.lib.optionalAttrs prev.stdenv.isDarwin {
@@ -73,7 +54,6 @@
   };
 
   overlayList = [
-    overlays.wrapperPackages
     overlays.direnv
     overlays.awscli2
     overlays.apyanki
