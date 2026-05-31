@@ -33,6 +33,15 @@ in {
     agenix.nixosModules.default
   ];
 
+  local.git = {
+    enable = true;
+    inherit user;
+  };
+  local.zsh = {
+    enable = true;
+    inherit user;
+  };
+
   boot = {
     loader = {
       efi.canTouchEfiVariables = true;
@@ -599,7 +608,6 @@ in {
           "wheel" # Enable ‘sudo’ for the user.
         ];
         hashedPasswordFile = "/persist/host/secrets/users/me-password-hash";
-        shell = pkgs.wrapperPackages.zsh;
         openssh.authorizedKeys.keys = keys.login;
       };
 

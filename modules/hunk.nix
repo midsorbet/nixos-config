@@ -23,8 +23,6 @@ in {
       description = "Hunk package to install.";
     };
 
-    enableGitPager = lib.mkEnableOption "Hunk as the default pager for wrapped Git";
-
     settings = lib.mkOption {
       type = tomlFormat.type;
       default = {
@@ -47,7 +45,5 @@ in {
         clobber = true;
       };
     };
-
-    local.wrapperManager.git.pager = lib.mkIf cfg.enableGitPager "hunk pager";
   };
 }

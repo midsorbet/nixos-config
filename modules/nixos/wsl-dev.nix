@@ -169,10 +169,7 @@ in {
       wslConf.interop.appendWindowsPath = false;
     };
 
-    users.users.${cfg.user} = {
-      shell = pkgs.wrapperPackages.zsh;
-      openssh.authorizedKeys.keys = cfg.authorizedKeys;
-    };
+    users.users.${cfg.user}.openssh.authorizedKeys.keys = cfg.authorizedKeys;
 
     nix = {
       package = pkgs.nix;

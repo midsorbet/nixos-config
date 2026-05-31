@@ -1,18 +1,11 @@
-{pkgs, ...}: {
+{...}: {
   imports = [
-    ./wrapper-manager.nix
+    ../git.nix
+    ../zsh.nix
   ];
 
-  environment.shells = [pkgs.wrapperPackages.zsh];
-
-  programs = {
-    direnv = {
-      enable = true;
-      nix-direnv.enable = true;
-    };
-
-    zsh = {
-      enable = true;
-    };
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
   };
 }

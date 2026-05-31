@@ -27,7 +27,15 @@ in {
     enable = true;
     inherit user;
   };
+  local.git = {
+    enable = true;
+    inherit user;
+  };
   local.hunk = {
+    enable = true;
+    inherit user;
+  };
+  local.zsh = {
     enable = true;
     inherit user;
   };

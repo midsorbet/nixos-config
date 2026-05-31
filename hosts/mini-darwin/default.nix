@@ -24,18 +24,32 @@ in {
     name = "${user}";
     home = "/Users/${user}";
     isHidden = false;
-    shell = pkgs.wrapperPackages.zsh;
     openssh.authorizedKeys.keys = [moblinKey lizalfosKey bokoblinKey];
   };
 
-  local.wrapperManager.git.commitSigning.enable = true;
   local.anki.enable = true;
-  local.githubCli.enable = true;
+  local.git = {
+    enable = true;
+    inherit user;
+    settings.core.pager = "hunk pager";
+    commitSigning.enable = true;
+  };
+  local.githubCli = {
+    enable = true;
+    inherit user;
+  };
   local.grayjay.enable = true;
-  local.ghostty.usgc.enable = true;
+  local.ghostty.usgc = {
+    enable = true;
+    inherit user;
+  };
   local.hunk = {
     enable = true;
-    enableGitPager = true;
+    inherit user;
+  };
+  local.zsh = {
+    enable = true;
+    inherit user;
   };
 
   homebrew = {
