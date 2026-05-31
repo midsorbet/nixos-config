@@ -1,11 +1,14 @@
 {lib, ...}: let
+  user = "nixos";
   # Fill this with the HP Windows hostname or IP that forwards SSH to Porygon.
   porygonSshHost = "";
   porygonSshPort = 22;
   porygonSshUser = "me";
-  porygonIdentityFile = "/home/nixos/.ssh/id_delcatty_porygon";
+  porygonIdentityFile = "/home/${user}/.ssh/id_delcatty_porygon";
 in {
   imports = [
+    ../../modules/github-cli.nix
+    ../../modules/hunk.nix
     ../../modules/nixos/wsl-dev.nix
   ];
 
@@ -14,10 +17,19 @@ in {
 
   local.wslDev = {
     enable = true;
-    user = "nixos";
-    flakePath = "/home/nixos/nix-config";
+    inherit user;
+    flakePath = "/home/${user}/nix-config";
     enableSshServer = false;
     authorizedKeys = [];
+  };
+
+  local.githubCli = {
+    enable = true;
+    inherit user;
+  };
+  local.hunk = {
+    enable = true;
+    inherit user;
   };
 
   programs.ssh.extraConfig = lib.optionalString (porygonSshHost != "") ''
