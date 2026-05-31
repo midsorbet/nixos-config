@@ -105,35 +105,6 @@
           nativeBuildInputs = with pkgs; [bashInteractive git age nixd uv];
         };
     };
-    mkNixosPkgs = {
-      system,
-      config ? {},
-    }:
-      import ./packages {
-        inherit inputs system config;
-      };
-    mkWslHost = {
-      hostPath,
-      allowUnfree ? [],
-    }:
-      nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        pkgs = import ./packages {
-          inherit inputs;
-          system = "x86_64-linux";
-          config.allowUnfreePredicate = pkg:
-            builtins.elem (nixpkgs.lib.getName pkg) allowUnfree;
-        };
-        specialArgs = inputs;
-        modules = [
-          nixos-wsl.nixosModules.default
-          nix-index-database.nixosModules.nix-index
-          {
-            programs.nix-index-database.comma.enable = true;
-          }
-          hostPath
-        ];
-      };
   in {
     devShells = forAllSystems devShell;
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
@@ -145,7 +116,8 @@
     darwinConfigurations = {
       mini-darwin = darwin.lib.darwinSystem {
         system = "aarch64-darwin";
-        pkgs = mkNixosPkgs {
+        pkgs = import ./packages {
+          inherit inputs;
           system = "aarch64-darwin";
           config = {
             allowUnfree = true;
@@ -181,7 +153,8 @@
     nixosConfigurations = {
       baymax = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        pkgs = mkNixosPkgs {
+        pkgs = import ./packages {
+          inherit inputs;
           system = "x86_64-linux";
           config = {
             allowUnfreePredicate = pkg:
@@ -208,14 +181,48 @@
         ];
       };
 
-      porygon = mkWslHost {
-        hostPath = ./hosts/porygon;
-        allowUnfree = ["github-copilot-cli"];
+      porygon = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        pkgs = import ./packages {
+          inherit inputs;
+          system = "x86_64-linux";
+          config.allowUnfreePredicate = pkg:
+            builtins.elem (nixpkgs.lib.getName pkg) [
+              "github-copilot-cli"
+            ];
+        };
+        specialArgs = inputs;
+        modules = [
+          nixos-wsl.nixosModules.default
+          hjem.nixosModules.default
+          nix-index-database.nixosModules.nix-index
+          {
+            programs.nix-index-database.comma.enable = true;
+          }
+          ./hosts/porygon
+        ];
       };
 
-      delcatty = mkWslHost {
-        hostPath = ./hosts/delcatty;
-        allowUnfree = ["github-copilot-cli"];
+      delcatty = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        pkgs = import ./packages {
+          inherit inputs;
+          system = "x86_64-linux";
+          config.allowUnfreePredicate = pkg:
+            builtins.elem (nixpkgs.lib.getName pkg) [
+              "github-copilot-cli"
+            ];
+        };
+        specialArgs = inputs;
+        modules = [
+          nixos-wsl.nixosModules.default
+          hjem.nixosModules.default
+          nix-index-database.nixosModules.nix-index
+          {
+            programs.nix-index-database.comma.enable = true;
+          }
+          ./hosts/delcatty
+        ];
       };
     };
   };
