@@ -13,6 +13,7 @@ in {
     ./secrets.nix
     ../../modules/darwin/anki.nix
     ../../modules/darwin/grayjay.nix
+    ../../modules/github-cli.nix
     ../../modules/ghostty.nix
     ../../modules/hunk.nix
     ../../modules/shared
@@ -29,6 +30,7 @@ in {
 
   local.wrapperManager.git.commitSigning.enable = true;
   local.anki.enable = true;
+  local.githubCli.enable = true;
   local.grayjay.enable = true;
   local.ghostty.usgc.enable = true;
   local.hunk = {
