@@ -242,12 +242,24 @@ in {
           run = "move-node-to-workspace A";
         }
         {
-          "if".app-id = "com.microsoft.VSCode";
-          run = "move-node-to-workspace B";
+          "if".app-id = "com.google.Chrome";
+          run = "move-node-to-workspace A";
+        }
+        {
+          "if".app-id = "com.openai.codex";
+          run = "move-node-to-workspace 1";
         }
         {
           "if".app-id = "com.openai.chat";
-          run = "move-node-to-workspace C";
+          run = "move-node-to-workspace 3";
+        }
+        {
+          "if".app-id = "com.microsoft.VSCode";
+          run = "move-node-to-workspace 2";
+        }
+        {
+          "if".app-id = "com.mitchellh.ghostty";
+          run = "move-node-to-workspace 1";
         }
         {
           "if".app-id = "com.apple.systempreferences";
