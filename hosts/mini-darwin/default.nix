@@ -103,7 +103,7 @@ in {
         Hour = 2;
         Minute = 0;
       };
-      options = "--delete-older-than 30d";
+      options = "--delete-older-than 7d";
     };
 
     extraOptions = ''
