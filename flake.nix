@@ -62,7 +62,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     lanzaboote = {
-      url = "github:nix-community/lanzaboote/v1.0.0";
+      # TODO: return to a tagged release after nix-community/lanzaboote#624 is released.
+      # PR #617 fixes nixpkgs' removed boot.bootspec.enable option.
+      url = "github:nix-community/lanzaboote/0403b4b7e8b2612657f0053a4c315e6c43eee9e6";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     secrets = {
