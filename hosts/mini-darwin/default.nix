@@ -140,7 +140,7 @@ in {
     ++ (import ./packages.nix {inherit pkgs;});
 
   environment.variables = {
-    NH_FLAKE = "/Users/${user}/.config/nixos-config";
+    NH_FLAKE = "/Users/${user}/vault/projects/nixos-config";
     CODEX_JS_REPL_NODE_PATH = "${pkgs.nodejs}/bin/node";
     # Let terminals provide TERMINFO and fall back to the system database.
     # The default profile-based TERMINFO_DIRS entries may not exist on Darwin.
