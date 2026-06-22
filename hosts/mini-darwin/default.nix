@@ -323,7 +323,7 @@ in {
         alt-shift-f = "move-node-to-workspace F";
 
         alt-tab = "workspace-back-and-forth";
-        alt-shift-tab = "move-workspace-to-monitor --wrap-around next";
+        alt-shift-tab = "move-node-to-monitor --focus-follows-window --wrap-around next";
       };
     };
   };
