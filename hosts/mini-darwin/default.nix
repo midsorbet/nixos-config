@@ -31,12 +31,27 @@ in {
   local.git = {
     enable = true;
     inherit user;
-    settings.core.pager = "hunk pager";
+    settings = {
+      core.pager = "hunk pager";
+      "includeIf \"gitdir:/Users/${user}/vault/projects/**\"" = {
+        path = "/Users/${user}/.config/git/includes/vault-project-hooks.gitconfig";
+      };
+      "includeIf \"gitdir:/Users/${user}/vault/.git/modules/projects/**\"" = {
+        path = "/Users/${user}/.config/git/includes/vault-project-hooks.gitconfig";
+      };
+    };
     commitSigning.enable = true;
   };
   local.githubCli = {
     enable = true;
     inherit user;
+  };
+  hjem.users.${user}.xdg.config.files."git/includes/vault-project-hooks.gitconfig" = {
+    text = ''
+      [core]
+        hooksPath = /Users/${user}/vault/.githooks/project
+    '';
+    clobber = true;
   };
   local.grayjay.enable = true;
   local.ghostty.usgc = {
