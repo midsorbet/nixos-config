@@ -1,10 +1,12 @@
 {
   agenix,
+  config,
   lib,
   pkgs,
   ...
 }: let
   user = "me";
+  homeDirectory = config.hjem.users.${user}.directory;
   moblinKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO/2RV9P8Z2/CMbghca654D4sbQ5zbUc7tOJ+x2tcUWILJV3bXeAPI3O+Y65yDU7CojTYje22WBOAWqysmv4LTs= me@moblin";
   lizalfosKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIaUXyO37/x5lwDapVXjT3PGJwbxyrW3dZEH6/uh6i/k me@lizalfos";
   bokoblinKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBOVxY8n90Qfv17EMNo3T5akdcj6bJZTgqNuMI8k3PxmVe3QIHqEVMDKZUsx2HXNCBiUr3D2XJqaucdObghKa6kY= me@bokoblin";
@@ -33,8 +35,8 @@ in {
     inherit user;
     settings = {
       core.pager = "hunk pager";
-      "includeIf \"gitdir:/Users/${user}/vault/.git/modules/projects/**\"" = {
-        path = "/Users/${user}/.config/git/includes/vault-project-hooks.gitconfig";
+      "includeIf \"gitdir:${homeDirectory}/vault/.git/modules/projects/\"" = {
+        path = "${homeDirectory}/.config/git/includes/vault-project-hooks.gitconfig";
       };
     };
     commitSigning.enable = true;
@@ -46,7 +48,7 @@ in {
   hjem.users.${user}.xdg.config.files."git/includes/vault-project-hooks.gitconfig" = {
     text = ''
       [core]
-        hooksPath = /Users/${user}/vault/.githooks/project
+        hooksPath = ${homeDirectory}/vault/.githooks/project
     '';
     clobber = true;
   };
