@@ -45,12 +45,20 @@ in {
     enable = true;
     inherit user;
   };
-  hjem.users.${user}.xdg.config.files."git/includes/vault-project-hooks.gitconfig" = {
-    text = ''
-      [core]
-        hooksPath = ${homeDir}/vault/.githooks/project
-    '';
-    clobber = true;
+  hjem.users.${user} = {
+    files."Projects" = {
+      type = "symlink";
+      source = "${homeDir}/vault/projects";
+      clobber = true;
+    };
+
+    xdg.config.files."git/includes/vault-project-hooks.gitconfig" = {
+      text = ''
+        [core]
+          hooksPath = ${homeDir}/vault/.githooks/project
+      '';
+      clobber = true;
+    };
   };
   local.grayjay.enable = true;
   local.ghostty.usgc = {
@@ -64,6 +72,7 @@ in {
   local.zsh = {
     enable = true;
     inherit user;
+    projectDirectories = ["~/vault/projects"];
   };
 
   homebrew = {

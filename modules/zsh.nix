@@ -41,7 +41,7 @@
     # Prefer the system profile, but keep NixOS privilege wrappers first.
     [[ -d /run/current-system/sw/bin ]] && path=(/run/current-system/sw/bin $path)
     [[ -d /run/wrappers/bin ]] && path=(/run/wrappers/bin $path)
-    cdpath=(~/Projects)
+    cdpath=(${lib.concatStringsSep " " cfg.projectDirectories})
 
     if command -v zmx >/dev/null 2>&1; then
       eval "$(zmx completions zsh)"
@@ -63,6 +63,12 @@ in {
       type = lib.types.package;
       default = pkgs.zsh;
       description = "zsh package to install and use as the user's shell.";
+    };
+
+    projectDirectories = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = ["~/Projects"];
+      description = "Directories zsh should search when changing into project names.";
     };
   };
 
