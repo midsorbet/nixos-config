@@ -33,9 +33,6 @@ in {
     inherit user;
     settings = {
       core.pager = "hunk pager";
-      "includeIf \"gitdir:/Users/${user}/vault/projects/**\"" = {
-        path = "/Users/${user}/.config/git/includes/vault-project-hooks.gitconfig";
-      };
       "includeIf \"gitdir:/Users/${user}/vault/.git/modules/projects/**\"" = {
         path = "/Users/${user}/.config/git/includes/vault-project-hooks.gitconfig";
       };
