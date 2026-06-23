@@ -33,6 +33,10 @@
       };
     };
 
+    omp = final: prev: {
+      omp = import ./omp.nix {pkgs = prev;};
+    };
+
     tsshd = final: prev: {
       tsshd = prev.tsshd.overrideAttrs (_: {
         version = "0.1.7";
@@ -59,6 +63,7 @@
     overlays.apyanki
     overlays.github-copilot-cli
     overlays.mdfried
+    overlays.omp
     overlays.tsshd
     overlays.trzsz-go
     overlays.zmx
