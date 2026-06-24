@@ -18,6 +18,7 @@ in {
     ../../modules/github-cli.nix
     ../../modules/ghostty.nix
     ../../modules/hunk.nix
+    ../../modules/omp.nix
     ../../modules/shared
     agenix.darwinModules.default
   ];
@@ -69,6 +70,7 @@ in {
     enable = true;
     inherit user;
   };
+  local.omp.enable = true;
   local.zsh = {
     enable = true;
     inherit user;

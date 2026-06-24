@@ -7,6 +7,5 @@ in
     aube
     fswatch
     gh
-    omp
     uv
   ]
