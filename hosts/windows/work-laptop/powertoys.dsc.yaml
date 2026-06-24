@@ -1,0 +1,53 @@
+# Conservative PowerToys DSC v3 settings for the work laptop.
+# Only fields documented by Microsoft are set here.
+$schema: https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2023/08/config/document.json
+metadata:
+  winget:
+    processor: dscv3
+resources:
+  - name: Configure PowerToys app shell
+    type: Microsoft.PowerToys/AppSettings
+    properties:
+      settings:
+        properties:
+          Enabled:
+            FancyZones: true
+            PowerRename: true
+            ColorPicker: true
+          startup: true
+          theme: dark
+        name: App
+        version: 1.0
+
+  - name: Configure FancyZones window management
+    type: Microsoft.PowerToys/FancyZonesSettings
+    properties:
+      settings:
+        properties:
+          fancyzones_shiftDrag: true
+          fancyzones_mouseSwitch: false
+          fancyzones_overrideSnapHotkeys: true
+          fancyzones_displayOrWorkAreaChange_moveWindows: true
+          fancyzones_zoneSetChange_moveWindows: true
+        name: FancyZones
+        version: 1.0
+
+  - name: Configure PowerToys Run
+    type: Microsoft.PowerToys/PowerLauncherSettings
+    properties:
+      settings:
+        properties:
+          maximum_number_of_results: 8
+          clear_input_on_launch: true
+        name: PowerLauncher
+        version: 1.0
+
+  - name: Configure Color Picker
+    type: Microsoft.PowerToys/ColorPickerSettings
+    properties:
+      settings:
+        properties:
+          changecursor: true
+          copiedcolorrepresentation: HEX
+        name: ColorPicker
+        version: 1.0

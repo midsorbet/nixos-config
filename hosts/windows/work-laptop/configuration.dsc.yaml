@@ -1,0 +1,42 @@
+# Microsoft-first native Windows package baseline for a corporate work laptop.
+# Apply from PowerShell with:
+#   winget configure -f .\configuration.dsc.yaml
+$schema: https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2023/08/config/document.json
+metadata:
+  winget:
+    processor: dscv3
+resources:
+  - name: Install PowerToys
+    type: Microsoft.WinGet.DSC/WinGetPackage
+    properties:
+      id: Microsoft.PowerToys
+      source: winget
+      ensure: Present
+
+  - name: Install Windows Terminal
+    type: Microsoft.WinGet.DSC/WinGetPackage
+    properties:
+      id: Microsoft.WindowsTerminal
+      source: winget
+      ensure: Present
+
+  - name: Install PowerShell
+    type: Microsoft.WinGet.DSC/WinGetPackage
+    properties:
+      id: Microsoft.PowerShell
+      source: winget
+      ensure: Present
+
+  - name: Install WSL
+    type: Microsoft.WinGet.DSC/WinGetPackage
+    properties:
+      id: Microsoft.WSL
+      source: winget
+      ensure: Present
+
+  - name: Install Visual Studio Code
+    type: Microsoft.WinGet.DSC/WinGetPackage
+    properties:
+      id: Microsoft.VisualStudioCode
+      source: winget
+      ensure: Present

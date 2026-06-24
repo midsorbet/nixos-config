@@ -1,0 +1,86 @@
+{
+  "copyOnSelect": false,
+  "copyFormatting": "none",
+  "trimBlockSelection": true,
+  "trimPaste": true,
+  "profiles": {
+    "defaults": {
+      "font": {
+        "face": "Maple Mono NF",
+        "size": 12
+      },
+      "cursorShape": "filledBox",
+      "colorScheme": "One Half Dark"
+    }
+  },
+  "actions": [
+    {
+      "command": "commandPalette",
+      "keys": "ctrl+shift+p"
+    },
+    {
+      "command": {
+        "action": "splitPane",
+        "split": "auto",
+        "splitMode": "duplicate"
+      },
+      "keys": "alt+shift+d"
+    },
+    {
+      "command": {
+        "action": "moveFocus",
+        "direction": "left"
+      },
+      "keys": "alt+h"
+    },
+    {
+      "command": {
+        "action": "moveFocus",
+        "direction": "down"
+      },
+      "keys": "alt+j"
+    },
+    {
+      "command": {
+        "action": "moveFocus",
+        "direction": "up"
+      },
+      "keys": "alt+k"
+    },
+    {
+      "command": {
+        "action": "moveFocus",
+        "direction": "right"
+      },
+      "keys": "alt+l"
+    },
+    {
+      "command": {
+        "action": "resizePane",
+        "direction": "left"
+      },
+      "keys": "alt+shift+h"
+    },
+    {
+      "command": {
+        "action": "resizePane",
+        "direction": "down"
+      },
+      "keys": "alt+shift+j"
+    },
+    {
+      "command": {
+        "action": "resizePane",
+        "direction": "up"
+      },
+      "keys": "alt+shift+k"
+    },
+    {
+      "command": {
+        "action": "resizePane",
+        "direction": "right"
+      },
+      "keys": "alt+shift+l"
+    }
+  ]
+}
