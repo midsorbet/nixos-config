@@ -17,6 +17,7 @@ in {
     ../../modules/darwin/grayjay.nix
     ../../modules/github-cli.nix
     ../../modules/ghostty.nix
+    ../../modules/herdr.nix
     ../../modules/hunk.nix
     ../../modules/omp.nix
     ../../modules/shared
@@ -63,6 +64,10 @@ in {
   };
   local.grayjay.enable = true;
   local.ghostty.usgc = {
+    enable = true;
+    inherit user;
+  };
+  local.herdr = {
     enable = true;
     inherit user;
   };
@@ -189,20 +194,6 @@ in {
         AUBE_PARANOID=true \
         aube dlx --package @openai/codex codex "''${codex_args[@]}" "$@"
     }
-  '';
-
-  programs.zsh.loginShellInit = lib.mkBefore ''
-    zms() {
-      if [ -x "${pkgs.zmx-select}/bin/zmx-select" ]; then
-        PATH="${pkgs.zmx}/bin:$PATH" ${pkgs.zmx-select}/bin/zmx-select "$@"
-      fi
-    }
-
-    if [ -z "''${ZMX_SESSION-}" ] \
-      && [ -t 0 ] \
-      && [ -t 1 ]; then
-      zms && exit
-    fi
   '';
 
   networking.knownNetworkServices = [
