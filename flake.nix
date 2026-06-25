@@ -102,14 +102,59 @@
     linuxSystems = ["x86_64-linux"];
     darwinSystems = ["aarch64-darwin"];
     forAllSystems = f: nixpkgs.lib.genAttrs (linuxSystems ++ darwinSystems) f;
+    allowUnfreeNames = names: pkg: builtins.elem (nixpkgs.lib.getName pkg) names;
+    allowCudaPackages = pkg: let
+      licenses = nixpkgs.lib.toList (pkg.meta.license or []);
+    in
+      nixpkgs.lib.any (
+        license: let
+          fullName = license.fullName or "";
+          shortName = license.shortName or "";
+          spdxId = license.spdxId or "";
+        in
+          shortName
+          == "CUDA EULA"
+          || fullName == "CUDA Toolkit End User License Agreement (EULA)"
+          || spdxId == "CUDA EULA"
+      )
+      licenses;
     devShell = system: let
       pkgs = nixpkgs.legacyPackages.${system};
-    in {
-      default = with pkgs;
-        mkShell {
-          nativeBuildInputs = with pkgs; [bashInteractive git age nixd uv];
-        };
-    };
+    in
+      {
+        default = with pkgs;
+          mkShell {
+            nativeBuildInputs = with pkgs; [bashInteractive git age nixd uv];
+          };
+      }
+      // nixpkgs.lib.optionalAttrs (system == "x86_64-linux") (
+        let
+          wslCudaPkgs = import ./packages {
+            inherit inputs system;
+            config = {
+              allowInsecure = false;
+              allowUnfreePredicate = allowCudaPackages;
+            };
+          };
+        in {
+          wsl-cuda = with wslCudaPkgs;
+            mkShell {
+              nativeBuildInputs = [bashInteractive git age nixd uv];
+              packages = [
+                cudatoolkit
+                cudaPackages.cuda_nvcc
+                micromamba
+              ];
+
+              shellHook = ''
+                export CUDA_PATH=${cudatoolkit}
+                export LD_LIBRARY_PATH=/usr/lib/wsl/lib:/run/opengl-driver/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+                echo "WSL CUDA shell ready"
+                echo "CUDA_PATH=$CUDA_PATH"
+              '';
+            };
+        }
+      );
   in {
     devShells = forAllSystems devShell;
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);

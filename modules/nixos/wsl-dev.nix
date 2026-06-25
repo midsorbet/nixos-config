@@ -194,6 +194,7 @@ in {
           github-copilot-cli
           git-filter-repo
           chafa
+          micromamba
           p7zip
           miniserve
           mupdf-headless
