@@ -58,15 +58,32 @@ in {
           focus_agent = "prefix+alt+1..9";
         };
 
-        theme.name = "catppuccin";
+        theme = {
+          name = "kanagawa";
+          auto_switch = true;
+          light_name = "kanagawa-lotus";
+          dark_name = "kanagawa";
+        };
 
-        ui.mouse_capture = true;
+        ui = {
+          mouse_capture = true;
+          toast = {
+            delivery = "terminal";
+            delay_seconds = 1;
+            herdr.position = "bottom-right";
+            clipboard = {
+              enabled = true;
+              position = "bottom-center";
+            };
+          };
+        };
 
         session.resume_agents_on_restore = true;
 
         experimental = {
           allow_nested = false;
-          pane_history = false;
+          pane_history = true;
+          kitty_graphics = true;
         };
       };
       description = "Herdr TOML configuration written to the user's XDG config directory.";
