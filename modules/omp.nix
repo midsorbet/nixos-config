@@ -213,6 +213,7 @@ in {
         memory.backend = "mnemopi";
         mnemopi.scoping = "per-project-tagged";
         modelRoles.default = "openai-codex/gpt-5.5";
+        modelRoles.smol = "openai-codex/gpt-5.5:low";
         providers.webSearch = "auto";
         secrets.enabled = true;
         theme = {
