@@ -5,6 +5,7 @@
   ...
 }: let
   cfg = config.local.omp;
+  yamlFormat = pkgs.formats.yaml {};
 
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/refs/tags/v${cfg.package.version}.tar.gz";
@@ -32,9 +33,142 @@
         --set-default PI_JS 1 \
         --set-default PI_PACKAGE_DIR "$out/share/omp"
     '';
+
+  mkTheme = {
+    name,
+    background,
+    text,
+    accent,
+    secondary,
+    success,
+    error,
+    warning,
+    muted,
+    dim,
+    selectedBg,
+    statusLineBg,
+  }: {
+    inherit name;
+    colors = {
+      accent = accent;
+      border = muted;
+      borderAccent = secondary;
+      borderMuted = dim;
+      success = success;
+      error = error;
+      warning = warning;
+      muted = muted;
+      dim = dim;
+      text = text;
+      thinkingText = muted;
+
+      selectedBg = selectedBg;
+      userMessageBg = selectedBg;
+      customMessageBg = selectedBg;
+      toolPendingBg = selectedBg;
+      toolSuccessBg = statusLineBg;
+      toolErrorBg = selectedBg;
+      statusLineBg = statusLineBg;
+
+      userMessageText = text;
+      customMessageText = text;
+      customMessageLabel = secondary;
+      toolTitle = text;
+      toolOutput = text;
+
+      mdHeading = accent;
+      mdLink = accent;
+      mdLinkUrl = secondary;
+      mdCode = warning;
+      mdCodeBlock = text;
+      mdCodeBlockBorder = muted;
+      mdQuote = muted;
+      mdQuoteBorder = dim;
+      mdHr = dim;
+      mdListBullet = secondary;
+
+      toolDiffAdded = success;
+      toolDiffRemoved = error;
+      toolDiffContext = muted;
+      syntaxComment = muted;
+      syntaxKeyword = secondary;
+      syntaxFunction = accent;
+      syntaxVariable = text;
+      syntaxString = success;
+      syntaxNumber = warning;
+      syntaxType = accent;
+      syntaxOperator = secondary;
+      syntaxPunctuation = dim;
+
+      thinkingOff = dim;
+      thinkingMinimal = muted;
+      thinkingLow = accent;
+      thinkingMedium = success;
+      thinkingHigh = warning;
+      thinkingXhigh = error;
+      bashMode = warning;
+      pythonMode = accent;
+
+      statusLineSep = dim;
+      statusLineModel = accent;
+      statusLinePath = text;
+      statusLineGitClean = success;
+      statusLineGitDirty = warning;
+      statusLineContext = secondary;
+      statusLineSpend = warning;
+      statusLineStaged = accent;
+      statusLineDirty = warning;
+      statusLineUntracked = error;
+      statusLineOutput = secondary;
+      statusLineCost = error;
+      statusLineSubagents = success;
+    };
+    export = {
+      pageBg = background;
+      cardBg = selectedBg;
+      infoBg = statusLineBg;
+    };
+    symbols.preset = "unicode";
+  };
+
+  kanagawaWaveTheme = mkTheme {
+    name = "kanagawa-wave";
+    background = "#1f1f28";
+    text = "#dcd7ba";
+    accent = "#7e9cd8";
+    secondary = "#957fb8";
+    success = "#98bb6c";
+    error = "#c34043";
+    warning = "#e6c384";
+    muted = "#727169";
+    dim = "#54546d";
+    selectedBg = "#2a2a37";
+    statusLineBg = "#090618";
+  };
+
+  everforestLightHardTheme = mkTheme {
+    name = "everforest-light-hard";
+    background = "#f2efdf";
+    text = "#5c6a72";
+    accent = "#7fbbb3";
+    secondary = "#d699b6";
+    success = "#9ab373";
+    error = "#e67e80";
+    warning = "#ceaf72";
+    muted = "#a6b0a0";
+    dim = "#b2af9f";
+    selectedBg = "#f0f2d4";
+    statusLineBg = "#e5dfc5";
+  };
 in {
   options.local.omp = {
     enable = lib.mkEnableOption "global OMP with Nix-provided eval runtimes";
+
+    user = lib.mkOption {
+      type = lib.types.str;
+      default = "me";
+      description = "User that should receive the Hjem-managed OMP package and config.";
+    };
 
     package = lib.mkOption {
       type = lib.types.package;
@@ -65,9 +199,37 @@ in {
       default = [];
       description = "Additional packages to prepend to PATH for OMP runtime and tool subprocesses.";
     };
+
+    settings = lib.mkOption {
+      type = yamlFormat.type;
+      default = {
+        theme = {
+          dark = "kanagawa-wave";
+          light = "everforest-light-hard";
+        };
+      };
+      description = "Global OMP settings written to ~/.omp/agent/config.yml.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [wrappedPackage];
+
+    hjem.users.${cfg.user} = {
+      files = {
+        ".omp/agent/config.yml" = {
+          source = yamlFormat.generate "omp-config.yml" cfg.settings;
+          clobber = true;
+        };
+        ".omp/agent/themes/kanagawa-wave.json" = {
+          text = builtins.toJSON kanagawaWaveTheme;
+          clobber = true;
+        };
+        ".omp/agent/themes/everforest-light-hard.json" = {
+          text = builtins.toJSON everforestLightHardTheme;
+          clobber = true;
+        };
+      };
+    };
   };
 }

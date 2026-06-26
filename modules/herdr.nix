@@ -61,7 +61,7 @@ in {
         theme = {
           name = "kanagawa";
           auto_switch = true;
-          light_name = "kanagawa-lotus";
+          light_name = "terminal";
           dark_name = "kanagawa";
         };
 

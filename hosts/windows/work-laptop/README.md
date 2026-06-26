@@ -51,6 +51,9 @@ Add `-AcceptAgreements` to the WinGet steps only after reviewing the YAML.
 The Terminal fragment merge creates a timestamped backup next to the existing
 Windows Terminal settings file and rewrites the settings as plain JSON. Do not
 use it if the company manages Terminal settings through policy.
+The managed fragment also sets Windows Terminal itself to follow the Windows
+system theme, with `Everforest Light Hard` for light mode and `Kanagawa Wave`
+for dark mode.
 
 `Microsoft.WSL` is included in the package baseline because WSL is the intended
 developer substrate, but enabling the underlying Windows optional features may
