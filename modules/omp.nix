@@ -5,7 +5,6 @@
   ...
 }: let
   cfg = config.local.omp;
-  yamlFormat = pkgs.formats.yaml {};
 
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/refs/tags/v${cfg.package.version}.tar.gz";
@@ -200,28 +199,10 @@ in {
       description = "Additional packages to prepend to PATH for OMP runtime and tool subprocesses.";
     };
 
-    settings = lib.mkOption {
-      type = yamlFormat.type;
-      default = {
-        defaultThinkingLevel = "xhigh";
-        exa = {
-          enabled = true;
-          enableSearch = true;
-          enableResearcher = true;
-          enableWebsets = false;
-        };
-        memory.backend = "mnemopi";
-        mnemopi.scoping = "per-project-tagged";
-        modelRoles.default = "openai-codex/gpt-5.5";
-        modelRoles.smol = "openai-codex/gpt-5.5:low";
-        providers.webSearch = "auto";
-        secrets.enabled = true;
-        theme = {
-          dark = "kanagawa-wave";
-          light = "everforest-light-hard";
-        };
-      };
-      description = "Global OMP settings written to ~/.omp/agent/config.yml.";
+    settingsFile = lib.mkOption {
+      type = lib.types.path;
+      default = ./omp-config.yml;
+      description = "YAML config file linked to ~/.omp/agent/config.yml.";
     };
   };
 
@@ -231,7 +212,7 @@ in {
     hjem.users.${cfg.user} = {
       files = {
         ".omp/agent/config.yml" = {
-          source = yamlFormat.generate "omp-config.yml" cfg.settings;
+          source = cfg.settingsFile;
           clobber = true;
         };
         ".omp/agent/themes/kanagawa-wave.json" = {
