@@ -201,7 +201,7 @@ in {
 
     settingsFile = lib.mkOption {
       type = lib.types.path;
-      default = ./omp-config.yml;
+      default = ./config.yml;
       description = "YAML config file linked to ~/.omp/agent/config.yml.";
     };
   };

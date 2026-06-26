@@ -19,7 +19,7 @@ in {
     ../../modules/ghostty.nix
     ../../modules/herdr.nix
     ../../modules/hunk.nix
-    ../../modules/omp.nix
+    ../../modules/omp
     ../../modules/shared
     agenix.darwinModules.default
   ];
