@@ -203,6 +203,16 @@ in {
     settings = lib.mkOption {
       type = yamlFormat.type;
       default = {
+        defaultThinkingLevel = "xhigh";
+        exa = {
+          enabled = true;
+          enableSearch = true;
+          enableResearcher = true;
+          enableWebsets = false;
+        };
+        modelRoles.default = "openai-codex/gpt-5.5";
+        providers.webSearch = "auto";
+        secrets.enabled = true;
         theme = {
           dark = "kanagawa-wave";
           light = "everforest-light-hard";
