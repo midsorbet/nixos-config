@@ -23,7 +23,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hunk = {
-      url = "github:modem-dev/hunk/v0.13.2";
+      url = "github:modem-dev/hunk/v0.16.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     herdr = {
@@ -66,9 +66,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     lanzaboote = {
-      # TODO: return to a tagged release after nix-community/lanzaboote#624 is released.
-      # PR #617 fixes nixpkgs' removed boot.bootspec.enable option.
-      url = "github:nix-community/lanzaboote/0403b4b7e8b2612657f0053a4c315e6c43eee9e6";
+      url = "github:nix-community/lanzaboote/v1.1.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     secrets = {
@@ -78,7 +76,7 @@
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     zmx.url = "github:neurosnap/zmx";
     mdfried = {
-      url = "github:benjajaja/mdfried/v0.19.7";
+      url = "github:benjajaja/mdfried/v0.22.4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

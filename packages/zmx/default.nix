@@ -20,7 +20,7 @@
   tarballs = {
     "aarch64-darwin" = {
       url = "https://zmx.sh/a/zmx-${version}-macos-aarch64.tar.gz";
-      hash = "sha256-YhuF8locczmeTuRvSCr8fP+0Y4RG6NDu9ayqV8K3m04=";
+      hash = "sha256-fx5Nln1B3qDfdrx8XdDVeV5+VP1lel8MdPv7LAaZOQ4=";
     };
   };
   zmx =

@@ -20,7 +20,7 @@
 
     padding = {
       type = "centered";
-      value = 100;
+      width = 100;
     };
   };
   configFile = (formats.toml {}).generate "mdfried-config.toml" (lib.recursiveUpdate defaultSettings settings);

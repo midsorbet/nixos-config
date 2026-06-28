@@ -153,16 +153,23 @@ nix flake update secrets --commit-lock-file
 
 ```zsh
 nh os switch . \
-  --hostname baymax \
+  -H baymax \
   --target-host me@192.168.4.200 \
   --build-host me@192.168.4.200
 ```
 
-After the config is pushed to `main`, Baymax can also deploy the reviewed GitHub flake itself:
+After the config is pushed to `main`, Baymax can also build the reviewed GitHub
+flake non-interactively through `nixos-upgrade.service`. This advances the boot
+profile and reboots only inside the configured reboot window; it does not prove
+the running system switched until `/run/current-system` matches the new profile.
 
 ```zsh
-zmx run nixos sudo -n systemctl start nixos-upgrade.service
-zmx run nixos systemctl status nixos-upgrade.service --no-pager -l
+ssh me@192.168.4.200 '
+  systemctl="$(readlink -f /run/current-system/sw/bin/systemctl)"
+  sudo -n "$systemctl" start nixos-upgrade.service
+'
+ssh me@192.168.4.200 'systemctl status nixos-upgrade.service --no-pager -l'
+ssh me@192.168.4.200 'readlink -f /nix/var/nix/profiles/system; readlink -f /run/current-system'
 ```
 
 4. In Cloudflare, recreate the published application routes under `Networking -> Tunnels -> baymax-apps`.
@@ -170,28 +177,22 @@ zmx run nixos systemctl status nixos-upgrade.service --no-pager -l
 
 ## Verification
 
-Check the tunnel on Baymax:
+Check Baymax-side service health:
 
 ```zsh
-ssh me@192.168.4.200 'systemctl status cloudflared-tunnel-baymax-apps --no-pager -l'
+ssh me@192.168.4.200 'systemctl --failed --no-pager'
+ssh me@192.168.4.200 'systemctl is-active cloudflared-tunnel-baymax-apps cloudflare-warp'
+ssh me@192.168.4.200 'systemctl is-active immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
 ```
 
-Check the public hostnames:
+Check the public hostnames. Readeck is intentionally public; the other app
+hostnames should redirect to Cloudflare Access.
 
 ```zsh
-curl -IksS https://readeck.midsorbet.me
-```
-
-```zsh
-curl -IksS https://rss.midsorbet.me
-```
-
-```zsh
-curl -IksS https://paperless.midsorbet.me
-```
-
-```zsh
-curl -IksS https://ntfy.midsorbet.me
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://readeck.midsorbet.me/
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://rss.midsorbet.me/
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://paperless.midsorbet.me/
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://ntfy.midsorbet.me/
 ```
 
 If macOS still reports stale DNS after the Cloudflare routes were restored:
