@@ -21,6 +21,8 @@ providers:
   webSearch: auto
 secrets:
   enabled: true
+startup:
+  setupWizard: false
 theme:
-  dark: kanagawa-wave
-  light: everforest-light-hard
+  dark: dark-terminal
+  light: light

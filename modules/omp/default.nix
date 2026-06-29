@@ -8,7 +8,7 @@
 
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/refs/tags/v${cfg.package.version}.tar.gz";
-    hash = "sha256-5Lyw55y8mp3U0Mt7nn+L24CrhwPmmuABjqxljRNoQdE=";
+    hash = "sha256-pEGIynQVV73KFtkYjT6+/t3jQ+j/VsMl/2XlSmOT/eA=";
   };
   runtimePath = lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage] ++ cfg.extraRuntimePackages);
 
