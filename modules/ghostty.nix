@@ -4,44 +4,74 @@
   pkgs,
   ...
 }: let
-  cfg = config.local.ghostty.usgc;
+  cfg = config.local.ghostty;
+  lightThemeName = "everforest-light-hard";
+  darkThemeName = "kanagawa-wave";
 
   configText = ''
-    theme = ${cfg.themeName}
+    theme = light:${lightThemeName},dark:${darkThemeName}
     font-family = "${cfg.fontFamily}"
     font-size = ${toString cfg.fontSize}
+    copy-on-select = "clipboard"
+    cursor-style-blink = false
+    window-save-state = never
     keybind = shift+enter=text:\x1b\r
   '';
 
-  # Ported from U.S. Graphics Company's USGC-POLYIMIDE-ST Sublime Text theme:
-  # https://github.com/usgraphics/usgc-themes/blob/master/themes/sublime-text/USGC-POLYIMIDE-ST.sublime-color-scheme
-  themeText = ''
-    background = #000000
-    foreground = #FFBF00
-    cursor-color = #00A645
-    selection-background = #000066
-    selection-foreground = #00FFFF
+  themes = {
+    "everforest-light-hard" = ''
+      palette = 0=#7a8478
+      palette = 1=#e67e80
+      palette = 2=#9ab373
+      palette = 3=#ceaf72
+      palette = 4=#7fbbb3
+      palette = 5=#d699b6
+      palette = 6=#83c092
+      palette = 7=#b2af9f
+      palette = 8=#a6b0a0
+      palette = 9=#f85552
+      palette = 10=#8da101
+      palette = 11=#dfa000
+      palette = 12=#3a94c5
+      palette = 13=#df69ba
+      palette = 14=#35a77c
+      palette = 15=#fffbef
 
-    palette = 0=#000000
-    palette = 1=#660000
-    palette = 2=#00A645
-    palette = 3=#FFBF00
-    palette = 4=#000066
-    palette = 5=#660066
-    palette = 6=#006666
-    palette = 7=#999999
-    palette = 8=#666600
-    palette = 9=#FF0000
-    palette = 10=#00FF00
-    palette = 11=#FFFF00
-    palette = 12=#0000FF
-    palette = 13=#FF00FF
-    palette = 14=#00FFFF
-    palette = 15=#FFFFFF
-  '';
+      background = #f2efdf
+      foreground = #5c6a72
+      cursor-color = #f57d26
+      selection-background = #f0f2d4
+      selection-foreground = #5c6a72
+    '';
+
+    "kanagawa-wave" = ''
+      palette = 0=#090618
+      palette = 1=#c34043
+      palette = 2=#76946a
+      palette = 3=#c0a36e
+      palette = 4=#7e9cd8
+      palette = 5=#957fb8
+      palette = 6=#6a9589
+      palette = 7=#c8c093
+      palette = 8=#727169
+      palette = 9=#e82424
+      palette = 10=#98bb6c
+      palette = 11=#e6c384
+      palette = 12=#7fb4ca
+      palette = 13=#938aa9
+      palette = 14=#7aa89f
+      palette = 15=#dcd7ba
+
+      background = #1f1f28
+      foreground = #dcd7ba
+      cursor-color = #dcd7ba
+      selection-background = #dcd7ba
+      selection-foreground = #1f1f28
+    '';
+  };
 in {
-  options.local.ghostty.usgc = {
-    enable = lib.mkEnableOption "USGC-themed Ghostty configuration";
+  options.local.ghostty = {
+    enable = lib.mkEnableOption "Ghostty configuration";
 
     user = lib.mkOption {
       type = lib.types.str;
@@ -75,12 +105,6 @@ in {
       default = 15;
       description = "Font size written to Ghostty's config.";
     };
-
-    themeName = lib.mkOption {
-      type = lib.types.str;
-      default = "USGC-POLYIMIDE-ST";
-      description = "Name of the managed Ghostty theme.";
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -89,17 +113,19 @@ in {
     hjem.users.${cfg.user} = {
       inherit (cfg) directory user;
 
-      xdg.config.files = {
-        "ghostty/config" = {
-          text = configText;
-          clobber = true;
-        };
-
-        "ghostty/themes/${cfg.themeName}" = {
-          text = themeText;
-          clobber = true;
-        };
-      };
+      xdg.config.files =
+        {
+          "ghostty/config" = {
+            text = configText;
+            clobber = true;
+          };
+        }
+        // (lib.mapAttrs' (name: text:
+          lib.nameValuePair "ghostty/themes/${name}" {
+            inherit text;
+            clobber = true;
+          })
+        themes);
     };
   };
 }

@@ -63,7 +63,7 @@ in {
     };
   };
   local.grayjay.enable = true;
-  local.ghostty.usgc = {
+  local.ghostty = {
     enable = true;
     inherit user;
   };
@@ -75,11 +75,15 @@ in {
     enable = true;
     inherit user;
   };
-  local.omp.enable = true;
+  local.omp = {
+    enable = true;
+    settingsFile = ../../modules/omp/config-mini-darwin.yml;
+  };
   local.zsh = {
     enable = true;
     inherit user;
     projectDirectories = ["~/vault/projects"];
+    promptTheme = "kanagawa-everforest";
   };
 
   homebrew = {

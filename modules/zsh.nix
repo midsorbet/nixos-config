@@ -6,27 +6,72 @@
 }: let
   cfg = config.local.zsh;
 
-  ohMyPoshConfig = let
-    base = builtins.fromJSON (
-      builtins.unsafeDiscardStringContext (
-        builtins.readFile "${pkgs.oh-my-posh}/share/oh-my-posh/themes/catppuccin_frappe.omp.json"
-      )
-    );
-    zmxBlock = {
-      type = "prompt";
-      alignment = "left";
-      segments = [
-        {
-          type = "text";
-          style = "plain";
-          foreground = "p:mauve";
-          template = "{{ if .Env.ZMX_SESSION }} {{ .Env.ZMX_SESSION }} {{ end }}";
-        }
-      ];
+  baseOhMyPoshConfig = builtins.fromJSON (
+    builtins.unsafeDiscardStringContext (
+      builtins.readFile "${pkgs.oh-my-posh}/share/oh-my-posh/themes/catppuccin_frappe.omp.json"
+    )
+  );
+
+  zmxBlock = {
+    type = "prompt";
+    alignment = "left";
+    segments = [
+      {
+        type = "text";
+        style = "plain";
+        foreground = "p:mauve";
+        template = "{{ if .Env.ZMX_SESSION }} {{ .Env.ZMX_SESSION }} {{ end }}";
+      }
+    ];
+  };
+
+  mkOhMyPoshConfig = palette:
+    baseOhMyPoshConfig
+    // {
+      inherit palette;
+      blocks = [zmxBlock] ++ baseOhMyPoshConfig.blocks;
     };
-    merged = base // {blocks = [zmxBlock] ++ base.blocks;};
-  in
-    pkgs.writeText "oh-my-posh.json" (builtins.toJSON merged);
+
+  catppuccinFrappeConfig = pkgs.writeText "oh-my-posh-catppuccin-frappe.json" (
+    builtins.toJSON (mkOhMyPoshConfig baseOhMyPoshConfig.palette)
+  );
+
+  kanagawaWaveConfig = pkgs.writeText "oh-my-posh-kanagawa-wave.json" (
+    builtins.toJSON (mkOhMyPoshConfig {
+      os = "#727169";
+      closer = "p:os";
+      pink = "#957fb8";
+      mauve = "#957fb8";
+      lavender = "#7fb4ca";
+      blue = "#7e9cd8";
+    })
+  );
+
+  everforestLightHardConfig = pkgs.writeText "oh-my-posh-everforest-light-hard.json" (
+    builtins.toJSON (mkOhMyPoshConfig {
+      os = "#a6b0a0";
+      closer = "p:os";
+      pink = "#d699b6";
+      mauve = "#d699b6";
+      lavender = "#3a94c5";
+      blue = "#7fbbb3";
+    })
+  );
+
+  ohMyPoshInit =
+    if cfg.promptTheme == "kanagawa-everforest"
+    then ''
+      oh_my_posh_config=${kanagawaWaveConfig}
+      if [[ "$(uname -s)" == "Darwin" ]] && command -v defaults >/dev/null 2>&1; then
+        if ! defaults read -g AppleInterfaceStyle >/dev/null 2>&1; then
+          oh_my_posh_config=${everforestLightHardConfig}
+        fi
+      fi
+      eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config "$oh_my_posh_config")"
+    ''
+    else ''
+      eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ${catppuccinFrappeConfig})"
+    '';
 
   zshrc = ''
     # Managed by Nix/Hjem.
@@ -47,7 +92,7 @@
       eval "$(zmx completions zsh)"
     fi
 
-    eval "$(${pkgs.oh-my-posh}/bin/oh-my-posh init zsh --config ${ohMyPoshConfig})"
+    ${ohMyPoshInit}
   '';
 in {
   options.local.zsh = {
@@ -69,6 +114,12 @@ in {
       type = lib.types.listOf lib.types.str;
       default = ["~/Projects"];
       description = "Directories zsh should search when changing into project names.";
+    };
+
+    promptTheme = lib.mkOption {
+      type = lib.types.enum ["catppuccin-frappe" "kanagawa-everforest"];
+      default = "catppuccin-frappe";
+      description = "Oh My Posh prompt color theme.";
     };
   };
 

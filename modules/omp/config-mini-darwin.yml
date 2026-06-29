@@ -1,0 +1,28 @@
+defaultThinkingLevel: xhigh
+exa:
+  enabled: true
+  enableSearch: true
+  enableResearcher: true
+  enableWebsets: false
+memory:
+  backend: mnemopi
+mnemopi:
+  scoping: per-project-tagged
+modelRoles:
+  default: openai-codex/gpt-5.5
+  smol: openai-codex/gpt-5.5:low
+  designer: zai/glm-5.2
+modelProviderOrder:
+  - openai-codex
+  - cloudflare-ai-gateway
+  - zai
+  - google-antigravity
+providers:
+  webSearch: auto
+secrets:
+  enabled: true
+startup:
+  setupWizard: false
+theme:
+  dark: kanagawa-wave
+  light: everforest-light-hard
