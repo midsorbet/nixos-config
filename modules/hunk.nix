@@ -7,6 +7,13 @@
 }: let
   cfg = config.local.hunk;
   tomlFormat = pkgs.formats.toml {};
+  defaultPackage = hunk.packages.${pkgs.stdenv.hostPlatform.system}.hunk.overrideAttrs (old: {
+    postInstall =
+      (old.postInstall or "")
+      + lib.optionalString pkgs.stdenv.isDarwin ''
+        /usr/bin/codesign --force --sign - "$out/bin/hunk"
+      '';
+  });
 in {
   options.local.hunk = {
     enable = lib.mkEnableOption "Hunk terminal diff viewer";
@@ -19,7 +26,7 @@ in {
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = hunk.packages.${pkgs.stdenv.hostPlatform.system}.hunk;
+      default = defaultPackage;
       description = "Hunk package to install.";
     };
 
