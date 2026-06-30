@@ -7,5 +7,6 @@ in
     aube
     fswatch
     gh
+    neovim
     uv
   ]
