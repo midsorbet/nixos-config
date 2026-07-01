@@ -30,9 +30,9 @@
       pkgs.coreutils
       pkgs.curl
       pkgs.gnugrep
-      pkgs.openssl
       pkgs.perl
       pkgs.uv
+      pkgs.xkcdpass
     ];
     text = ''
       usage() {
@@ -44,7 +44,8 @@
 
       Environment:
         HERDR_RELAY_PORT   Relay listen port, default 18375.
-        HERDR_RELAY_TOKEN  Optional pre-set relay token. If unset, generated.
+        HERDR_RELAY_TOKEN  Optional pre-set relay token. If unset, generated
+                           as a five-word hyphenated passphrase.
       EOF
       }
 
@@ -70,7 +71,7 @@
 
       token="''${HERDR_RELAY_TOKEN:-}"
       if [ -z "$token" ]; then
-        token="$(openssl rand -hex 32)"
+        token="$(xkcdpass -n 5 -d '-' -C lower)"
       fi
 
       workdir="$(mktemp -d "''${TMPDIR:-/tmp}/herdr-remote-quick.XXXXXX")"
