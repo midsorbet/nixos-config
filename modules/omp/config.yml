@@ -11,7 +11,7 @@ mnemopi:
 modelRoles:
   default: openai-codex/gpt-5.5
   smol: openai-codex/gpt-5.5:low
-  advisor: openai-codex/gpt-5.5:low
+  advisor: opencode-zen/claude-fable-5:low
   designer: zai/glm-5.2
 modelProviderOrder:
   - openai-codex
