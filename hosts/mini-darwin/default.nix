@@ -19,6 +19,7 @@ in {
     ../../modules/ghostty.nix
     ../../modules/herdr.nix
     ../../modules/hunk.nix
+    ../../modules/neovim.nix
     ../../modules/omp
     ../../modules/shared
     agenix.darwinModules.default
@@ -61,20 +62,6 @@ in {
       '';
       clobber = true;
     };
-
-    xdg.config.files."nvim/init.lua" = {
-      text = ''
-        vim.opt.number = true
-        vim.opt.relativenumber = true
-        vim.opt.hlsearch = true
-
-        vim.keymap.set("n", "<Esc>", "<Cmd>nohlsearch<CR>", {
-          desc = "Clear search highlights",
-          silent = true,
-        })
-      '';
-      clobber = true;
-    };
   };
   local.grayjay.enable = true;
   local.ghostty = {
@@ -86,6 +73,10 @@ in {
     inherit user;
   };
   local.hunk = {
+    enable = true;
+    inherit user;
+  };
+  local.neovim = {
     enable = true;
     inherit user;
   };
