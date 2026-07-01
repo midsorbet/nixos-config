@@ -11,10 +11,11 @@ mnemopi:
 modelRoles:
   default: openai-codex/gpt-5.5
   smol: openai-codex/gpt-5.5:low
-  advisor: cloudflare-ai-gateway/workers-ai/@cf/moonshotai/kimi-k2.6:low
+  advisor: opencode-zen/gpt-5.5:low
   designer: zai/glm-5.2
 modelProviderOrder:
   - openai-codex
+  - opencode-zen
   - cloudflare-ai-gateway
   - zai
   - google-antigravity
