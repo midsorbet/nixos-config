@@ -1,12 +1,12 @@
 {pkgs}: let
   inherit (pkgs) lib stdenv;
 
-  version = "16.2.12";
+  version = "16.2.13";
   releaseBaseUrl = "https://github.com/can1357/oh-my-pi/releases/download/v${version}";
   binaries = {
     "aarch64-darwin" = {
       name = "omp-darwin-arm64";
-      hash = "sha256-/sREt48metu0egD+h8i4d5uuSxoZ9ZEqurQrHwlX+0M=";
+      hash = "sha256-W+a/b5ip92HqNwPv7qWyUZiItXK4X6tGClQyeg7yQRc=";
     };
   };
   binary =
