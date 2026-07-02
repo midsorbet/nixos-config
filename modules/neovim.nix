@@ -1,14 +1,11 @@
 {
   config,
   lib,
+  nix-wrapper-modules,
   pkgs,
   ...
 }: let
   cfg = config.local.neovim;
-
-  # Vendored from nvim-mini/MiniMax configs/nvim-0.12 at rev
-  # 35dfab31cf290d74493403853822899af7c8464b, then patched locally.
-  minimaxConfig = ./neovim/minimax-config;
 
   mkFlakeEnvWrapper = {
     name,
@@ -52,33 +49,33 @@
     name = "jdtls";
     package = pkgs.jdt-language-server;
   };
+
+  neovimWrapperModule = import ./neovim/wrapper-module.nix {
+    inherit jdtlsWrapper metalsWrapper;
+  };
+
+  wrappedNeovim = nix-wrapper-modules.lib.evalPackage [
+    neovimWrapperModule
+    {inherit pkgs;}
+  ];
 in {
   options.local.neovim = {
-    enable = lib.mkEnableOption "Neovim MiniMax configuration";
+    enable = lib.mkEnableOption "Neovim configuration built with nix-wrapper-modules";
 
     user = lib.mkOption {
       type = lib.types.str;
       default = "me";
-      description = "User that should receive the Hjem-managed MiniMax Neovim config.";
+      description = "User that should receive the Hjem-managed wrapped Neovim package.";
+    };
+
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = wrappedNeovim;
+      description = "Wrapped Neovim package to install.";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    hjem.users.${cfg.user} = {
-      packages = [
-        metalsWrapper
-        jdtlsWrapper
-        pkgs.jdk
-        pkgs.maven
-        pkgs.marksman
-        pkgs.vscode-langservers-extracted
-      ];
-
-      xdg.config.files."nvim" = {
-        type = "symlink";
-        source = minimaxConfig;
-        clobber = true;
-      };
-    };
+    hjem.users.${cfg.user}.packages = [cfg.package];
   };
 }
