@@ -7,6 +7,50 @@
 }: let
   domain = "midsorbet.me";
   user = "me";
+  herdrRelayPort = 18375;
+  herdrWebPort = 18376;
+  herdrMiniHost = "mini-me.local";
+  herdrRemoteSrc = pkgs.fetchFromGitHub {
+    owner = "dcolinmorgan";
+    repo = "herdr-remote";
+    rev = "221e2fe71d1e9f8e09f1a7b2211157c53d31ce1f";
+    hash = "sha256-S1Aq/5ZgMHwqDMcjEdvZAUgY+VMyzDTSuIzNEZEdNfo=";
+  };
+  herdrRemoteWeb = pkgs.runCommand "herdr-remote-web" {nativeBuildInputs = [pkgs.python3];} ''
+    mkdir -p "$out"
+    cp ${herdrRemoteSrc}/web/index.html "$out/index.html"
+    chmod u+w "$out/index.html"
+    python - "$out/index.html" <<'PY'
+    from pathlib import Path
+    import sys
+
+    path = Path(sys.argv[1])
+    text = path.read_text()
+    replacements = [
+        (
+            "const savedUrl = localStorage.getItem('herdr_relay_url') || " + chr(39) * 2 + ";",
+            "const savedUrl = localStorage.getItem('herdr_relay_url') || 'wss://herdr.${domain}/';",
+        ),
+        (
+            'placeholder="wss://your-tunnel.trycloudflare.com"',
+            'placeholder="wss://herdr.${domain}/"',
+        ),
+        (
+            "Run <code>./relay/start.sh</code> to get a URL.",
+            "Run <code>herdr-remote-lan-relay</code> on mini-darwin, then use the printed token.",
+        ),
+        (
+            '1. Run: <code style="font-size:0.7rem">cd relay && ./start.sh</code><br>',
+            '1. Run: <code style="font-size:0.7rem">herdr-remote-lan-relay</code> on mini-darwin<br>',
+        ),
+    ]
+    for old, new in replacements:
+        if old not in text:
+            raise SystemExit(f"missing expected herdr-remote web text: {old}")
+        text = text.replace(old, new)
+    path.write_text(text)
+    PY
+  '';
   keys = {
     boot = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"
@@ -402,6 +446,24 @@ in {
     cloudflared = {
       enable = true;
       tunnels."baymax-apps".tokenFile = config.age.secrets."baymax-tunnel".path;
+    };
+
+    caddy = {
+      enable = true;
+      virtualHosts."http://herdr.${domain}:${toString herdrWebPort}" = {
+        listenAddresses = ["127.0.0.1"];
+        extraConfig = ''
+          @websocket {
+            header Connection *Upgrade*
+            header Upgrade websocket
+          }
+
+          reverse_proxy @websocket http://${herdrMiniHost}:${toString herdrRelayPort}
+
+          root * ${herdrRemoteWeb}
+          file_server
+        '';
+      };
     };
   };
 

@@ -23,10 +23,9 @@
     ${lib.getExe cfg.package} integration status
   '';
 
-  quickTunnelHelper = pkgs.writeShellApplication {
-    name = "herdr-remote-quick-tunnel";
+  lanRelayHelper = pkgs.writeShellApplication {
+    name = "herdr-remote-lan-relay";
     runtimeInputs = [
-      pkgs.cloudflared
       pkgs.coreutils
       pkgs.curl
       pkgs.gnugrep
@@ -37,15 +36,19 @@
     text = ''
       usage() {
         cat <<'EOF'
-      usage: herdr-remote-quick-tunnel [PORT]
+      usage: herdr-remote-lan-relay [PORT]
 
-      Starts a local herdr-remote relay and exposes it through a temporary
-      Cloudflare Quick Tunnel. Stop with Ctrl-C to tear down the public URL.
+      Starts a herdr-remote relay for LAN-only access from Baymax.
+      Stop with Ctrl-C to tear it down.
 
       Environment:
         HERDR_RELAY_PORT   Relay listen port, default 18375.
+        HERDR_RELAY_BIND   Relay listen address. Defaults to this Mac's en0
+                           IPv4 address, falling back to 0.0.0.0.
         HERDR_RELAY_TOKEN  Optional pre-set relay token. If unset, generated
                            as a five-word hyphenated passphrase.
+        HERDR_REMOTE_URL   Public relay URL shown in output, default
+                           wss://herdr.midsorbet.me/.
       EOF
       }
 
@@ -74,16 +77,21 @@
         token="$(xkcdpass -n 5 -d '-' -C lower)"
       fi
 
-      workdir="$(mktemp -d "''${TMPDIR:-/tmp}/herdr-remote-quick.XXXXXX")"
+      bind="''${HERDR_RELAY_BIND:-}"
+      if [ -z "$bind" ]; then
+        bind="$(/usr/sbin/ipconfig getifaddr en0 2>/dev/null || true)"
+      fi
+      if [ -z "$bind" ]; then
+        bind="0.0.0.0"
+      fi
+
+      public_url="''${HERDR_REMOTE_URL:-wss://herdr.midsorbet.me/}"
+
+      workdir="$(mktemp -d "''${TMPDIR:-/tmp}/herdr-remote-lan.XXXXXX")"
       relay_pid=""
-      tunnel_pid=""
 
       cleanup() {
         set +e
-        if [ -n "$tunnel_pid" ] && kill -0 "$tunnel_pid" 2>/dev/null; then
-          kill "$tunnel_pid" 2>/dev/null
-          wait "$tunnel_pid" 2>/dev/null
-        fi
         if [ -n "$relay_pid" ] && kill -0 "$relay_pid" 2>/dev/null; then
           kill "$relay_pid" 2>/dev/null
           wait "$relay_pid" 2>/dev/null
@@ -100,17 +108,23 @@
 
       # Keep the relay local-only and avoid mDNS cleanup hangs in the upstream prototype.
       perl -0pi -e 's/zc, info = start_mdns\(\)/zc, info = (None, None)/' "$relay"
-      perl -0pi -e 's/serve\(handle_client, "0\.0\.0\.0", WS_PORT, process_request=process_request\)/serve(handle_client, "127.0.0.1", WS_PORT, process_request=process_request)/' "$relay"
+      perl -0pi -e 's/serve\(handle_client, "0\.0\.0\.0", WS_PORT, process_request=process_request\)/serve(handle_client, os.environ.get("HERDR_RELAY_BIND", "0.0.0.0"), WS_PORT, process_request=process_request)/' "$relay"
 
       HERDR_BIN="${lib.getExe cfg.package}" \
+        HERDR_RELAY_BIND="$bind" \
         HERDR_RELAY_PORT="$port" \
         HERDR_RELAY_TOKEN="$token" \
         uv run "$relay" >"$workdir/relay.log" 2>&1 &
       relay_pid="$!"
 
+      probe_host="$bind"
+      if [ "$probe_host" = "0.0.0.0" ]; then
+        probe_host="127.0.0.1"
+      fi
+
       relay_ready=""
       for _ in $(seq 1 60); do
-        if curl -fsS --max-time 1 "http://127.0.0.1:$port/?token=$token" >/dev/null 2>&1; then
+        if curl -fsS --max-time 1 "http://$probe_host:$port/?token=$token" >/dev/null 2>&1; then
           relay_ready=1
           break
         fi
@@ -123,52 +137,28 @@
       done
 
       if [ -z "$relay_ready" ]; then
-        echo "error: herdr-remote relay did not become ready on 127.0.0.1:$port" >&2
+        echo "error: herdr-remote relay did not become ready on $bind:$port" >&2
         cat "$workdir/relay.log" >&2
         exit 1
       fi
 
-      cloudflared tunnel --url "http://127.0.0.1:$port" >"$workdir/cloudflared.log" 2>&1 &
-      tunnel_pid="$!"
-
-      url=""
-      for _ in $(seq 1 120); do
-        if ! kill -0 "$tunnel_pid" 2>/dev/null; then
-          echo "error: cloudflared exited during startup" >&2
-          cat "$workdir/cloudflared.log" >&2
-          exit 1
-        fi
-        url="$(grep -Eo 'https://[-a-zA-Z0-9]+\.trycloudflare\.com' "$workdir/cloudflared.log" | tail -n 1 || true)"
-        if [ -n "$url" ]; then
-          break
-        fi
-        sleep 1
-      done
-
-      if [ -z "$url" ]; then
-        echo "error: timed out waiting for Cloudflare Quick Tunnel URL" >&2
-        cat "$workdir/cloudflared.log" >&2
-        exit 1
-      fi
-
-      ws_url="wss://''${url#https://}"
-
       cat <<EOF
-      herdr-remote quick tunnel is live.
+      herdr-remote LAN relay is live.
 
-        Web UI:    https://herdr-demo.pages.dev
-        Relay URL: $ws_url
+        Bind:      $bind:$port
+        Web UI:    https://herdr.midsorbet.me
+        Relay URL: $public_url
         Token:     $token
 
       Paste the Relay URL and Token into the web UI settings.
-      Stop this command with Ctrl-C to tear down the public URL.
+      Stop this command with Ctrl-C to tear down the LAN relay.
       EOF
 
-      while kill -0 "$relay_pid" 2>/dev/null && kill -0 "$tunnel_pid" 2>/dev/null; do
+      while kill -0 "$relay_pid" 2>/dev/null; do
         sleep 5
       done
 
-      echo "herdr-remote quick tunnel stopped" >&2
+      echo "herdr-remote LAN relay stopped" >&2
     '';
   };
 in {
@@ -260,7 +250,7 @@ in {
 
   config = lib.mkIf cfg.enable {
     hjem.users.${cfg.user} = {
-      packages = [cfg.package integrationHelper quickTunnelHelper];
+      packages = [cfg.package integrationHelper lanRelayHelper];
 
       xdg.config.files."herdr/config.toml" = lib.mkIf (cfg.settings != {}) {
         source = tomlFormat.generate "herdr-config.toml" cfg.settings;
