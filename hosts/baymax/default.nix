@@ -443,6 +443,12 @@ in {
       package = pkgs.cloudflare-warp.override {headless = true;};
     };
 
+    avahi = {
+      enable = true;
+      nssmdns4 = true;
+      openFirewall = true;
+    };
+
     cloudflared = {
       enable = true;
       tunnels."baymax-apps".tokenFile = config.age.secrets."baymax-tunnel".path;

@@ -109,7 +109,7 @@ Relevant repo paths:
 - `hosts/baymax/secrets.nix`
 - `hosts/baymax/default.nix`
 
-Cloudflare forwards to Baymax loopback listeners. The Herdr route is the narrow exception behind that local listener: Baymax serves the web UI locally, then proxies WebSocket upgrades to the mini-darwin LAN relay.
+Cloudflare forwards to Baymax loopback listeners. The Herdr route is the narrow exception behind that local listener: Baymax serves the web UI locally, then proxies WebSocket upgrades to the mini-darwin LAN relay. Baymax uses Avahi/NSS mDNS to resolve `mini-me.local` on the LAN; if that name does not resolve, the web UI can load while the relay WebSocket still fails.
 
 ## Published Routes
 
@@ -182,7 +182,8 @@ Check Baymax-side service health:
 
 ```zsh
 ssh me@192.168.4.200 'systemctl --failed --no-pager'
-ssh me@192.168.4.200 'systemctl is-active cloudflared-tunnel-baymax-apps cloudflare-warp caddy'
+ssh me@192.168.4.200 'systemctl is-active cloudflared-tunnel-baymax-apps cloudflare-warp caddy avahi-daemon'
+ssh me@192.168.4.200 'getent hosts mini-me.local'
 ssh me@192.168.4.200 'systemctl is-active immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
 ```
 
