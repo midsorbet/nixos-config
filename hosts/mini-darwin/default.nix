@@ -80,10 +80,7 @@ in {
     enable = true;
     inherit user;
   };
-  local.omp = {
-    enable = true;
-    settingsFile = ../../modules/omp/config-mini-darwin.yml;
-  };
+  local.omp.enable = true;
   local.zsh = {
     enable = true;
     inherit user;

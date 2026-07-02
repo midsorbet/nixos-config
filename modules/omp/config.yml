@@ -9,28 +9,32 @@ memory:
 mnemopi:
   scoping: per-project-tagged
 modelRoles:
-  default: openai-codex/gpt-5.5
+  default: openai-codex/gpt-5.5:high
   smol: openai-codex/gpt-5.5:low
-  advisor: anthropic/claude-sonnet-5:low
-  designer: zai/glm-5.2
+  slow: anthropic/claude-fable-5:low
+  advisor: anthropic/claude-opus-4-8:medium
+  designer: zai/glm-5.2:high
 modelProviderOrder:
   - anthropic
   - openai-codex
-  - opencode-zen
-  - cloudflare-ai-gateway
   - zai
+  - cloudflare-ai-gateway
   - google-antigravity
+  - opencode-zen
 advisor:
   enabled: true
   subagents: false
   syncBacklog: off
   immuneTurns: 3
+task:
+  softRequestBudgetNotice: true
 providers:
   webSearch: auto
 secrets:
   enabled: true
 startup:
   setupWizard: false
+symbolPreset: nerd
 theme:
-  dark: dark-terminal
-  light: light
+  dark: kanagawa-wave
+  light: everforest-light-hard
