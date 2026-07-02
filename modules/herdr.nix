@@ -43,8 +43,9 @@
 
       Environment:
         HERDR_RELAY_PORT   Relay listen port, default 18375.
-        HERDR_RELAY_BIND   Relay listen address. Defaults to this Mac's en0
-                           IPv4 address, falling back to 0.0.0.0.
+        HERDR_RELAY_BIND   Relay listen address. Defaults to this Mac's
+                           advertised .local IPv4 address, then en0, then
+                           0.0.0.0.
         HERDR_RELAY_TOKEN  Optional pre-set relay token. If unset, generated
                            as a five-word hyphenated passphrase.
         HERDR_REMOTE_URL   Public relay URL shown in output, default
@@ -78,6 +79,15 @@
       fi
 
       bind="''${HERDR_RELAY_BIND:-}"
+      if [ -z "$bind" ]; then
+        local_host="$(/usr/sbin/scutil --get LocalHostName 2>/dev/null || true)"
+        if [ -n "$local_host" ]; then
+          bind="$(
+            /usr/bin/dscacheutil -q host -a name "$local_host.local" 2>/dev/null \
+              | awk '/^ip_address: / && $2 !~ /^127[.]/ && $2 !~ /^169[.]254[.]/ && $2 ~ /^[0-9.]+$/ { print $2; exit }'
+          )"
+        fi
+      fi
       if [ -z "$bind" ]; then
         bind="$(/usr/sbin/ipconfig getifaddr en0 2>/dev/null || true)"
       fi
