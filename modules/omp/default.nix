@@ -12,6 +12,70 @@
   };
   runtimePath = lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage] ++ cfg.extraRuntimePackages);
 
+  managedNpmPluginsArgs = lib.concatMapStringsSep " " lib.escapeShellArg cfg.managedNpmPlugins;
+
+  pluginInstalledCheck = pkgs.writeText "omp-plugin-installed.py" ''
+    import json
+    import os
+    import sys
+
+    try:
+        data = json.loads(os.environ.get("PLUGIN_JSON", ""))
+    except Exception:
+        sys.exit(1)
+
+    for plugin in data.get("npm", []):
+        if (
+            plugin.get("name") == os.environ["PLUGIN_NAME"]
+            and plugin.get("version") == os.environ["PLUGIN_VERSION"]
+            and plugin.get("enabled", True)
+        ):
+            sys.exit(0)
+
+    sys.exit(1)
+  '';
+
+  installManagedNpmPlugins = pkgs.writeShellApplication {
+    name = "omp-install-managed-npm-plugins";
+    runtimeInputs = [wrappedPackage cfg.bunPackage cfg.pythonPackage];
+    text = ''
+      set -u
+
+      export HOME=${lib.escapeShellArg config.hjem.users.${cfg.user}.directory}
+      plugins=(${managedNpmPluginsArgs})
+
+      if [ "''${#plugins[@]}" -eq 0 ]; then
+        exit 0
+      fi
+
+      installed_json="$(omp plugin list --json 2>/dev/null || true)"
+
+      for spec in "''${plugins[@]}"; do
+        name="''${spec%@*}"
+        version="''${spec##*@}"
+
+        if [ -z "$name" ] || [ "$name" = "$spec" ]; then
+          echo "warning: managed OMP plugin spec must include an explicit version: $spec" >&2
+          continue
+        fi
+
+        if PLUGIN_JSON="$installed_json" PLUGIN_NAME="$name" PLUGIN_VERSION="$version" python3 ${pluginInstalledCheck}; then
+          echo "OMP plugin already installed: $spec"
+          continue
+        fi
+
+        echo "Installing managed OMP plugin: $spec"
+        if omp install "$spec"; then
+          installed_json="$(omp plugin list --json 2>/dev/null || true)"
+        else
+          echo "warning: failed to install managed OMP plugin: $spec" >&2
+        fi
+      done
+
+      exit 0
+    '';
+  };
+
   wrappedPackage =
     pkgs.runCommand "omp-${cfg.package.version}-with-runtimes" {
       nativeBuildInputs = [pkgs.makeWrapper];
@@ -193,6 +257,12 @@ in {
       description = "uv package manager made available to OMP and its tool subprocesses.";
     };
 
+    managedNpmPlugins = lib.mkOption {
+      type = with lib.types; listOf str;
+      default = [];
+      description = "Version-pinned npm plugins that OMP should ensure exist in the user's mutable plugin directory.";
+    };
+
     extraRuntimePackages = lib.mkOption {
       type = with lib.types; listOf package;
       default = [];
@@ -222,6 +292,18 @@ in {
         ".omp/agent/themes/everforest-light-hard.json" = {
           text = builtins.toJSON everforestLightHardTheme;
           clobber = true;
+        };
+      };
+    };
+
+    launchd.user.agents.omp-install-managed-npm-plugins = lib.mkIf (cfg.managedNpmPlugins != []) {
+      serviceConfig = {
+        ProgramArguments = ["${installManagedNpmPlugins}/bin/omp-install-managed-npm-plugins"];
+        RunAtLoad = true;
+        StandardOutPath = "${config.hjem.users.${cfg.user}.directory}/Library/Logs/omp-install-managed-npm-plugins.log";
+        StandardErrorPath = "${config.hjem.users.${cfg.user}.directory}/Library/Logs/omp-install-managed-npm-plugins.log";
+        EnvironmentVariables = {
+          HOME = config.hjem.users.${cfg.user}.directory;
         };
       };
     };
