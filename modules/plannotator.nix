@@ -3,10 +3,7 @@
   lib,
   pkgs,
   ...
-}: let
-  cfg = config.local.plannotator;
-  piExtensionSpec = "@plannotator/pi-extension@${cfg.package.version}";
-in {
+}: {
   options.local.plannotator = {
     enable = lib.mkEnableOption "Plannotator plan and code review integration";
 
@@ -23,15 +20,7 @@ in {
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = config.local.omp.enable;
-        message = "local.plannotator.enable requires local.omp.enable so OMP can install the Plannotator Pi extension.";
-      }
-    ];
-
-    local.omp.managedNpmPlugins = [piExtensionSpec];
-    hjem.users.${cfg.user}.packages = [cfg.package];
+  config = lib.mkIf config.local.plannotator.enable {
+    hjem.users.${config.local.plannotator.user}.packages = [config.local.plannotator.package];
   };
 }
