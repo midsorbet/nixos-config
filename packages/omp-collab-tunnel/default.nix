@@ -18,13 +18,13 @@
   # linker signature (strict verify fails, the binary dies with SIGKILL /
   # Code Signature Invalid — same class as the repo's hunk override), and
   # /usr/bin/codesign refuses to replace it; rcodesign rewrites it cleanly.
-  relay = pkgs.stdenv.mkDerivation {
-    pname = "omp-collab-relay";
+  unwrapped = pkgs.stdenv.mkDerivation {
+    pname = "omp-collab-tunnel-unwrapped";
     version = piWireVersion;
 
     src = lib.fileset.toSource {
       root = ./.;
-      fileset = lib.fileset.unions [./relay.ts ./package.json];
+      fileset = lib.fileset.unions [./relay.ts ./tunnel.ts ./package.json];
     };
 
     nativeBuildInputs = [pkgs.bun] ++ lib.optionals pkgs.stdenv.isDarwin [pkgs.rcodesign];
@@ -43,47 +43,42 @@
       BUN_INSTALL=$PWD/.bun-install \
       bun build --compile \
         --no-compile-autoload-bunfig \
-        ./relay.ts \
-        --outfile omp-collab-relay
+        ./tunnel.ts \
+        --outfile omp-collab-tunnel
       runHook postBuild
     '';
 
     installPhase =
       ''
         runHook preInstall
-        install -Dm755 omp-collab-relay "$out/bin/omp-collab-relay"
+        install -Dm755 omp-collab-tunnel "$out/bin/omp-collab-tunnel"
         runHook postInstall
       ''
       + lib.optionalString pkgs.stdenv.isDarwin ''
-        rcodesign sign "$out/bin/omp-collab-relay"
+        rcodesign sign "$out/bin/omp-collab-tunnel"
       '';
 
     dontStrip = true;
     dontFixup = true;
 
     meta = {
-      description = "Hardened loopback WebSocket relay for OMP collab sessions";
-      mainProgram = "omp-collab-relay";
-    };
-  };
-
-  tunnel = pkgs.writeShellApplication {
-    name = "omp-collab-tunnel";
-    runtimeInputs = [
-      relay
-      pkgs.cloudflared
-      pkgs.coreutils
-      pkgs.curl
-      pkgs.gnugrep
-      pkgs.gnused
-    ];
-    text = builtins.readFile ./tunnel.sh;
-    meta = {
-      description = "On-demand OMP collab relay behind a temporary Cloudflare Quick Tunnel";
+      description = "OMP collab relay plus Cloudflare Quick Tunnel launcher";
       mainProgram = "omp-collab-tunnel";
     };
   };
 in {
-  omp-collab-relay = relay;
-  omp-collab-tunnel = tunnel;
+  # Wrapper pins the Nix cloudflared for the compiled binary; same
+  # runCommand + makeWrapper shape as modules/omp's wrapped package.
+  omp-collab-tunnel =
+    pkgs.runCommand "omp-collab-tunnel-${piWireVersion}" {
+      nativeBuildInputs = [pkgs.makeWrapper];
+      meta = {
+        description = "On-demand OMP collab relay behind a temporary Cloudflare Quick Tunnel";
+        mainProgram = "omp-collab-tunnel";
+      };
+    } ''
+      mkdir -p "$out/bin"
+      makeWrapper ${unwrapped}/bin/omp-collab-tunnel "$out/bin/omp-collab-tunnel" \
+        --set-default OMP_COLLAB_CLOUDFLARED ${pkgs.cloudflared}/bin/cloudflared
+    '';
 }

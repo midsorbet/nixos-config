@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "omp-collab-relay",
+      "name": "omp-collab-tunnel",
       "dependencies": {
         "@oh-my-pi/pi-wire": "16.3.4",
       },

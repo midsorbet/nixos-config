@@ -5,7 +5,7 @@
  * (oh-my-pi packages/collab-web/test/local-relay.test.ts, v16.3.2);
  * hardening cases cover the caps this relay adds on top.
  *
- * Run with: bun test packages/omp-collab-relay/relay.test.ts
+ * Run with: bun test packages/omp-collab-tunnel/relay.test.ts
  */
 import { COLLAB_PROTO, ENVELOPE_HEADER_LENGTH, ROOM_ID_BYTES } from "@oh-my-pi/pi-wire";
 import { afterEach, describe, expect, it } from "bun:test";

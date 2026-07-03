@@ -37,7 +37,7 @@
       omp = import ./omp.nix {pkgs = prev;};
     };
 
-    omp-collab = final: prev: import ./omp-collab-relay {pkgs = prev;};
+    omp-collab = final: prev: import ./omp-collab-tunnel {pkgs = prev;};
 
     tsshd = final: prev: {
       tsshd = prev.tsshd.overrideAttrs (_: {
