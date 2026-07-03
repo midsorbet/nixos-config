@@ -21,6 +21,33 @@
       hash = "sha256-19wZGFRAvQfXNWgwlAsFJoFhLyUhSFi+068bcv0asuA=";
     };
   };
+
+  sourceSrc = pkgs.fetchFromGitHub {
+    owner = "backnotprop";
+    repo = "plannotator";
+    rev = "v${version}";
+    hash = "sha256-lopRRustXdji4dit5Pg6MFbPaFzVXQR3ETo+frmulN0=";
+  };
+
+  skills = stdenv.mkDerivation {
+    pname = "plannotator-skills";
+    inherit version;
+
+    src = sourceSrc;
+
+    dontConfigure = true;
+    dontBuild = true;
+
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out/share/agents/skills"
+      cp -R apps/skills/core/plannotator-annotate "$out/share/agents/skills/"
+      cp -R apps/skills/core/plannotator-last "$out/share/agents/skills/"
+      cp -R apps/skills/core/plannotator-review "$out/share/agents/skills/"
+      runHook postInstall
+    '';
+  };
+
   binary =
     binaries.${stdenv.hostPlatform.system}
     or (throw "plannotator is not packaged for ${stdenv.hostPlatform.system}");
@@ -50,6 +77,9 @@ in
     doInstallCheck = true;
     versionCheckProgramArg = "--version";
 
+    passthru = {
+      inherit skills;
+    };
     meta = with lib; {
       description = "Interactive browser-based plan and code review surface for AI coding agents";
       homepage = "https://github.com/backnotprop/plannotator";
