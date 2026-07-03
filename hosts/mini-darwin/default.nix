@@ -21,6 +21,7 @@ in {
     ../../modules/hunk.nix
     ../../modules/neovim.nix
     ../../modules/omp
+    ../../modules/plannotator.nix
     ../../modules/shared
     agenix.darwinModules.default
   ];
@@ -81,6 +82,7 @@ in {
     inherit user;
   };
   local.omp.enable = true;
+  local.plannotator.enable = true;
   local.zsh = {
     enable = true;
     inherit user;

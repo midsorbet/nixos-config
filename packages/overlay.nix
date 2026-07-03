@@ -37,6 +37,10 @@
       omp = import ./omp.nix {pkgs = prev;};
     };
 
+    plannotator = final: prev: {
+      plannotator = import ./plannotator.nix {pkgs = prev;};
+    };
+
     omp-collab = final: prev: import ./omp-collab-tunnel {pkgs = prev;};
 
     tsshd = final: prev: {
@@ -67,6 +71,7 @@
     overlays.mdfried
     overlays.omp
     overlays.omp-collab
+    overlays.plannotator
     overlays.tsshd
     overlays.trzsz-go
     overlays.zmx
