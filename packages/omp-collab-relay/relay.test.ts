@@ -7,8 +7,9 @@
  *
  * Run with: bun test packages/omp-collab-relay/relay.test.ts
  */
+import { COLLAB_PROTO, ENVELOPE_HEADER_LENGTH, ROOM_ID_BYTES } from "@oh-my-pi/pi-wire";
 import { afterEach, describe, expect, it } from "bun:test";
-import { type CollabRelay, startRelay } from "./relay";
+import { type CollabRelay, ROOM_PATH_RE, startRelay } from "./relay";
 
 const ROOM = "RelayRoom_12345";
 const OTHER_ROOM = "OtherRoom_67890";
@@ -319,5 +320,24 @@ describe("omp-collab-relay hardening", () => {
 		// The slot is free again: a new host can recreate the room.
 		const nextHost = socket(`/r/${ROOM}?role=host`);
 		await waitOpen(nextHost);
+	});
+});
+
+// Drift tripwire: @oh-my-pi/pi-wire is version-locked to the managed OMP
+// release. If a bump changes any of these, the relay contract must be
+// re-verified against the new OMP source before the pin advances.
+describe("upstream wire conformance", () => {
+	it("matches the relay's wire assumptions", () => {
+		// Envelope prefix: [4B uint32 BE peerId][sealed payload].
+		expect(ENVELOPE_HEADER_LENGTH).toBe(4);
+
+		// Room ids are base64url(ROOM_ID_BYTES) and must pass the room path.
+		const roomIdLength = Math.ceil((ROOM_ID_BYTES * 8) / 6);
+		const sampleRoomId = "A".repeat(roomIdLength);
+		expect(ROOM_PATH_RE.test(`/r/${sampleRoomId}`)).toBe(true);
+
+		// The relay is content-blind, but this workflow targets collab wire
+		// protocol v3 (host rejects mismatched guests at hello).
+		expect(COLLAB_PROTO).toBe(3);
 	});
 });

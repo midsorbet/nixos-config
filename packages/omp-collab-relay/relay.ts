@@ -56,8 +56,15 @@
  * the `/s` (`/share`) blob routes. Guests must join from a terminal.
  */
 
-const ROOM_PATH_RE = /^\/r\/([A-Za-z0-9_-]{10,64})$/;
-const ENVELOPE_HEADER_BYTES = 4;
+import type { RelayControlToGuest, RelayControlToHost } from "@oh-my-pi/pi-wire";
+import { ENVELOPE_HEADER_LENGTH } from "@oh-my-pi/pi-wire";
+
+/**
+ * Relay-side room path. Upstream does not publish this (it lives in the
+ * private collab-web package and coding-agent protocol.ts); exported so the
+ * conformance tests can assert it accepts upstream-sized room ids.
+ */
+export const ROOM_PATH_RE = /^\/r\/([A-Za-z0-9_-]{10,64})$/;
 
 export interface RelayOptions {
 	port: number;
@@ -130,7 +137,7 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 	/** Tear a room down: room-closed + fatal 4001 to guests, `hostCode` to the host. */
 	const closeRoom = (roomId: string, room: Room, hostCode: number, hostReason: string): void => {
 		rooms.delete(roomId);
-		const closure = JSON.stringify({ t: "room-closed" });
+		const closure = JSON.stringify({ t: "room-closed" } satisfies RelayControlToGuest);
 		for (const guest of room.guests.values()) {
 			guest.send(closure);
 			guest.close(4001, "room closed");
@@ -200,12 +207,12 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 				ws.data.peerId = peerId;
 				room.guests.set(peerId, ws);
 				room.lastActivityMs = Date.now();
-				room.host.send(JSON.stringify({ t: "peer-joined", peer: peerId }));
+				room.host.send(JSON.stringify({ t: "peer-joined", peer: peerId } satisfies RelayControlToHost));
 				log(`guest ${peerId} joined room ${roomTag(roomId)} (guests=${room.guests.size}, sockets=${openSockets})`);
 			},
 			message(ws: RelaySocket, message: string | Buffer): void {
 				if (typeof message === "string") return; // clients never send TEXT
-				if (message.byteLength < ENVELOPE_HEADER_BYTES) return;
+				if (message.byteLength < ENVELOPE_HEADER_LENGTH) return;
 				const room = rooms.get(ws.data.roomId);
 				if (!room) return;
 				// Enforce the configured frame cap here, where close codes are
@@ -250,7 +257,7 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 					// Rejected second host: the live room is not ours to tear down.
 					if (room.host !== ws) return;
 					rooms.delete(roomId);
-					const closure = JSON.stringify({ t: "room-closed" });
+					const closure = JSON.stringify({ t: "room-closed" } satisfies RelayControlToGuest);
 					for (const guest of room.guests.values()) {
 						guest.send(closure);
 						guest.close(4001, "room closed");
@@ -261,7 +268,7 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 				}
 				if (room.guests.delete(peerId)) {
 					room.lastActivityMs = Date.now();
-					room.host.send(JSON.stringify({ t: "peer-left", peer: peerId }));
+					room.host.send(JSON.stringify({ t: "peer-left", peer: peerId } satisfies RelayControlToHost));
 					log(`guest ${peerId} left room ${roomTag(roomId)} (guests=${room.guests.size}, sockets=${openSockets})`);
 				}
 			},
