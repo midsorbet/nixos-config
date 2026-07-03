@@ -44,6 +44,8 @@
       cp -R apps/skills/core/plannotator-annotate "$out/share/agents/skills/"
       cp -R apps/skills/core/plannotator-last "$out/share/agents/skills/"
       cp -R apps/skills/core/plannotator-review "$out/share/agents/skills/"
+      cp -R apps/skills/extra/plannotator-setup-goal "$out/share/agents/skills/"
+      cp -R apps/skills/extra/plannotator-visual-explainer "$out/share/agents/skills/"
       runHook postInstall
     '';
   };
