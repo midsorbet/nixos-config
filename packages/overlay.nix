@@ -37,6 +37,8 @@
       omp = import ./omp.nix {pkgs = prev;};
     };
 
+    omp-collab = final: prev: import ./omp-collab-relay {pkgs = prev;};
+
     tsshd = final: prev: {
       tsshd = prev.tsshd.overrideAttrs (_: {
         version = "0.1.8";
@@ -64,6 +66,7 @@
     overlays.github-copilot-cli
     overlays.mdfried
     overlays.omp
+    overlays.omp-collab
     overlays.tsshd
     overlays.trzsz-go
     overlays.zmx
