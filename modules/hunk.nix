@@ -33,11 +33,12 @@ in {
     settings = lib.mkOption {
       type = tomlFormat.type;
       default = {
-        theme = "graphite";
+        theme = "auto";
         mode = "auto";
         line_numbers = true;
         wrap_lines = true;
         agent_notes = true;
+        transparent_background = true;
       };
       description = "Hunk TOML configuration written to the user's XDG config directory.";
     };
