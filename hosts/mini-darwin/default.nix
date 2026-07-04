@@ -15,6 +15,7 @@ in {
     ./secrets.nix
     ../../modules/darwin/anki.nix
     ../../modules/darwin/grayjay.nix
+    ../../modules/darwin/mole.nix
     ../../modules/github-cli.nix
     ../../modules/ghostty.nix
     ../../modules/herdr.nix
@@ -76,6 +77,14 @@ in {
   local.hunk = {
     enable = true;
     inherit user;
+  };
+  local.mole = {
+    enable = true;
+    inherit user;
+    runPurge = true;
+    runOptimize = true;
+    cleanCacheCheckouts = true;
+    purgePaths = ["~/vault/projects"];
   };
   local.neovim = {
     enable = true;
@@ -142,6 +151,15 @@ in {
         Minute = 0;
       };
       options = "--delete-older-than 7d";
+    };
+
+    optimise = {
+      automatic = true;
+      interval = {
+        Weekday = 0;
+        Hour = 4;
+        Minute = 15;
+      };
     };
 
     extraOptions = ''
