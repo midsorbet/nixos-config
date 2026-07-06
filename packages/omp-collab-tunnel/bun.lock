@@ -5,7 +5,7 @@
     "": {
       "name": "omp-collab-tunnel",
       "dependencies": {
-        "@oh-my-pi/pi-wire": "16.3.6",
+        "@oh-my-pi/pi-wire": "16.3.11",
       },
       "devDependencies": {
         "@types/bun": "^1.3.13",
@@ -13,7 +13,7 @@
     },
   },
   "packages": {
-    "@oh-my-pi/pi-wire": ["@oh-my-pi/pi-wire@16.3.6", "", {}, "sha512-fFGKyGVcGd1drUX3nE/A/f+4tGKiQnFMFKgaaIDfeSPkjX1nVr5RR0Zzh+b5KeQ5ejJo+oHVCMklPVUu+VJFrg=="],
+    "@oh-my-pi/pi-wire": ["@oh-my-pi/pi-wire@16.3.11", "", {}, "sha512-ABWqB5RFGAd9rDeQoW+Uys3xI4g6foaSPfjlWUXIUN8GJrqbY63BoHVLItwpJJBAY6n52GXWyBk8qdpKir73Nw=="],
 
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 

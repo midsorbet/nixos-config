@@ -90,7 +90,10 @@ in {
     enable = true;
     inherit user;
   };
-  local.omp.enable = true;
+  local.omp = {
+    enable = true;
+    dailyReview.enable = true;
+  };
   local.plannotator.enable = true;
   local.zsh = {
     enable = true;

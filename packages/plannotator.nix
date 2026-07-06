@@ -67,11 +67,16 @@ in
     dontConfigure = true;
     dontBuild = true;
     dontStrip = true;
+
+    nativeBuildInputs = [pkgs.makeWrapper];
+
     dontFixup = true;
 
     installPhase = ''
       runHook preInstall
-      install -Dm755 "$src" "$out/bin/plannotator"
+      install -Dm755 "$src" "$out/bin/.plannotator-unwrapped"
+      makeWrapper "$out/bin/.plannotator-unwrapped" "$out/bin/plannotator" \
+        --set PLANNOTATOR_SHARE disabled
       runHook postInstall
     '';
 

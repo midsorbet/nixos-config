@@ -8,9 +8,58 @@
 
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/refs/tags/v${cfg.package.version}.tar.gz";
-    hash = "sha256-msjNlc9hH88FvpcwonYCrRoLMPL9MAH/g8cx2oMcBhc=";
+    hash = "sha256-pSB62I+idIEXnjaVL9MP2Lvdq31NNrWSaYVL/8u+YO8=";
   };
   runtimePath = lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage] ++ cfg.extraRuntimePackages);
+  dailyReviewScript = pkgs.writeShellApplication {
+    name = "omp-daily-thread-review";
+    runtimeInputs = [cfg.pythonPackage];
+
+    text = ''
+      set -euo pipefail
+
+      export HOME="/Users/${cfg.user}"
+      export USER="${cfg.user}"
+      export PATH="/run/current-system/sw/bin:/etc/profiles/per-user/${cfg.user}/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+      log_dir="$HOME/Library/Logs/omp"
+      state_dir="$HOME/Library/Application Support/omp-daily-thread-review"
+      report_dir="$HOME/vault/planner/omp-daily-thread-reviews"
+      mkdir -p "$log_dir" "$state_dir/prompts" "$report_dir"
+      exec >> "$log_dir/daily-thread-review.log" 2>&1
+
+      echo "== $(date '+%Y-%m-%d %H:%M:%S') omp daily thread review =="
+
+      prompt_path="$(
+        ${lib.getExe cfg.pythonPackage} ${./daily-review.py} \
+          --sessions-dir "$HOME/.omp/agent/sessions" \
+          --output-dir "$state_dir/prompts" \
+          --report-dir "$report_dir" \
+          --lookback-hours ${toString cfg.dailyReview.lookbackHours} \
+          --max-threads ${toString cfg.dailyReview.maxThreads}
+      )"
+
+      if [ -z "$prompt_path" ]; then
+        echo "No explicit user-started OMP sessions matched today's review window."
+        exit 0
+      fi
+
+      echo "Review prompt: $prompt_path"
+
+      ${wrappedPackage}/bin/omp \
+        -p \
+        --cwd "$HOME/vault" \
+        --no-session \
+        --max-time ${toString cfg.dailyReview.maxSeconds} \
+        --model ${lib.escapeShellArg cfg.dailyReview.model} \
+        --tools=read,grep,glob,edit,write \
+        --auto-approve \
+        --approval-mode yolo \
+        "@$prompt_path"
+
+      echo "== omp daily thread review complete =="
+    '';
+  };
 
   wrappedPackage =
     pkgs.runCommand "omp-${cfg.package.version}-with-runtimes" {
@@ -204,10 +253,51 @@ in {
       default = ./config.yml;
       description = "YAML config file linked to ~/.omp/agent/config.yml.";
     };
+    dailyReview = {
+      enable = lib.mkEnableOption "unattended end-of-day review of explicit user-started OMP sessions";
+
+      hour = lib.mkOption {
+        type = lib.types.int;
+        default = 23;
+        description = "Local hour for the daily OMP thread review launchd job.";
+      };
+
+      minute = lib.mkOption {
+        type = lib.types.int;
+        default = 30;
+        description = "Local minute for the daily OMP thread review launchd job.";
+      };
+
+      lookbackHours = lib.mkOption {
+        type = lib.types.int;
+        default = 0;
+        description = "Optional rolling fallback window; 0 reviews only the local calendar day.";
+      };
+
+      maxThreads = lib.mkOption {
+        type = lib.types.int;
+        default = 20;
+        description = "Maximum number of selected session transcripts to include in one review prompt.";
+      };
+
+      maxSeconds = lib.mkOption {
+        type = lib.types.int;
+        default = 3600;
+        description = "Maximum runtime for the unattended OMP review agent.";
+      };
+
+      model = lib.mkOption {
+        type = lib.types.str;
+        default = "openai-codex/gpt-5.5:high";
+        description = "Model used by the unattended OMP review agent.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = [wrappedPackage];
+    environment.systemPackages =
+      [wrappedPackage]
+      ++ lib.optional cfg.dailyReview.enable dailyReviewScript;
 
     hjem.users.${cfg.user} = {
       files = {
@@ -222,6 +312,17 @@ in {
         ".omp/agent/themes/everforest-light-hard.json" = {
           text = builtins.toJSON everforestLightHardTheme;
           clobber = true;
+        };
+      };
+    };
+
+    launchd.user.agents.omp-daily-thread-review = lib.mkIf cfg.dailyReview.enable {
+      command = "${dailyReviewScript}/bin/omp-daily-thread-review";
+      serviceConfig = {
+        RunAtLoad = false;
+        StartCalendarInterval = {
+          Hour = cfg.dailyReview.hour;
+          Minute = cfg.dailyReview.minute;
         };
       };
     };

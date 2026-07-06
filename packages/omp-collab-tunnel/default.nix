@@ -8,7 +8,7 @@
 
   piWireTarball = pkgs.fetchurl {
     url = "https://registry.npmjs.org/@oh-my-pi/pi-wire/-/pi-wire-${piWireVersion}.tgz";
-    hash = "sha512-fFGKyGVcGd1drUX3nE/A/f+4tGKiQnFMFKgaaIDfeSPkjX1nVr5RR0Zzh+b5KeQ5ejJo+oHVCMklPVUu+VJFrg==";
+    hash = "sha512-ABWqB5RFGAd9rDeQoW+Uys3xI4g6foaSPfjlWUXIUN8GJrqbY63BoHVLItwpJJBAY6n52GXWyBk8qdpKir73Nw==";
   };
 
   # Bun-compiled standalone binary, following modem-dev/hunk's nix/package.nix:
