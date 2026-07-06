@@ -27,6 +27,12 @@ in {
     agenix.darwinModules.default
   ];
 
+  # nix-darwin manual generation currently calls a removed nixos-render-docs
+  # --toc-depth flag with nixpkgs 2026-07-05. Its uninstaller package evaluates
+  # a separate default system that still builds the broken manual, so omit both.
+  documentation.enable = false;
+  system.tools.darwin-uninstaller.enable = false;
+
   users.users.${user} = {
     name = "${user}";
     home = "/Users/${user}";
