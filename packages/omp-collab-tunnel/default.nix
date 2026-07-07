@@ -24,7 +24,7 @@
 
     src = lib.fileset.toSource {
       root = ./.;
-      fileset = lib.fileset.unions [./relay.ts ./tunnel.ts ./package.json];
+      fileset = lib.fileset.unions [./relay.ts ./state.ts ./tunnel.ts ./package.json];
     };
 
     nativeBuildInputs = [pkgs.bun] ++ lib.optionals pkgs.stdenv.isDarwin [pkgs.rcodesign];

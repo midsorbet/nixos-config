@@ -24,6 +24,7 @@
 
 import net from "node:net";
 import { type CollabRelay, DEFAULT_OPTIONS, type RelayOptions, startRelay } from "./relay";
+import { clearTunnelState, writeTunnelState } from "./state";
 
 const CLOUDFLARED_BIN = process.env.OMP_COLLAB_CLOUDFLARED ?? "cloudflared";
 const TUNNEL_HOST_RE = /https:\/\/([a-zA-Z0-9-]+)\.trycloudflare\.com/;
@@ -47,8 +48,8 @@ function usage(): string {
 	return `usage: omp-collab-tunnel [options]
 
 Starts a hardened loopback-only OMP collab relay plus a temporary Cloudflare
-Quick Tunnel, then prints the /collab command for the session.
-Stop with Ctrl-C to tear down both the relay and the tunnel.
+Quick Tunnel, then publishes that tunnel as the default relay for new OMP
+sessions while this command runs. Stop with Ctrl-C to tear everything down.
 
 options:
   --relay-only           run only the loopback relay, no public tunnel
@@ -62,8 +63,12 @@ options:
   -h, --help             show this help
 
 notes:
+  - New OMP sessions started while this command runs can use bare "/collab";
+    the wrapper injects the generated relay URL through an ephemeral config
+    overlay. Existing OMP sessions do not reload config; use the printed
+    "/collab wss://..." command there.
   - The printed wss://...trycloudflare.com URL is public internet attack
-    surface while this command runs. Share the /collab link only with the
+    surface while this command runs. Share the collab link only with the
     intended guest; prefer "/collab view" for lower-trust observers.
   - Terminal-only v1: browser click-to-join and QR links are NOT supported
     (GET / serves no client), and /share self-hosting is disabled. Guests
@@ -183,6 +188,7 @@ function dumpTunnelLog(): void {
 async function shutdown(code: number): Promise<never> {
 	if (shuttingDown) process.exit(code);
 	shuttingDown = true;
+	await clearTunnelState();
 	if (cloudflared && cloudflared.exitCode === null) {
 		cloudflared.kill();
 		const exited = await Promise.race([cloudflared.exited, Bun.sleep(5_000).then(() => null)]);
@@ -323,22 +329,35 @@ if (!relayOnly) {
 
 	// Only after success: an unexpected cloudflared death now ends the session.
 	const proc = cloudflared!;
-	void proc.exited.then(code => {
+	void proc.exited.then(async code => {
 		if (shuttingDown) return;
 		console.error(`error: cloudflared exited unexpectedly (code ${code})`);
 		dumpTunnelLog();
+		await clearTunnelState();
 		relay.stop();
 		process.exit(1);
 	});
 
 	const relayUrl = `wss://${hostname}`;
+	let statePath: string;
+	try {
+		statePath = (await writeTunnelState(relayUrl)).config;
+	} catch (err) {
+		console.error(`error: failed to publish OMP collab default config: ${err instanceof Error ? err.message : String(err)}`);
+		await shutdown(1);
+	}
 	console.log(`
 OMP collab quick tunnel is live.
 
   Local relay:  http://${originHost}:${relay.port}  (loopback only)
   Public relay: ${relayUrl}
+  OMP config:   ${statePath}
 
-Start sharing from an OMP session on this machine:
+Start sharing from a new OMP session on this machine:
+
+  /collab
+
+Existing OMP sessions do not reload config; use this there:
 
   /collab ${relayUrl}
 
