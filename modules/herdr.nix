@@ -207,7 +207,7 @@ in {
         remote.manage_ssh_config = true;
 
         keys = {
-          prefix = "ctrl+b";
+          prefix = "cmd+b";
           detach = "prefix+q";
           switch_tab = "prefix+1..9";
           switch_workspace = "prefix+shift+1..9";
