@@ -102,6 +102,15 @@ function waitEvent<T extends Event>(
 	return promise;
 }
 
+async function waitFor<T>(promise: Promise<T>, label: string, timeoutMs = 5_000): Promise<T> {
+	return await Promise.race([
+		promise,
+		Bun.sleep(timeoutMs).then(() => {
+			throw new Error(`timed out waiting for ${label}`);
+		}),
+	]);
+}
+
 function waitOpen(ws: WebSocket): Promise<Event> {
 	if (ws.readyState === WebSocket.OPEN) return Promise.resolve(new Event("open"));
 	return waitEvent(ws, "open", "socket open");
@@ -125,8 +134,8 @@ function closeSocket(ws: WebSocket): void {
 	if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) ws.close(1000);
 }
 
-function start(overrides: Parameters<typeof startRelay>[0] = {}): CollabRelay {
-	relay = startRelay({ port: 0, quiet: true, ...overrides });
+function start(overrides: Parameters<typeof startRelay>[0] = {}, callbacks: Parameters<typeof startRelay>[1] = {}): CollabRelay {
+	relay = startRelay({ port: 0, quiet: true, ...overrides }, callbacks);
 	return relay;
 }
 
@@ -301,8 +310,9 @@ describe("omp-collab-relay hardening", () => {
 	// Real-clock integration test: the idle sweeper runs on a real interval
 	// inside startRelay while WebSocket events flow through real socket I/O;
 	// fake timers cannot advance the sweep without starving the event pump.
-	it("tears down idle rooms with fatal 4001", async () => {
-		start({ idleTimeoutSecs: 1 });
+	it("tears down idle rooms with fatal 4001 and reports relay idle", async () => {
+		const idle = Promise.withResolvers<void>();
+		start({ idleTimeoutSecs: 1 }, { onIdleTimeout: idle.resolve });
 		const host = socket(`/r/${ROOM}?role=host`);
 		await waitOpen(host);
 		const guest = socket(`/r/${ROOM}?role=guest`);
@@ -317,9 +327,19 @@ describe("omp-collab-relay hardening", () => {
 		expect((await guestClose).code).toBe(4001);
 		expect((await hostClose).code).toBe(4001);
 
-		// The slot is free again: a new host can recreate the room.
+		await waitFor(idle.promise, "relay idle callback");
+
+		// The slot is free again: a new host can recreate the room if the
+		// embedding process chooses not to exit from the idle callback.
 		const nextHost = socket(`/r/${ROOM}?role=host`);
 		await waitOpen(nextHost);
+	});
+
+	it("reports relay idle even if no room ever opens", async () => {
+		const idle = Promise.withResolvers<void>();
+		start({ idleTimeoutSecs: 1 }, { onIdleTimeout: idle.resolve });
+
+		await waitFor(idle.promise, "empty relay idle callback");
 	});
 });
 

@@ -205,7 +205,12 @@ const { overrides, relayOnly } = parseArgs(Bun.argv.slice(2));
 
 let relay: CollabRelay;
 try {
-	relay = startRelay(overrides);
+	relay = startRelay(overrides, {
+		onIdleTimeout: () => {
+			console.error(`omp-collab-tunnel: idle for ${overrides.idleTimeoutSecs ?? DEFAULT_OPTIONS.idleTimeoutSecs}s; shutting down`);
+			void shutdown(0);
+		},
+	});
 } catch (err) {
 	const message = err instanceof Error ? err.message : String(err);
 	console.error(`omp-collab-tunnel: relay startup failed: ${message}`);

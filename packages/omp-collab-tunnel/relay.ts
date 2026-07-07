@@ -78,6 +78,11 @@ export interface RelayOptions {
 	quiet: boolean;
 }
 
+export interface RelayCallbacks {
+	/** Called once when the relay has been idle for idleTimeoutSecs. */
+	onIdleTimeout?: () => void;
+}
+
 export const DEFAULT_OPTIONS: RelayOptions = {
 	port: 7475,
 	bind: "127.0.0.1",
@@ -119,7 +124,7 @@ function isLoopbackBind(host: string): boolean {
 	return host.split(".").every(octet => Number(octet) <= 255);
 }
 
-export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
+export function startRelay(overrides: Partial<RelayOptions> = {}, callbacks: RelayCallbacks = {}): CollabRelay {
 	const opts: RelayOptions = { ...DEFAULT_OPTIONS, ...overrides };
 	if (!isLoopbackBind(opts.bind)) {
 		throw new Error(`refusing to bind non-loopback address ${opts.bind}`);
@@ -127,12 +132,23 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 
 	const rooms = new Map<string, Room>();
 	let openSockets = 0;
-
+	let lastRelayActivityMs = Date.now();
+	let idleNotified = false;
 	const log = (message: string): void => {
 		if (!opts.quiet) console.log(`[omp-collab-relay] ${message}`);
 	};
 	/** Truncated id for logs: enough to correlate, never the full path segment. */
 	const roomTag = (roomId: string): string => `${roomId.slice(0, 8)}…`;
+
+	const noteActivity = (): void => {
+		lastRelayActivityMs = Date.now();
+		idleNotified = false;
+	};
+	const notifyIdle = (): void => {
+		if (idleNotified) return;
+		idleNotified = true;
+		callbacks.onIdleTimeout?.();
+	};
 
 	/** Tear a room down: room-closed + fatal 4001 to guests, `hostCode` to the host. */
 	const closeRoom = (roomId: string, room: Room, hostCode: number, hostReason: string): void => {
@@ -189,7 +205,8 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 						ws.close(4029, "room is full");
 						return;
 					}
-					rooms.set(roomId, { host: ws, guests: new Map(), nextPeerId: 1, lastActivityMs: Date.now() });
+					noteActivity();
+					rooms.set(roomId, { host: ws, guests: new Map(), nextPeerId: 1, lastActivityMs: lastRelayActivityMs });
 					log(`host connected, room ${roomTag(roomId)} open (rooms=${rooms.size}, sockets=${openSockets})`);
 					return;
 				}
@@ -206,7 +223,7 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 				const peerId = room.nextPeerId++;
 				ws.data.peerId = peerId;
 				room.guests.set(peerId, ws);
-				room.lastActivityMs = Date.now();
+				noteActivity();
 				room.host.send(JSON.stringify({ t: "peer-joined", peer: peerId } satisfies RelayControlToHost));
 				log(`guest ${peerId} joined room ${roomTag(roomId)} (guests=${room.guests.size}, sockets=${openSockets})`);
 			},
@@ -233,7 +250,7 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 				if (ws.data.role === "host") {
 					// Rejected duplicate host: not this room's host, drop.
 					if (room.host !== ws) return;
-					room.lastActivityMs = Date.now();
+					noteActivity();
 					const peerId = message.readUInt32BE(0);
 					if (peerId === 0) {
 						for (const guest of room.guests.values()) guest.send(message);
@@ -244,7 +261,7 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 				}
 				// Rejected guests (peerId 0 or unregistered) must not inject frames.
 				if (room.guests.get(ws.data.peerId) !== ws) return;
-				room.lastActivityMs = Date.now();
+				noteActivity();
 				message.writeUInt32BE(ws.data.peerId, 0);
 				room.host.send(message);
 			},
@@ -256,6 +273,7 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 				if (role === "host") {
 					// Rejected second host: the live room is not ours to tear down.
 					if (room.host !== ws) return;
+					noteActivity();
 					rooms.delete(roomId);
 					const closure = JSON.stringify({ t: "room-closed" } satisfies RelayControlToGuest);
 					for (const guest of room.guests.values()) {
@@ -267,7 +285,7 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 					return;
 				}
 				if (room.guests.delete(peerId)) {
-					room.lastActivityMs = Date.now();
+					noteActivity();
 					room.host.send(JSON.stringify({ t: "peer-left", peer: peerId } satisfies RelayControlToHost));
 					log(`guest ${peerId} left room ${roomTag(roomId)} (guests=${room.guests.size}, sockets=${openSockets})`);
 				}
@@ -278,12 +296,18 @@ export function startRelay(overrides: Partial<RelayOptions> = {}): CollabRelay {
 	// Idle teardown backstop: sweep at 1/4 of the timeout, clamped to 250ms..30s.
 	const sweepMs = Math.min(Math.max(Math.floor(opts.idleTimeoutSecs * 250), 250), 30_000);
 	const sweeper = setInterval(() => {
-		const cutoff = Date.now() - opts.idleTimeoutSecs * 1000;
+		const now = Date.now();
+		const cutoff = now - opts.idleTimeoutSecs * 1000;
+		let closedIdleRoom = false;
 		for (const [roomId, room] of rooms) {
 			if (room.lastActivityMs > cutoff) continue;
 			log(`room ${roomTag(roomId)} idle for ${opts.idleTimeoutSecs}s, closing`);
 			// Fatal 4001 both ways so neither side reconnects and re-registers the room.
 			closeRoom(roomId, room, 4001, "room closed");
+			closedIdleRoom = true;
+		}
+		if (rooms.size === 0 && (closedIdleRoom || now - lastRelayActivityMs > opts.idleTimeoutSecs * 1000)) {
+			notifyIdle();
 		}
 	}, sweepMs);
 
