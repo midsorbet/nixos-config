@@ -22,7 +22,9 @@
  * with `/r/<roomId>` paths redacted.
  */
 
+import { resolve4, resolve6 } from "node:dns/promises";
 import net from "node:net";
+import { connect } from "node:tls";
 import { type CollabRelay, DEFAULT_OPTIONS, type RelayOptions, startRelay } from "./relay";
 import { clearTunnelState, writeTunnelState } from "./state";
 
@@ -151,6 +153,48 @@ async function fetchOk(url: string, timeoutMs = 2_000): Promise<Response | null>
 	} catch {
 		return null;
 	}
+}
+
+async function dnsResolves(hostname: string): Promise<boolean> {
+	try {
+		await Promise.any([resolve4(hostname), resolve6(hostname)]);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+async function fetchTrycloudflareEdgeHealthz(hostname: string, timeoutMs = 5_000): Promise<boolean> {
+	return await new Promise<boolean>(resolve => {
+		let settled = false;
+		let responsePrefix = "";
+		const socket = connect({
+			host: "trycloudflare.com",
+			port: 443,
+			servername: hostname,
+			ALPNProtocols: ["http/1.1"],
+		});
+		const finish = (ok: boolean): void => {
+			if (settled) return;
+			settled = true;
+			clearTimeout(timer);
+			socket.destroy();
+			resolve(ok);
+		};
+		const timer = setTimeout(() => finish(false), timeoutMs);
+		socket.once("secureConnect", () => {
+			socket.write(`GET /healthz HTTP/1.1\r\nHost: ${hostname}\r\nUser-Agent: omp-collab-tunnel\r\nConnection: close\r\n\r\n`);
+		});
+		socket.on("data", chunk => {
+			responsePrefix += chunk.toString("utf8");
+			const lineEnd = responsePrefix.indexOf("\r\n");
+			if (lineEnd !== -1) {
+				finish(/^HTTP\/1\.[01] 2\d\d\b/.test(responsePrefix.slice(0, lineEnd)));
+			}
+		});
+		socket.once("error", () => finish(false));
+		socket.once("end", () => finish(false));
+	});
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -302,18 +346,36 @@ if (!relayOnly) {
 		if (!edgeReady) console.log("note: edge readiness was not confirmed via metrics; continuing to the public check...");
 
 		// Hard gate: the banner must only print once the public URL actually
-		// works — the same condition guests need.
+		// works — the same condition guests need. Probe the Cloudflare edge
+		// route DNS-free first: querying a fresh trycloudflare.com hostname too
+		// early can prime local/WARP negative caches, so defer normal DNS/fetch
+		// until the edge has proven that the hostname routes to this tunnel.
 		console.log(`waiting for https://${hostname} to become publicly reachable...`);
 		const publicDeadline = Date.now() + PUBLIC_TIMEOUT_MS;
-		let waited = 0;
+		const publicStart = Date.now();
+		let nextLogAtSecs = 30;
+		let edgeHealthzOk = false;
+		let dnsReady = false;
+		let stage = "Cloudflare edge route";
 		while (Date.now() < publicDeadline) {
 			if (proc.exitCode !== null) return failAttempt(`cloudflared exited (code ${proc.exitCode})`);
-			if ((await fetchOk(`https://${hostname}/healthz`, 5_000)) !== null) return hostname;
-			waited += 5;
-			if (waited % 30 === 0) console.log(`still waiting for public reachability (${waited}s)...`);
-			await Bun.sleep(5_000);
+			if (!edgeHealthzOk) {
+				edgeHealthzOk = await fetchTrycloudflareEdgeHealthz(hostname, 5_000);
+				stage = edgeHealthzOk ? "DNS publication" : "Cloudflare edge route";
+			} else if (!dnsReady) {
+				dnsReady = await dnsResolves(hostname);
+				stage = dnsReady ? "normal HTTPS /healthz" : "DNS publication";
+			} else if ((await fetchOk(`https://${hostname}/healthz`, 5_000)) !== null) {
+				return hostname;
+			}
+			const elapsedSecs = Math.floor((Date.now() - publicStart) / 1_000);
+			if (elapsedSecs >= nextLogAtSecs) {
+				console.log(`still waiting for public reachability (${elapsedSecs}s; stage: ${stage})...`);
+				nextLogAtSecs += 30;
+			}
+			await Bun.sleep(2_000);
 		}
-		return failAttempt(`https://${hostname}/healthz not reachable within ${PUBLIC_TIMEOUT_MS / 1000}s`);
+		return failAttempt(`https://${hostname}/healthz not reachable within ${PUBLIC_TIMEOUT_MS / 1000}s (last stage: ${stage})`);
 	};
 
 	let hostname: string | null = null;
