@@ -26,6 +26,10 @@ advisor:
   subagents: false
   syncBacklog: off
   immuneTurns: 3
+tier:
+  openai: priority
+  anthropic: priority
+  google: priority
 task:
   softRequestBudgetNotice: true
 providers:
