@@ -65,51 +65,21 @@
     pkgs.runCommand "omp-${cfg.package.version}-with-runtimes" {
       nativeBuildInputs = [pkgs.makeWrapper];
     } ''
-            mkdir -p "$out/bin"
+      mkdir -p "$out/bin"
 
-            mkdir -p "$out/share"
-            cp -R ${cfg.package}/share/. "$out/share/"
-            mkdir -p "$out/share/omp"
-            cp -R ${assetSrc}/docs "$out/share/omp/docs"
-            cp -R ${assetSrc}/packages/coding-agent/examples "$out/share/omp/examples"
-            cp ${assetSrc}/packages/coding-agent/CHANGELOG.md "$out/share/omp/CHANGELOG.md"
-            cp ${assetSrc}/packages/coding-agent/README.md "$out/share/omp/README.md"
+      mkdir -p "$out/share"
+      cp -R ${cfg.package}/share/. "$out/share/"
+      mkdir -p "$out/share/omp"
+      cp -R ${assetSrc}/docs "$out/share/omp/docs"
+      cp -R ${assetSrc}/packages/coding-agent/examples "$out/share/omp/examples"
+      cp ${assetSrc}/packages/coding-agent/CHANGELOG.md "$out/share/omp/CHANGELOG.md"
+      cp ${assetSrc}/packages/coding-agent/README.md "$out/share/omp/README.md"
 
-            makeWrapper ${lib.getExe cfg.package} "$out/bin/.omp-real" \
-              --prefix PATH : ${lib.escapeShellArg runtimePath} \
-              --set-default PI_PY 1 \
-              --set-default PI_JS 1 \
-              --set-default PI_PACKAGE_DIR "$out/share/omp"
-
-            cat > "$out/bin/omp" <<EOF
-      #!${pkgs.runtimeShell}
-      set -eu
-
-      case "\''${1:-}" in
-        acp|agents|auth-broker|auth-gateway|bench|commit|completions|config|dry-balance|gallery|gc|grep|grievances|install|join|models|plugin|read|say|search|setup|shell|ssh|stats|tiny-models|token|ttsr|update|usage|worktree)
-          exec "$out/bin/.omp-real" "\''$@"
-          ;;
-      esac
-
-      state_dir="\''${OMP_COLLAB_TUNNEL_STATE_DIR:-\''${HOME}/Library/Application Support/omp-collab-tunnel}"
-      overlay="\''${state_dir}/config.yml"
-      pid_file="\''${state_dir}/pid"
-
-      if [ -r "\''${overlay}" ] && [ -r "\''${pid_file}" ]; then
-        pid="\$(cat "\''${pid_file}" 2>/dev/null || true)"
-        case "\''${pid}" in
-          ""|*[!0-9]*) ;;
-          *)
-            if kill -0 "\''${pid}" 2>/dev/null; then
-              exec "$out/bin/.omp-real" --config "\''${overlay}" "\''$@"
-            fi
-            ;;
-        esac
-      fi
-
-      exec "$out/bin/.omp-real" "\''$@"
-      EOF
-            chmod +x "$out/bin/omp"
+      makeWrapper ${lib.getExe cfg.package} "$out/bin/omp" \
+        --prefix PATH : ${lib.escapeShellArg runtimePath} \
+        --set-default PI_PY 1 \
+        --set-default PI_JS 1 \
+        --set-default PI_PACKAGE_DIR "$out/share/omp"
     '';
 
   mkTheme = {

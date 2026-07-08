@@ -41,8 +41,6 @@
       plannotator = import ./plannotator.nix {pkgs = prev;};
     };
 
-    omp-collab = final: prev: import ./omp-collab-tunnel {pkgs = prev;};
-
     tsshd = final: prev: {
       tsshd = prev.tsshd.overrideAttrs (_: {
         version = "0.1.8";
@@ -70,7 +68,6 @@
     overlays.github-copilot-cli
     overlays.mdfried
     overlays.omp
-    overlays.omp-collab
     overlays.plannotator
     overlays.tsshd
     overlays.trzsz-go

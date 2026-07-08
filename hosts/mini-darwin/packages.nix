@@ -8,6 +8,5 @@ in
     fswatch
     gh
     neovim
-    omp-collab-tunnel
     uv
   ]
