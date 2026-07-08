@@ -98,7 +98,7 @@ sudo bootctl status
 
 ## Cloudflare Tunnel
 
-Baymax publishes its self-hosted apps through the Cloudflare tunnel named `baymax-apps`.
+Baymax publishes selected self-hosted apps through the Cloudflare tunnel named `baymax-apps`.
 
 - The tunnel token lives in the secrets repo as `baymax-tunnel.age`.
 - Baymax decrypts that secret as `age.secrets."baymax-tunnel"`.
@@ -109,7 +109,7 @@ Relevant repo paths:
 - `hosts/baymax/secrets.nix`
 - `hosts/baymax/default.nix`
 
-Cloudflare forwards to Baymax loopback listeners. The Herdr route is the narrow exception behind that local listener: Baymax serves the web UI locally, then proxies WebSocket upgrades to the mini-darwin LAN relay. Baymax uses Avahi/NSS mDNS to resolve `mini-me.local` on the LAN; if that name does not resolve, the web UI can load while the relay WebSocket still fails.
+Cloudflare forwards to Baymax loopback listeners. OMP and Herdr are intentionally not part of this standing public Cloudflare route set.
 
 ## Published Routes
 
@@ -121,7 +121,7 @@ Current Cloudflare published application routes for `baymax-apps`:
 | `rss.midsorbet.me` | `http://127.0.0.1:8081` | Miniflux. Expected to stay behind Cloudflare Access. |
 | `paperless.midsorbet.me` | `http://127.0.0.1:28981` | Paperless. Expected to stay behind Cloudflare Access. |
 | `ntfy.midsorbet.me` | `http://127.0.0.1:8080` | ntfy. Expected to stay behind Cloudflare Access. |
-| `herdr.midsorbet.me` | `http://127.0.0.1:18376` | Herdr remote web UI on Baymax; WebSocket upgrades proxy to `mini-me.local:18375`. Expected to stay behind Cloudflare Access plus the relay token. |
+| `photos.midsorbet.me` | `http://127.0.0.1:2283` | Immich. Expected to stay behind Cloudflare Access. |
 
 The matching Baymax services are configured with these canonical hostnames in `hosts/baymax/default.nix`.
 
@@ -130,7 +130,8 @@ The matching Baymax services are configured with these canonical hostnames in `h
 Intended Access posture:
 
 - `readeck.midsorbet.me` is the narrow public exception.
-- `rss.midsorbet.me`, `paperless.midsorbet.me`, `photos.midsorbet.me`, `ntfy.midsorbet.me`, and `herdr.midsorbet.me` are the gated hostnames.
+- `rss.midsorbet.me`, `paperless.midsorbet.me`, `photos.midsorbet.me`, and `ntfy.midsorbet.me` are the gated hostnames.
+- `omp.midsorbet.me`, `lab.midsorbet.me`, and `herdr.midsorbet.me` should not have standing DNS records, tunnel ingress rules, or Access app entries.
 - If a wildcard Access app matches `*.midsorbet.me`, make sure `readeck.midsorbet.me` is explicitly excluded or otherwise not covered by that policy.
 
 Useful symptoms:
@@ -182,7 +183,7 @@ Check Baymax-side service health:
 
 ```zsh
 ssh me@192.168.4.200 'systemctl --failed --no-pager'
-ssh me@192.168.4.200 'systemctl is-active cloudflared-tunnel-baymax-apps cloudflare-warp caddy avahi-daemon'
+ssh me@192.168.4.200 'systemctl is-active cloudflared-tunnel-baymax-apps cloudflare-warp avahi-daemon'
 ssh me@192.168.4.200 'getent hosts mini-me.local'
 ssh me@192.168.4.200 'systemctl is-active immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
 ```
@@ -195,7 +196,7 @@ curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://readeck.midsor
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://rss.midsorbet.me/
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://paperless.midsorbet.me/
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://ntfy.midsorbet.me/
-curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://herdr.midsorbet.me/
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://photos.midsorbet.me/
 ```
 
 If macOS still reports stale DNS after the Cloudflare routes were restored:

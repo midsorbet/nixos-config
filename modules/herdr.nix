@@ -38,7 +38,7 @@
         cat <<'EOF'
       usage: herdr-remote-lan-relay [PORT]
 
-      Starts a herdr-remote relay for LAN-only access from Baymax.
+      Starts a herdr-remote relay for LAN-only access.
       Stop with Ctrl-C to tear it down.
 
       Environment:
@@ -48,8 +48,8 @@
                            0.0.0.0.
         HERDR_RELAY_TOKEN  Optional pre-set relay token. If unset, generated
                            as a five-word hyphenated passphrase.
-        HERDR_REMOTE_URL   Public relay URL shown in output, default
-                           wss://herdr.midsorbet.me/.
+        HERDR_REMOTE_URL   Optional relay URL shown in output. If unset,
+                           prints a direct LAN ws:// address.
       EOF
       }
 
@@ -95,7 +95,14 @@
         bind="0.0.0.0"
       fi
 
-      public_url="''${HERDR_REMOTE_URL:-wss://herdr.midsorbet.me/}"
+      public_url="''${HERDR_REMOTE_URL:-}"
+      if [ -z "$public_url" ]; then
+        public_host="$bind"
+        if [ "$public_host" = "0.0.0.0" ]; then
+          public_host="127.0.0.1"
+        fi
+        public_url="ws://$public_host:$port/"
+      fi
 
       workdir="$(mktemp -d "''${TMPDIR:-/tmp}/herdr-remote-lan.XXXXXX")"
       relay_pid=""
@@ -156,7 +163,7 @@
       herdr-remote LAN relay is live.
 
         Bind:      $bind:$port
-        Web UI:    https://herdr.midsorbet.me
+        Web UI:    use a local herdr-remote web UI
         Relay URL: $public_url
         Token:     $token
 
