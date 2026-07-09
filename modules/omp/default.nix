@@ -8,7 +8,7 @@
 
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/refs/tags/v${cfg.package.version}.tar.gz";
-    hash = "sha256-fawj6MZQ77BuytQus0e5JuRhRDWkAzm03M8nWb1Iipw=";
+    hash = "sha256-HhueDOze47PGi70xR6Oui0lq5v50C6kDe3jEVkU2EkU=";
   };
   runtimePath = lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage] ++ cfg.extraRuntimePackages);
   dailyReviewScript = pkgs.writeShellApplication {
