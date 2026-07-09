@@ -11,9 +11,10 @@ mnemopi:
 modelRoles:
   default: openai-codex/gpt-5.6-sol:high
   smol: openai-codex/gpt-5.6-luna:low
+  task: openai-codex/gpt-5.6-terra:medium
   slow: anthropic/claude-fable-5:low
   advisor: anthropic/claude-opus-4-8:medium
-  designer: zai/glm-5.2:high
+  designer: openai-codex/gpt-5.6-sol:high
 modelProviderOrder:
   - anthropic
   - openai-codex
