@@ -9,8 +9,8 @@ memory:
 mnemopi:
   scoping: per-project-tagged
 modelRoles:
-  default: openai-codex/gpt-5.5:high
-  smol: openai-codex/gpt-5.5:low
+  default: openai-codex/gpt-5.6-sol:high
+  smol: openai-codex/gpt-5.6-luna:low
   slow: anthropic/claude-fable-5:low
   advisor: anthropic/claude-opus-4-8:medium
   designer: zai/glm-5.2:high
