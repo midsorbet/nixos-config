@@ -11,53 +11,24 @@
     hash = "sha256-m1b2MJukQvrzMVTyfj96oVDXKHHbNLsSFVZKRC2jJjw=";
   };
   runtimePath = lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage] ++ cfg.extraRuntimePackages);
-  dailyReviewScript = pkgs.writeShellApplication {
-    name = "omp-daily-thread-review";
-    runtimeInputs = [cfg.pythonPackage];
+  papercutReviewScript = pkgs.writeShellApplication {
+    name = "omp-papercut-review";
 
     text = ''
       set -euo pipefail
 
       export HOME="/Users/${cfg.user}"
       export USER="${cfg.user}"
-      export PATH="/run/current-system/sw/bin:/etc/profiles/per-user/${cfg.user}/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      export PATH="${lib.makeBinPath [wrappedPackage cfg.bunPackage]}:/usr/bin:/bin:/usr/sbin:/sbin"
 
       log_dir="$HOME/Library/Logs/omp"
-      state_dir="$HOME/Library/Application Support/omp-daily-thread-review"
-      report_dir="$HOME/vault/planner/omp-daily-thread-reviews"
-      mkdir -p "$log_dir" "$state_dir/prompts" "$report_dir"
-      exec >> "$log_dir/daily-thread-review.log" 2>&1
+      project_path=${lib.escapeShellArg cfg.papercutReview.projectPath}
+      mkdir -p "$log_dir"
+      exec >> "$log_dir/papercut-review.log" 2>&1
 
-      echo "== $(date '+%Y-%m-%d %H:%M:%S') omp daily thread review =="
-
-      prompt_path="$(
-        ${lib.getExe cfg.pythonPackage} ${./daily-review.py} \
-          --sessions-dir "$HOME/.omp/agent/sessions" \
-          --output-dir "$state_dir/prompts" \
-          --report-dir "$report_dir" \
-          --lookback-hours ${toString cfg.dailyReview.lookbackHours} \
-          --max-threads ${toString cfg.dailyReview.maxThreads}
-      )"
-
-      if [ -z "$prompt_path" ]; then
-        echo "No explicit user-started OMP sessions matched today's review window."
-        exit 0
-      fi
-
-      echo "Review prompt: $prompt_path"
-
-      ${wrappedPackage}/bin/omp \
-        -p \
-        --cwd "$HOME/vault" \
-        --no-session \
-        --max-time ${toString cfg.dailyReview.maxSeconds} \
-        --model ${lib.escapeShellArg cfg.dailyReview.model} \
-        --tools=read,grep,glob,edit,write \
-        --auto-approve \
-        --approval-mode yolo \
-        "@$prompt_path"
-
-      echo "== omp daily thread review complete =="
+      echo "== $(date '+%Y-%m-%d %H:%M:%S') OMP papercut review =="
+      cd "$project_path"
+      exec ${lib.getExe cfg.bunPackage} "$project_path/src/cli.ts" review
     '';
   };
 
@@ -81,7 +52,6 @@
         --set-default PI_JS 1 \
         --set-default PI_PACKAGE_DIR "$out/share/omp"
     '';
-
   mkTheme = {
     name,
     background,
@@ -247,57 +217,37 @@ in {
       default = [];
       description = "Additional packages to prepend to PATH for OMP runtime and tool subprocesses.";
     };
-
     settingsFile = lib.mkOption {
       type = lib.types.path;
       default = ./config.yml;
       description = "YAML config file linked to ~/.omp/agent/config.yml.";
     };
-    dailyReview = {
-      enable = lib.mkEnableOption "unattended end-of-day review of explicit user-started OMP sessions";
+
+    papercutReview = {
+      enable = lib.mkEnableOption "nightly papercut review";
 
       hour = lib.mkOption {
         type = lib.types.int;
         default = 23;
-        description = "Local hour for the daily OMP thread review launchd job.";
+        description = "Local hour for the papercut review launchd job.";
       };
 
       minute = lib.mkOption {
         type = lib.types.int;
         default = 30;
-        description = "Local minute for the daily OMP thread review launchd job.";
+        description = "Local minute for the papercut review launchd job.";
       };
 
-      lookbackHours = lib.mkOption {
-        type = lib.types.int;
-        default = 0;
-        description = "Optional rolling fallback window; 0 reviews only the local calendar day.";
-      };
-
-      maxThreads = lib.mkOption {
-        type = lib.types.int;
-        default = 20;
-        description = "Maximum number of selected session transcripts to include in one review prompt.";
-      };
-
-      maxSeconds = lib.mkOption {
-        type = lib.types.int;
-        default = 3600;
-        description = "Maximum runtime for the unattended OMP review agent.";
-      };
-
-      model = lib.mkOption {
+      projectPath = lib.mkOption {
         type = lib.types.str;
-        default = "openai-codex/gpt-5.5:high";
-        description = "Model used by the unattended OMP review agent.";
+        default = "/Users/${cfg.user}/vault/projects/omp-papercuts";
+        description = "Mutable standalone checkout containing the papercut review CLI.";
       };
     };
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages =
-      [wrappedPackage]
-      ++ lib.optional cfg.dailyReview.enable dailyReviewScript;
+    environment.systemPackages = [wrappedPackage];
 
     hjem.users.${cfg.user} = {
       files = {
@@ -316,13 +266,13 @@ in {
       };
     };
 
-    launchd.user.agents.omp-daily-thread-review = lib.mkIf cfg.dailyReview.enable {
-      command = "${dailyReviewScript}/bin/omp-daily-thread-review";
+    launchd.user.agents.omp-papercut-review = lib.mkIf cfg.papercutReview.enable {
+      command = "${papercutReviewScript}/bin/omp-papercut-review";
       serviceConfig = {
         RunAtLoad = false;
         StartCalendarInterval = {
-          Hour = cfg.dailyReview.hour;
-          Minute = cfg.dailyReview.minute;
+          Hour = cfg.papercutReview.hour;
+          Minute = cfg.papercutReview.minute;
         };
       };
     };

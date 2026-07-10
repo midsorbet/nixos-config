@@ -16,6 +16,7 @@
     core = {
       editor = "vim";
       autocrlf = "input";
+      excludesFile = "${homeDirectory}/.config/git/ignore";
     };
     user = {
       name = "midsorbet";
@@ -66,9 +67,21 @@ in {
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [cfg.package];
 
-    hjem.users.${cfg.user}.files.".gitconfig" = {
-      source = gitConfigFormat.generate "gitconfig" settings;
-      clobber = true;
+    hjem.users.${cfg.user} = {
+      files.".gitconfig" = {
+        source = gitConfigFormat.generate "gitconfig" settings;
+        clobber = true;
+      };
+
+      xdg.config.files."git/ignore" = {
+        text = ''
+          **/.claude/settings.local.json
+          **/PAPERCUTS.md
+          **/PAPERCUTS.md.lock*/
+          **/.PAPERCUTS.md.*.tmp
+        '';
+        clobber = true;
+      };
     };
   };
 }

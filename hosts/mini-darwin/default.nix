@@ -98,7 +98,7 @@ in {
   };
   local.omp = {
     enable = true;
-    dailyReview.enable = true;
+    papercutReview.enable = true;
   };
   local.plannotator.enable = true;
   local.zsh = {
