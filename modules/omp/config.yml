@@ -10,11 +10,15 @@ mnemopi:
   scoping: per-project-tagged
 modelRoles:
   default: openai-codex/gpt-5.6-sol:high
-  smol: openai-codex/gpt-5.6-luna:low
-  task: openai-codex/gpt-5.6-terra:medium
-  slow: anthropic/claude-fable-5:low
-  advisor: anthropic/claude-opus-4-8:medium
+  smol: openai-codex/gpt-5.6-luna:high
+  slow: openai-codex/gpt-5.6-terra:max
+  vision: openai-codex/gpt-5.6-sol:high
+  plan: openai-codex/gpt-5.6-sol:high
   designer: openai-codex/gpt-5.6-sol:high
+  commit: openai-codex/gpt-5.6-luna:medium
+  tiny: openai-codex/gpt-5.6-luna:low
+  task: openai-codex/gpt-5.6-luna:high
+  advisor: anthropic/claude-opus-4-8:medium
 modelProviderOrder:
   - anthropic
   - openai-codex
@@ -30,7 +34,12 @@ advisor:
 tier:
   openai: priority
 task:
+  eager: default
+  maxConcurrency: 8
+  maxRecursionDepth: 2
   softRequestBudgetNotice: true
+  agentModelOverrides:
+    reviewer: openai-codex/gpt-5.6-sol:high
 providers:
   webSearch: auto
 secrets:
