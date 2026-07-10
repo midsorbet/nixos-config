@@ -2,6 +2,8 @@
   description = "Starter Configuration with secrets for MacOS and NixOS";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    # Isolate Hunk's x86_64-darwin formatter and mdfried's Python 3.14 remarshal incompatibility.
+    nixpkgs-darwin-compat.url = "github:nixos/nixpkgs/nixpkgs-26.05-darwin";
     agenix.url = "github:ryantm/agenix";
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
@@ -29,6 +31,7 @@
     hunk = {
       url = "github:modem-dev/hunk/v0.17.0";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.bun2nix.inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
     };
     herdr = {
       url = "github:ogulcancelik/herdr/v0.7.3";
@@ -81,7 +84,7 @@
     zmx.url = "github:neurosnap/zmx";
     mdfried = {
       url = "github:benjajaja/mdfried/v0.22.4";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
     };
   };
   outputs = {

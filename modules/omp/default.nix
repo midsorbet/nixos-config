@@ -196,7 +196,7 @@ in {
 
     pythonPackage = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.python313;
+      default = pkgs.python314;
       description = "Python interpreter made available to OMP eval cells.";
     };
 
