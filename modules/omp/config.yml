@@ -6,6 +6,10 @@ exa:
   enableWebsets: false
 memory:
   backend: mnemopi
+autolearn:
+  enabled: true
+  autoContinue: true
+  minToolCalls: 12
 mnemopi:
   scoping: per-project-tagged
 modelRoles:
