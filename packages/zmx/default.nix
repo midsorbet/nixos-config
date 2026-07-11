@@ -1,4 +1,4 @@
-{inputs}: final: prev: let
+{}: final: prev: let
   system = prev.stdenvNoCC.hostPlatform.system;
   version = "0.6.0";
   zmxMeta = {
@@ -15,39 +15,50 @@
     downloadPage = "https://zmx.sh/#install";
     license = prev.lib.licenses.mit;
     mainProgram = "zmx";
-    platforms = ["aarch64-darwin" "x86_64-linux" "aarch64-linux"];
+    platforms = ["aarch64-darwin" "x86_64-darwin" "aarch64-linux" "x86_64-linux"];
   };
   tarballs = {
     "aarch64-darwin" = {
-      url = "https://zmx.sh/a/zmx-${version}-macos-aarch64.tar.gz";
-      hash = "sha256-fx5Nln1B3qDfdrx8XdDVeV5+VP1lel8MdPv7LAaZOQ4=";
+      name = "zmx-${version}-macos-aarch64.tar.gz";
+      hash = "sha256-PwcMbjjLOkjdwTHb6Vb9TE6/TKbPzFfDrLtAmU8Wl4c=";
+    };
+    "x86_64-darwin" = {
+      name = "zmx-${version}-macos-x86_64.tar.gz";
+      hash = "sha256-Hmo+VkC4UzL6yViqSx/HY5C8H2mLa0l1RZ2J87z7GGU=";
+    };
+    "aarch64-linux" = {
+      name = "zmx-${version}-linux-aarch64.tar.gz";
+      hash = "sha256-wj9LTKgOFE4ynQQrkarkhZ0jIXqwcHazg69BNNl/qsU=";
+    };
+    "x86_64-linux" = {
+      name = "zmx-${version}-linux-x86_64.tar.gz";
+      hash = "sha256-MJ2RO5gq4W6sKoVPQR3kDszAtkr+2JKqAqC+NR8CccE=";
     };
   };
-  zmx =
-    if builtins.hasAttr system tarballs
-    then
-      prev.stdenvNoCC.mkDerivation {
-        pname = "zmx";
-        inherit version;
+  tarball =
+    tarballs.${system}
+    or (throw "zmx is not packaged for ${system}");
+  zmx = prev.stdenvNoCC.mkDerivation {
+    pname = "zmx";
+    inherit version;
 
-        src = prev.fetchurl tarballs.${system};
+    src = prev.fetchurl {
+      url = "https://github.com/neurosnap/zmx/releases/download/v${version}/${tarball.name}";
+      hash = tarball.hash;
+    };
 
-        sourceRoot = ".";
+    sourceRoot = ".";
 
-        unpackPhase = ''
-          tar -xzf "$src"
-        '';
+    unpackPhase = ''
+      tar -xzf "$src"
+    '';
 
-        installPhase = ''
-          install -Dm755 zmx "$out/bin/zmx"
-        '';
+    installPhase = ''
+      install -Dm755 zmx "$out/bin/zmx"
+    '';
 
-        meta = zmxMeta;
-      }
-    else
-      inputs.zmx.packages.${system}.zmx.overrideAttrs (old: {
-        meta = (old.meta or {}) // zmxMeta;
-      });
+    meta = zmxMeta;
+  };
 in {
   inherit zmx;
 

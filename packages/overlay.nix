@@ -58,7 +58,7 @@
       trzsz-go = final.callPackage ./trzsz-go.nix {};
     };
 
-    zmx = final: prev: import ./zmx {inherit inputs;} final prev;
+    zmx = final: prev: import ./zmx {} final prev;
   };
 
   overlayList = [
