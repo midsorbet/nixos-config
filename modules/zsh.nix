@@ -82,6 +82,7 @@
 
     typeset -U path cdpath
     setopt hist_verify
+    setopt rm_star_wait
 
     # Prefer the system profile, but keep NixOS privilege wrappers first.
     [[ -d /run/current-system/sw/bin ]] && path=(/run/current-system/sw/bin $path)
