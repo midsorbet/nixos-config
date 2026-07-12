@@ -13,7 +13,7 @@ autolearn:
 mnemopi:
   scoping: per-project-tagged
 modelRoles:
-  default: openai-codex/gpt-5.6-sol:high
+  default: openai-codex/gpt-5.6-sol:medium
   smol: openai-codex/gpt-5.6-luna:high
   slow: openai-codex/gpt-5.6-terra:max
   vision: openai-codex/gpt-5.6-sol:high
