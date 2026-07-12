@@ -118,6 +118,7 @@ in {
       "firefox"
       "ghostty"
       "karabiner-elements"
+      "vibeproxy"
       "visual-studio-code"
     ];
     onActivation = {
