@@ -9,7 +9,7 @@
   homeDir = config.hjem.users.${user}.directory;
   moblinKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO/2RV9P8Z2/CMbghca654D4sbQ5zbUc7tOJ+x2tcUWILJV3bXeAPI3O+Y65yDU7CojTYje22WBOAWqysmv4LTs= me@moblin";
   lizalfosKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIaUXyO37/x5lwDapVXjT3PGJwbxyrW3dZEH6/uh6i/k me@lizalfos";
-  bokoblinKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBOVxY8n90Qfv17EMNo3T5akdcj6bJZTgqNuMI8k3PxmVe3QIHqEVMDKZUsx2HXNCBiUr3D2XJqaucdObghKa6kY= me@bokoblin";
+  bokoblinKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMxlO3eFi2yvrVH9bSsEyMMvzjRGWIoImlK+ixy2FIcy bokoblin";
 in {
   imports = [
     ./secrets.nix
