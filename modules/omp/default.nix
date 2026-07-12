@@ -222,6 +222,11 @@ in {
       default = ./config.yml;
       description = "YAML config file linked to ~/.omp/agent/config.yml.";
     };
+    modelsFile = lib.mkOption {
+      type = lib.types.path;
+      default = ./models.yml;
+      description = "YAML model provider file linked to ~/.omp/agent/models.yml.";
+    };
 
     papercutReview = {
       enable = lib.mkEnableOption "nightly papercut review";
@@ -261,6 +266,10 @@ in {
         };
         ".omp/agent/themes/everforest-light-hard.json" = {
           text = builtins.toJSON everforestLightHardTheme;
+          clobber = true;
+        };
+        ".omp/agent/models.yml" = {
+          source = cfg.modelsFile;
           clobber = true;
         };
       };

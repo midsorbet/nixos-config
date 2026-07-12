@@ -1,0 +1,29 @@
+providers:
+  vibeproxy-anthropic:
+    baseUrl: http://127.0.0.1:8318
+    apiKey: vibeproxy
+    api: anthropic-messages
+    models:
+      - id: claude-fable-5
+        name: Claude Fable 5 via VibeProxy
+        reasoning: true
+        input: [text, image]
+        contextWindow: 1000000
+        maxTokens: 128000
+      - id: claude-opus-4-8
+        name: Claude Opus 4.8 via VibeProxy
+        reasoning: true
+        input: [text, image]
+        contextWindow: 1000000
+        maxTokens: 128000
+  vibeproxy-zai:
+    baseUrl: http://127.0.0.1:8318/v1
+    apiKey: vibeproxy
+    api: openai-completions
+    models:
+      - id: glm-5.2
+        name: GLM 5.2 via VibeProxy
+        reasoning: true
+        input: [text]
+        contextWindow: 1000000
+        maxTokens: 131072
