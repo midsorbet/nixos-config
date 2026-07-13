@@ -1,4 +1,5 @@
 defaultThinkingLevel: xhigh
+textVerbosity: low
 exa:
   enabled: true
   enableSearch: true
