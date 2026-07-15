@@ -7,6 +7,25 @@
 }: let
   user = "me";
   homeDir = config.hjem.users.${user}.directory;
+  chromeOmpLauncher = pkgs.writeShellApplication {
+    name = "chrome-omp";
+
+    text = ''
+      data_dir="$HOME/Library/Application Support/Google/Chrome OMP"
+
+      if [[ ! -f "$data_dir/Local State" || ! -d "$data_dir/Profile 2" ]]; then
+        echo "Chrome OMP profile is missing from: $data_dir" >&2
+        exit 1
+      fi
+
+      exec /usr/bin/open -na "/Applications/Google Chrome.app" --args \
+        --remote-debugging-address=127.0.0.1 \
+        --remote-debugging-port=9222 \
+        "--user-data-dir=$data_dir" \
+        "--profile-directory=Profile 2" \
+        --no-first-run
+    '';
+  };
   moblinKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO/2RV9P8Z2/CMbghca654D4sbQ5zbUc7tOJ+x2tcUWILJV3bXeAPI3O+Y65yDU7CojTYje22WBOAWqysmv4LTs= me@moblin";
   lizalfosKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIaUXyO37/x5lwDapVXjT3PGJwbxyrW3dZEH6/uh6i/k me@lizalfos";
   bokoblinKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMxlO3eFi2yvrVH9bSsEyMMvzjRGWIoImlK+ixy2FIcy bokoblin";
@@ -201,6 +220,7 @@ in {
     [
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
       pkgs.mdfried
+      chromeOmpLauncher
       pkgs.nh
     ]
     ++ (import ./packages.nix {inherit pkgs;});
