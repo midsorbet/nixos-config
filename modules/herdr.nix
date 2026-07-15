@@ -67,6 +67,20 @@ in {
 
         ui = {
           mouse_capture = true;
+          copy_on_select = true;
+          sidebar_width = 20;
+          sidebar_min_width = 18;
+          sidebar_max_width = 24;
+          sidebar = {
+            agents = {
+              row_gap = 0;
+              rows = [["state_icon" "workspace" "tab"]];
+            };
+            spaces = {
+              row_gap = 0;
+              rows = [["state_icon" "workspace" "branch" "git_status"]];
+            };
+          };
           toast = {
             delivery = "terminal";
             delay_seconds = 1;
