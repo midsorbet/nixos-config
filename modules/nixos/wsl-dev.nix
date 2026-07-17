@@ -214,6 +214,7 @@ in {
         ]);
 
       variables = {
+        UV_MALWARE_CHECK = "1";
         BROWSER = "/mnt/c/Windows/explorer.exe";
         NH_FLAKE = cfg.flakePath;
       };
