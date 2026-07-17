@@ -8,7 +8,7 @@
 
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/refs/tags/v${cfg.package.version}.tar.gz";
-    hash = "sha256-Pd26yehP/xm/acHMRpmQ2GiUK+jAuizKXOQ6Y1evlaM=";
+    hash = "sha256-BLENwWwvsjN5XFwZK7XCavyYUgedMGXD4iSD02W5NBA=";
   };
   runtimePath = lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage] ++ cfg.extraRuntimePackages);
   papercutReviewScript = pkgs.writeShellApplication {
