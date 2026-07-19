@@ -9,6 +9,8 @@ astGrep:
   enabled: true
 edit:
   enforceSeenLines: true
+generate_image:
+  enabled: true
 memory:
   backend: mnemopi
 autolearn:
