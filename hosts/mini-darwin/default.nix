@@ -115,7 +115,10 @@ in {
     casks = [
       "calibre"
       "chatgpt"
-      "cloudflare-warp"
+      {
+        name = "cloudflare-warp";
+        greedy = true;
+      }
       "codex"
       "firefox"
       "ghostty"
@@ -396,6 +399,82 @@ in {
     checks.verifyNixPath = false;
     primaryUser = user;
     stateVersion = 5;
+
+    activationScripts.postActivation.text = lib.mkAfter ''
+      set -eu
+
+      credentials='${config.age.secrets."mini-warp-service-token".path}'
+      directory='/Library/Application Support/Cloudflare'
+      target="$directory/mdm.xml"
+      warp_cli='/Applications/Cloudflare WARP.app/Contents/Resources/warp-cli'
+
+      remaining=30
+      while [ ! -s "$credentials" ]; do
+        if [ "$remaining" -eq 0 ]; then
+          echo "Timed out waiting for agenix to decrypt the Cloudflare WARP enrollment token" >&2
+          exit 1
+        fi
+        /bin/sleep 1
+        remaining=$((remaining - 1))
+      done
+
+      /usr/bin/install -d -m 0755 -o root -g wheel "$directory"
+
+      client_id="$(${pkgs.jq}/bin/jq -er '.client_id | select(test("^[0-9a-f]{32}\\.access$"))' "$credentials")"
+      client_secret="$(${pkgs.jq}/bin/jq -er '.client_secret | select(test("^[0-9a-f]{64}$"))' "$credentials")"
+
+      tmp_xml="$(/usr/bin/mktemp "$directory/.mdm.XXXXXX.xml")"
+      trap '/bin/rm -f "$tmp_xml"' EXIT
+
+      /bin/cat >"$tmp_xml" <<EOF
+      <dict>
+        <key>configs</key>
+        <array>
+          <dict>
+            <key>display_name</key>
+            <string>Mini service enrollment</string>
+            <key>organization</key>
+            <string>midsorbet</string>
+            <key>auth_client_id</key>
+            <string>$client_id</string>
+            <key>auth_client_secret</key>
+            <string>$client_secret</string>
+            <key>service_mode</key>
+            <string>warp</string>
+            <key>auto_connect</key>
+            <integer>1</integer>
+            <key>switch_locked</key>
+            <false/>
+            <key>onboarding</key>
+            <false/>
+          </dict>
+        </array>
+        <key>organization_configs</key>
+        <dict>
+          <key>midsorbet</key>
+          <dict>
+            <key>hardware_backed_registration</key>
+            <true/>
+          </dict>
+        </dict>
+      </dict>
+      EOF
+
+      /usr/sbin/chown root:wheel "$tmp_xml"
+      /bin/chmod 0600 "$tmp_xml"
+
+      if [ ! -f "$target" ] || ! /usr/bin/cmp -s "$tmp_xml" "$target"; then
+        /bin/mv -f "$tmp_xml" "$target"
+      fi
+
+      if [ ! -x "$warp_cli" ]; then
+        echo "Cloudflare One Client CLI is missing after Homebrew activation" >&2
+        exit 1
+      fi
+
+      "$warp_cli" mdm refresh
+      "$warp_cli" mdm set-config 'Mini service enrollment'
+    '';
 
     defaults = {
       NSGlobalDomain = {

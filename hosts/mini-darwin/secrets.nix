@@ -7,6 +7,13 @@ in {
 
   age.secrets."user-email".file = "${secrets}/user-email.age";
 
+  age.secrets."mini-warp-service-token" = {
+    file = "${secrets}/mini-warp-service-token.age";
+    mode = "400";
+    owner = "root";
+    group = "wheel";
+  };
+
   age.secrets."github-ssh-key" = {
     symlink = true;
     path = "/Users/${user}/.ssh/id_github";
