@@ -43,14 +43,14 @@
 
     tsshd = final: prev: {
       tsshd = prev.tsshd.overrideAttrs (_: {
-        version = "0.1.8";
+        version = "0.1.9";
         src = prev.fetchFromGitHub {
           owner = "trzsz";
           repo = "tsshd";
-          tag = "v0.1.8";
-          hash = "sha256-YqSSJA/jP8WRbfwC5fxFE4su01ZEPQNmiNRr96pDE1g=";
+          tag = "v0.1.9";
+          hash = "sha256-/h18WuKkPWD5sDvLckQPcL7f5VG2dlD6uGheUrwMXFQ=";
         };
-        vendorHash = "sha256-HJWxphZuBh3gXPoEqL/EVGtwdWyW+cMSQhKyfSymKG0=";
+        vendorHash = "sha256-+hX81OgNBNs85c51WXSsIBMClRTvsmmiVdvQtV5ml2g=";
       });
     };
 
