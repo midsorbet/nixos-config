@@ -397,6 +397,8 @@ in {
 
     "cloudflare-warp" = {
       enable = true;
+      # On WARP updates, verify the headless install still succeeds. Nixpkgs
+      # 2026.6.822 tries to remove a GUI path missing from its Debian archive.
       package = pkgs.cloudflare-warp.override {headless = true;};
     };
 
