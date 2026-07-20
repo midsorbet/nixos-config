@@ -9,6 +9,7 @@ in
     inetutils
     inotify-tools
     keepassxc
+    omp
     libnotify
     sbctl
     smartmontools

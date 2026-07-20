@@ -7,6 +7,7 @@
 }: let
   user = "me";
   homeDir = config.hjem.users.${user}.directory;
+  baymaxLanAddress = "192.168.4.200";
   moblinKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO/2RV9P8Z2/CMbghca654D4sbQ5zbUc7tOJ+x2tcUWILJV3bXeAPI3O+Y65yDU7CojTYje22WBOAWqysmv4LTs= me@moblin";
   lizalfosKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIaUXyO37/x5lwDapVXjT3PGJwbxyrW3dZEH6/uh6i/k me@lizalfos";
   bokoblinKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMxlO3eFi2yvrVH9bSsEyMMvzjRGWIoImlK+ixy2FIcy bokoblin";
@@ -98,6 +99,7 @@ in {
   };
   local.omp = {
     enable = true;
+    authBrokerUrl = "http://${baymaxLanAddress}:8765";
     papercutReview.enable = true;
   };
   local.plannotator.enable = true;
@@ -118,7 +120,6 @@ in {
       "firefox"
       "ghostty"
       "karabiner-elements"
-      "vibeproxy"
       "visual-studio-code"
     ];
     onActivation = {
@@ -179,7 +180,7 @@ in {
 
     buildMachines = [
       {
-        hostName = "192.168.4.200";
+        hostName = baymaxLanAddress;
         protocol = "ssh-ng";
         systems = ["x86_64-linux"];
         sshUser = "me";

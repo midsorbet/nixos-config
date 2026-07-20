@@ -7,6 +7,7 @@
 }: let
   domain = "midsorbet.me";
   user = "me";
+  ompBrokerPort = 8765;
   keys = {
     boot = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFs1Ljh6faseFzEG9B0jufOsmc8wMIDxMwiROfp9u3zC"
@@ -143,7 +144,7 @@ in {
     firewall = {
       enable = true;
       interfaces.CloudflareWARP.allowedTCPPorts = [22 2283];
-      interfaces.enp1s0.allowedTCPPorts = [22 2283];
+      interfaces.enp1s0.allowedTCPPorts = [22 2283 ompBrokerPort];
     };
   };
 
@@ -420,6 +421,41 @@ in {
       # host degraded for this non-fatal compatibility failure.
       "systemd-tmpfiles-clean".serviceConfig.SuccessExitStatus = "CANTCREAT";
 
+      "omp-auth-broker" = {
+        description = "OMP authentication broker";
+        wantedBy = ["multi-user.target"];
+        wants = ["network-online.target"];
+        after = ["network-online.target"];
+        environment.HOME = "/home/${user}";
+        serviceConfig = {
+          Type = "simple";
+          ExecStart = "${lib.getExe pkgs.omp} auth-broker serve --bind=0.0.0.0:${toString ompBrokerPort}";
+          Restart = "on-failure";
+          RestartSec = "5s";
+          User = user;
+          Group = "users";
+          WorkingDirectory = "/home/${user}";
+          UMask = "0077";
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          ProtectSystem = "strict";
+          ProtectHome = "read-only";
+          ReadWritePaths = ["/home/${user}/.omp"];
+          RestrictAddressFamilies = ["AF_UNIX" "AF_INET" "AF_INET6"];
+          CapabilityBoundingSet = [""];
+          AmbientCapabilities = [""];
+          SystemCallArchitectures = "native";
+          LockPersonality = true;
+          ProtectClock = true;
+          ProtectControlGroups = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          RestrictSUIDSGID = true;
+        };
+      };
+
       readeck.serviceConfig = {
         DynamicUser = lib.mkForce false;
         User = "readeck";
@@ -584,6 +620,10 @@ in {
           mode = "0444";
         };
       }
+      // (mkTmpDirEntries user "users" "0700" [
+        "/home/${user}/.omp"
+        "/home/${user}/.omp/agent"
+      ])
       // (mkTmpDirEntries config.services.immich.user config.services.immich.group "0700" [
         config.services.immich.mediaLocation
         config.services.immich.environment.THUMB_LOCATION

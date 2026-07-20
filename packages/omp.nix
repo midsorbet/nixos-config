@@ -1,12 +1,16 @@
 {pkgs}: let
   inherit (pkgs) lib stdenv;
 
-  version = "17.0.3";
+  version = "17.0.5";
   releaseBaseUrl = "https://github.com/can1357/oh-my-pi/releases/download/v${version}";
   binaries = {
     "aarch64-darwin" = {
       name = "omp-darwin-arm64";
-      hash = "sha256-CpBS5qKlO/QEd8BijaDMWMNpEIMt4qKqh0cPeUMuKj4=";
+      hash = "sha256-wNQ8R7lp77Z/oYT3edGDu1JBHphnK3afsOcdUdWe7Wg=";
+    };
+    "x86_64-linux" = {
+      name = "omp-linux-x64";
+      hash = "sha256-MZ0Iq45fuAxz9zSQfV9Hqou9TqMfehm6z4YRxauibDE=";
     };
   };
   binary =
@@ -26,6 +30,7 @@ in
     dontConfigure = true;
     dontBuild = true;
     dontStrip = true;
+    nativeBuildInputs = lib.optionals stdenv.isLinux [pkgs.patchelf];
 
     installPhase = ''
       runHook preInstall
@@ -34,6 +39,10 @@ in
     '';
 
     postInstall = ''
+      ${lib.optionalString stdenv.isLinux ''
+        patchelf --set-interpreter ${stdenv.cc.bintools.dynamicLinker} "$out/bin/omp"
+      ''}
+
       install -d "$out/share/bash-completion/completions"
       install -d "$out/share/fish/vendor_completions.d"
       install -d "$out/share/zsh/site-functions"

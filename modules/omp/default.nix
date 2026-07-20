@@ -8,7 +8,7 @@
 
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/refs/tags/v${cfg.package.version}.tar.gz";
-    hash = "sha256-BLENwWwvsjN5XFwZK7XCavyYUgedMGXD4iSD02W5NBA=";
+    hash = "sha256-t4j3y+9BOrb177y5x5EkMIgn1mmMuijACNog2iyw0jY=";
   };
   runtimePath = lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage] ++ cfg.extraRuntimePackages);
   papercutReviewScript = pkgs.writeShellApplication {
@@ -52,6 +52,15 @@
         --set-default PI_JS 1 \
         --set-default PI_PACKAGE_DIR "$out/share/omp"
     '';
+  managedSettingsFile =
+    if cfg.authBrokerUrl == null
+    then cfg.settingsFile
+    else
+      pkgs.writeText "omp-config.yml" (
+        builtins.readFile cfg.settingsFile
+        + "\nauth:\n  broker:\n    url: ${builtins.toJSON cfg.authBrokerUrl}\n"
+      );
+
   mkTheme = {
     name,
     background,
@@ -217,15 +226,18 @@ in {
       default = [];
       description = "Additional packages to prepend to PATH for OMP runtime and tool subprocesses.";
     };
+
     settingsFile = lib.mkOption {
       type = lib.types.path;
       default = ./config.yml;
       description = "YAML config file linked to ~/.omp/agent/config.yml.";
     };
-    modelsFile = lib.mkOption {
-      type = lib.types.path;
-      default = ./models.yml;
-      description = "YAML model provider file linked to ~/.omp/agent/models.yml.";
+
+    authBrokerUrl = lib.mkOption {
+      type = with lib.types; nullOr str;
+      default = null;
+      example = "http://192.0.2.1:8765";
+      description = "Auth broker URL to add to the managed OMP config; null leaves broker mode disabled.";
     };
 
     papercutReview = {
@@ -257,7 +269,7 @@ in {
     hjem.users.${cfg.user} = {
       files = {
         ".omp/agent/config.yml" = {
-          source = cfg.settingsFile;
+          source = managedSettingsFile;
           clobber = true;
         };
         ".omp/agent/themes/kanagawa-wave.json" = {
@@ -266,10 +278,6 @@ in {
         };
         ".omp/agent/themes/everforest-light-hard.json" = {
           text = builtins.toJSON everforestLightHardTheme;
-          clobber = true;
-        };
-        ".omp/agent/models.yml" = {
-          source = cfg.modelsFile;
           clobber = true;
         };
       };
