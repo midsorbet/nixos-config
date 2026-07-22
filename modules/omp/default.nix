@@ -60,6 +60,11 @@
         builtins.readFile cfg.settingsFile
         + "\nauth:\n  broker:\n    url: ${builtins.toJSON cfg.authBrokerUrl}\n"
       );
+  managedMcpConfig = {
+    "$schema" = "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json";
+    mcpServers = {};
+    disabledServers = cfg.disabledMcpServers;
+  };
 
   mkTheme = {
     name,
@@ -240,6 +245,13 @@ in {
       description = "Auth broker URL to add to the managed OMP config; null leaves broker mode disabled.";
     };
 
+    disabledMcpServers = lib.mkOption {
+      type = with lib.types; listOf str;
+      default = [];
+      example = ["cloudflare:cloudflare-api"];
+      description = "MCP server names to disable in the managed user-level mcp.json.";
+    };
+
     papercutReview = {
       enable = lib.mkEnableOption "nightly papercut review";
 
@@ -270,6 +282,10 @@ in {
       files = {
         ".omp/agent/config.yml" = {
           source = managedSettingsFile;
+          clobber = true;
+        };
+        ".omp/agent/mcp.json" = {
+          text = builtins.toJSON managedMcpConfig;
           clobber = true;
         };
         ".omp/agent/themes/kanagawa-wave.json" = {
