@@ -100,10 +100,6 @@ in {
   local.omp = {
     enable = true;
     authBrokerUrl = "http://${baymaxLanAddress}:8765";
-    disabledMcpServers = [
-      "computer-use"
-      "cloudflare:cloudflare-api"
-    ];
     papercutReview.enable = true;
   };
   local.plannotator.enable = true;
