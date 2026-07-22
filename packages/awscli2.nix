@@ -8,12 +8,12 @@
     };
   });
 in rec {
-  version = "2.36.4";
+  version = "2.36.6";
   src = pkgs.fetchFromGitHub {
     owner = "aws";
     repo = "aws-cli";
     tag = version;
-    hash = "sha256-Mo1cbVHmanEQIPixfII9Jw+VydkOGyMa5YL0x02peAc=";
+    hash = "sha256-SQWjz0tak41epSJxJLjIHlM3X1IVC88PQdMkTDwcCFE=";
   };
 
   dependencies = [awscrt] ++ pkgs.lib.tail old.dependencies;
