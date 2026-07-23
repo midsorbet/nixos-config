@@ -2,12 +2,12 @@
 set -o pipefail
 
 # Based on the upstream session picker example:
-# https://github.com/neurosnap/zmx/blob/9d01661fd1bacf9d7e886332af0d94e8c939aed9/README.md#L275-L329
+# https://github.com/neurosnap/zmx/blob/v0.7.0/README.md#session-picker
 main() {
   local display output rc query key selected session_name
 
   display=$(
-    zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients _created dir; do
+    zmx list 2>/dev/null | while IFS=$'\t' read -r name pid clients _created dir _labels; do
       name=${name#*name=}
       pid=${pid#pid=}
       clients=${clients#clients=}

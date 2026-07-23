@@ -1,6 +1,6 @@
 {}: final: prev: let
   system = prev.stdenvNoCC.hostPlatform.system;
-  version = "0.6.0";
+  version = "0.7.0";
   zmxMeta = {
     description = "Session persistence for terminal processes";
     longDescription = ''
@@ -20,19 +20,19 @@
   tarballs = {
     "aarch64-darwin" = {
       name = "zmx-${version}-macos-aarch64.tar.gz";
-      hash = "sha256-PwcMbjjLOkjdwTHb6Vb9TE6/TKbPzFfDrLtAmU8Wl4c=";
+      hash = "sha256-pj1vPt1tSzgkD4+BUT5g41qJjKUgIRES17xn9hDx8+s=";
     };
     "x86_64-darwin" = {
       name = "zmx-${version}-macos-x86_64.tar.gz";
-      hash = "sha256-Hmo+VkC4UzL6yViqSx/HY5C8H2mLa0l1RZ2J87z7GGU=";
+      hash = "sha256-ZsV+eWPISIEmb586z9s2lFw0DAFqVwYZSFF/OzA8p9M=";
     };
     "aarch64-linux" = {
       name = "zmx-${version}-linux-aarch64.tar.gz";
-      hash = "sha256-wj9LTKgOFE4ynQQrkarkhZ0jIXqwcHazg69BNNl/qsU=";
+      hash = "sha256-d1mfZhJGlProC7sdL6Dq/bjGSLQnoEjK2QUT7PYTb8k=";
     };
     "x86_64-linux" = {
       name = "zmx-${version}-linux-x86_64.tar.gz";
-      hash = "sha256-MJ2RO5gq4W6sKoVPQR3kDszAtkr+2JKqAqC+NR8CccE=";
+      hash = "sha256-i4eD17Egyf/QrPSu43lpBU3A3+88TzpHKNLv018ul6A=";
     };
   };
   tarball =
