@@ -29,7 +29,7 @@ modelRoles:
   commit: openai-codex/gpt-5.6-luna:medium
   tiny: openai-codex/gpt-5.6-luna:low
   task: openai-codex/gpt-5.6-sol:medium
-  advisor: anthropic/claude-opus-4-8:medium
+  advisor: anthropic/claude-opus-5:medium
 modelProviderOrder:
   - anthropic
   - zai
@@ -39,9 +39,9 @@ modelProviderOrder:
   - opencode-zen
 advisor:
   enabled: true
-  subagents: false
+  subagents: true
   syncBacklog: off
-  immuneTurns: 3
+  immuneTurns: 5
 tier:
   openai: priority
 task:
@@ -52,8 +52,6 @@ task:
   softRequestBudgetNotice: true
   agentModelOverrides:
     reviewer: openai-codex/gpt-5.6-sol:high
-providers:
-  webSearch: auto
 secrets:
   enabled: true
 startup:
