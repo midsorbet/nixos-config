@@ -7,10 +7,16 @@ exa:
   enableWebsets: false
 astGrep:
   enabled: true
+computer:
+  enabled: true
 edit:
   enforceSeenLines: true
+error:
+  notify: on
 generate_image:
   enabled: true
+read:
+  renderMarkdown: true
 memory:
   backend: mnemopi
 autolearn:
