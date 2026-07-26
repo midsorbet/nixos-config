@@ -122,6 +122,7 @@ Current Cloudflare published application routes for `baymax-apps`:
 | `paperless.midsorbet.me` | `http://127.0.0.1:28981` | Paperless. Expected to stay behind Cloudflare Access. |
 | `ntfy.midsorbet.me` | `http://127.0.0.1:8080` | ntfy. Expected to stay behind Cloudflare Access. |
 | `photos.midsorbet.me` | `http://127.0.0.1:2283` | Immich. Expected to stay behind Cloudflare Access. |
+| `budget.midsorbet.me` | `http://127.0.0.1:5006` | Actual Budget. A separate Access app requires the configured identity and Gateway device posture. |
 
 The matching Baymax services are configured with these canonical hostnames in `hosts/baymax/default.nix`.
 
@@ -130,7 +131,7 @@ The matching Baymax services are configured with these canonical hostnames in `h
 Intended Access posture:
 
 - `readeck.midsorbet.me` is the narrow public exception.
-- `rss.midsorbet.me`, `paperless.midsorbet.me`, `photos.midsorbet.me`, and `ntfy.midsorbet.me` are the gated hostnames.
+- `rss.midsorbet.me`, `paperless.midsorbet.me`, `photos.midsorbet.me`, `ntfy.midsorbet.me`, and `budget.midsorbet.me` are the gated hostnames.
 - `omp.midsorbet.me`, `lab.midsorbet.me`, and `herdr.midsorbet.me` should not have standing DNS records, tunnel ingress rules, or Access app entries.
 - If a wildcard Access app matches `*.midsorbet.me`, make sure `readeck.midsorbet.me` is explicitly excluded or otherwise not covered by that policy.
 
@@ -139,6 +140,29 @@ Useful symptoms:
 - `302` to `midsorbet.cloudflareaccess.com` means the hostname is still matched by Access.
 - `403` from Cloudflare on a gated hostname usually means the request did not satisfy the Access policy.
 - `NXDOMAIN` means the published route or DNS record is missing, not that Baymax itself is down.
+
+## Actual Budget
+
+Actual listens only on Baymax loopback port `5006`. Its server and user files live
+under `/persist/save/actual` with `0700` ownership by the static `actual` service
+account.
+
+`budget.midsorbet.me` has its own Cloudflare Access application. The
+`private-actual` allow policy copies the existing private-lab identity selector,
+requires the `Gateway` device-posture rule, and uses a `720h` session duration.
+A client without the required posture receives a Cloudflare Access `403`; this
+does not indicate an Actual origin failure.
+
+Before each Borg run, `actual-backup.service` stops Actual briefly, snapshots the
+`data/persistSave` ZFS dataset, restarts Actual, writes the validated archive to
+`/persist/save/actual-backups/actual-server.tar.zst`, and destroys the temporary
+snapshot. Verify the live backup path with:
+
+```zsh
+ssh -t me@192.168.4.200 'sudo systemctl start actual-backup.service'
+ssh me@192.168.4.200 'systemctl show actual-backup.service --property=Result,ExecMainStatus,ExecMainStartTimestamp,ExecMainExitTimestamp'
+ssh -t me@192.168.4.200 'sudo tar --list --zstd --file /persist/save/actual-backups/actual-server.tar.zst >/dev/null'
+```
 
 ## Recovery
 
@@ -185,11 +209,11 @@ Check Baymax-side service health:
 ssh me@192.168.4.200 'systemctl --failed --no-pager'
 ssh me@192.168.4.200 'systemctl is-active cloudflared-tunnel-baymax-apps cloudflare-warp avahi-daemon'
 ssh me@192.168.4.200 'getent hosts mini-me.local'
-ssh me@192.168.4.200 'systemctl is-active immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
+ssh me@192.168.4.200 'systemctl is-active actual immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
 ```
 
-Check the public hostnames. Readeck is intentionally public; the other app
-hostnames should redirect to Cloudflare Access.
+Check the published hostnames. Readeck is intentionally public; the other app
+hostnames should return a Cloudflare Access redirect or policy denial.
 
 ```zsh
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://readeck.midsorbet.me/
@@ -197,6 +221,7 @@ curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://rss.midsorbet.
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://paperless.midsorbet.me/
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://ntfy.midsorbet.me/
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://photos.midsorbet.me/
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://budget.midsorbet.me/
 ```
 
 If macOS still reports stale DNS after the Cloudflare routes were restored:

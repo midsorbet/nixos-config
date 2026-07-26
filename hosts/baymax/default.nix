@@ -287,6 +287,20 @@ in {
       startAt = [];
     };
 
+    actual = {
+      enable = true;
+      user = "actual";
+      group = "actual";
+      openFirewall = false;
+      settings = {
+        hostname = "127.0.0.1";
+        port = 5006;
+        dataDir = "/persist/save/actual";
+        loginMethod = "password";
+        allowedLoginMethods = ["password"];
+      };
+    };
+
     immich = {
       enable = true;
       host = "0.0.0.0";
@@ -508,6 +522,47 @@ in {
         '';
       };
 
+      "actual-backup" = {
+        description = "Create a consistent Actual server backup";
+        path = [
+          pkgs.coreutils
+          pkgs.gnutar
+          pkgs.systemd
+          pkgs.zfs
+          pkgs.zstd
+        ];
+        serviceConfig = {
+          Type = "oneshot";
+          TimeoutStartSec = "30m";
+          UMask = "0077";
+          ExecStopPost = "${pkgs.systemd}/bin/systemctl start actual.service";
+        };
+        script = ''
+          set -euo pipefail
+
+          snapshot="data/persistSave@actual-backup"
+          snapshotDir="/persist/save/.zfs/snapshot/actual-backup/actual"
+          backupDir="/persist/save/actual-backups"
+          staging="$backupDir/.actual-server.tar.zst.tmp"
+
+          cleanup() {
+            rm -f "$staging"
+            zfs destroy "$snapshot" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          zfs destroy "$snapshot" >/dev/null 2>&1 || true
+          systemctl stop actual.service
+          zfs snapshot "$snapshot"
+          systemctl start actual.service
+
+          test -d "$snapshotDir"
+          tar --create --zstd --file "$staging" --directory "$snapshotDir" .
+          tar --list --zstd --file "$staging" >/dev/null
+          mv -f "$staging" "$backupDir/actual-server.tar.zst"
+        '';
+      };
+
       # Template service for failure notifications
       "ntfy-failure@" = {
         description = "Send failure notification for %i";
@@ -533,6 +588,8 @@ in {
       };
 
       # Attach failure notifications to critical services
+      "actual".unitConfig.OnFailure = "ntfy-failure@%n";
+      "actual-backup".unitConfig.OnFailure = "ntfy-failure@%n";
       "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
       "postgresqlBackup" = {
         requires = ["postgresql.service"];
@@ -541,11 +598,13 @@ in {
       };
       "paperless-exporter".unitConfig.OnFailure = "ntfy-failure@%n";
       "borgbackup-job-hetzner".requires = [
+        "actual-backup.service"
         "paperless-exporter.service"
         "readeck-export.service"
         "postgresqlBackup.service"
       ];
       "borgbackup-job-hetzner".after = [
+        "actual-backup.service"
         "paperless-exporter.service"
         "readeck-export.service"
         "postgresqlBackup.service"
@@ -604,6 +663,7 @@ in {
         "/persist/cache"
       ])
       // (mkTmpDirEntries "root" "root" "0700" [
+        "/persist/save/actual-backups"
         "/persist/host/secrets"
         "/persist/host/secrets/zfs"
         "/persist/host/sbctl"
@@ -634,6 +694,21 @@ in {
         config.services.immich.environment.BACKUP_LOCATION
       ])
       // {
+        "${config.services.actual.settings.dataDir}".d = {
+          user = config.services.actual.user;
+          group = config.services.actual.group;
+          mode = "0700";
+        };
+        "${config.services.actual.settings.serverFiles}".d = {
+          user = config.services.actual.user;
+          group = config.services.actual.group;
+          mode = "0700";
+        };
+        "${config.services.actual.settings.userFiles}".d = {
+          user = config.services.actual.user;
+          group = config.services.actual.group;
+          mode = "0700";
+        };
         "${config.services.readeck.settings.main.data_directory}".d = {
           user = "readeck";
           group = "readeck";
@@ -659,12 +734,18 @@ in {
         openssh.authorizedKeys.keys = keys.login;
       };
 
+      actual = {
+        isSystemUser = true;
+        group = "actual";
+      };
+
       readeck = {
         isSystemUser = true;
         group = "readeck";
       };
     };
 
+    groups.actual = {};
     groups.readeck = {};
 
     mutableUsers = false;
