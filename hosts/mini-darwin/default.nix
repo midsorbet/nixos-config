@@ -447,6 +447,8 @@ in {
             <false/>
             <key>onboarding</key>
             <false/>
+            <key>enable_pmtud</key>
+            <false/>
           </dict>
         </array>
         <key>organization_configs</key>
