@@ -53,6 +53,8 @@ tier:
 task:
   eager: default
   prewalk: true
+  enableEffort: true
+  maxEffort: high
   maxConcurrency: 8
   maxRecursionDepth: 2
   softRequestBudgetNotice: true

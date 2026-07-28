@@ -1,16 +1,16 @@
 {pkgs}: let
   inherit (pkgs) lib stdenv;
 
-  version = "17.1.4";
+  version = "17.1.8";
   releaseBaseUrl = "https://github.com/can1357/oh-my-pi/releases/download/v${version}";
   binaries = {
     "aarch64-darwin" = {
       name = "omp-darwin-arm64";
-      hash = "sha256-z0+niqf5XxpKJyIFkMMYrVRrRqa5FPPbWj5C4vzgcvw=";
+      hash = "sha256-rB28gk78oCAreURSEDUTvvDAb+gDTJJI2r1dI/SCDXM=";
     };
     "x86_64-linux" = {
       name = "omp-linux-x64";
-      hash = "sha256-OEc8pvw7N9ku1+BlowwSzqqRaaWjyEWv4CXAkoPT+BY=";
+      hash = "sha256-fuN/oqzcRh/ihvdn51OTp7rCUA/2ODuGNxQSH3PWEOQ=";
     };
   };
   binary =

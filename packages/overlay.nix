@@ -15,10 +15,6 @@
         });
     };
 
-    awscli2 = final: prev: {
-      awscli2 = import ./awscli2.nix {pkgs = prev;};
-    };
-
     apyanki = final: prev: {
       apyanki = final.callPackage ./apyanki.nix {inherit inputs;};
     };
@@ -63,7 +59,6 @@
 
   overlayList = [
     overlays.direnv
-    overlays.awscli2
     overlays.apyanki
     overlays.github-copilot-cli
     overlays.mdfried
