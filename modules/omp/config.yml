@@ -64,6 +64,8 @@ secrets:
   enabled: true
 startup:
   setupWizard: false
+tui:
+  codexResetFireworks: true
 symbolPreset: nerd
 theme:
   dark: kanagawa-wave
