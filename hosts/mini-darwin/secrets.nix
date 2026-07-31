@@ -14,6 +14,13 @@ in {
     group = "wheel";
   };
 
+  age.secrets."herdr-remote-tunnel" = {
+    file = "${secrets}/herdr-remote-tunnel.age";
+    mode = "400";
+    owner = user;
+    group = "staff";
+  };
+
   age.secrets."github-ssh-key" = {
     symlink = true;
     path = "/Users/${user}/.ssh/id_github";

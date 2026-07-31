@@ -132,7 +132,8 @@ Intended Access posture:
 
 - `readeck.midsorbet.me` is the narrow public exception.
 - `rss.midsorbet.me`, `paperless.midsorbet.me`, `photos.midsorbet.me`, `ntfy.midsorbet.me`, and `budget.midsorbet.me` are the gated hostnames.
-- `omp.midsorbet.me`, `lab.midsorbet.me`, and `herdr.midsorbet.me` should not have standing DNS records, tunnel ingress rules, or Access app entries.
+- `omp.midsorbet.me` and `lab.midsorbet.me` should not have standing DNS records, tunnel ingress rules, or Access app entries.
+- `herdr.midsorbet.me` belongs to the separate, Mini-hosted `herdr-remote` Tunnel and Access app; never add it to `baymax-apps`.
 - If a wildcard Access app matches `*.midsorbet.me`, make sure `readeck.midsorbet.me` is explicitly excluded or otherwise not covered by that policy.
 
 Useful symptoms:

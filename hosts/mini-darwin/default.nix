@@ -80,6 +80,12 @@ in {
   local.herdr = {
     enable = true;
     inherit user;
+    remote = {
+      enable = true;
+      tunnelId = "32cb7364-d8e7-4278-8b5d-25b130e520df";
+      credentialsFile = config.age.secrets."herdr-remote-tunnel".path;
+      accessAudience = "d1e198782f9611e555c5657c769cb809fb0f1cb56c3a93d187d5fe220f97aee5";
+    };
   };
   local.hunk = {
     enable = true;
