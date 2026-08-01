@@ -161,7 +161,8 @@ in {
     package = pkgs.nix;
 
     settings = {
-      trusted-users = ["@admin" "${user}"];
+      # Intentional single-admin trust for local Nix and remote Linux builder workflows.
+      trusted-users = ["${user}"];
       substituters = ["https://nix-community.cachix.org" "https://cache.nixos.org"];
       trusted-public-keys = [
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
@@ -419,6 +420,7 @@ in {
       directory='/Library/Application Support/Cloudflare'
       target="$directory/mdm.xml"
       warp_cli='/Applications/Cloudflare WARP.app/Contents/Resources/warp-cli'
+      warp_user=${lib.escapeShellArg user}
 
       remaining=30
       while [ ! -s "$credentials" ]; do
@@ -486,8 +488,8 @@ in {
         exit 1
       fi
 
-      "$warp_cli" mdm refresh
-      "$warp_cli" mdm set-config 'Mini service enrollment'
+      /usr/bin/sudo -H -u "$warp_user" -- "$warp_cli" mdm refresh
+      /usr/bin/sudo -H -u "$warp_user" -- "$warp_cli" mdm set-config 'Mini service enrollment'
     '';
 
     defaults = {

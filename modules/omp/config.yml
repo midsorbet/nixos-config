@@ -7,6 +7,7 @@ exa:
   enableWebsets: false
 astGrep:
   enabled: true
+# Accepted on this single-user host: OMP may capture and control the real desktop.
 computer:
   enabled: true
 edit:

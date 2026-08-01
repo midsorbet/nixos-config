@@ -152,7 +152,8 @@ in {
     nixPath = ["nixos-config=/home/${user}/.local/share/src/nixos-config:/etc/nixos"];
     settings = {
       allowed-users = ["${user}"];
-      trusted-users = ["@admin" "${user}"];
+      # Required for flake archive and remote nh build/switch workflows over SSH.
+      trusted-users = ["${user}"];
       substituters = ["https://nix-community.cachix.org" "https://cache.nixos.org"];
       trusted-public-keys = [
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
@@ -510,6 +511,9 @@ in {
         description = "Export Readeck payload for Borg jobs";
         serviceConfig = {
           Type = "oneshot";
+          User = "readeck";
+          Group = "readeck";
+          UMask = "0077";
           EnvironmentFile = config.age.secrets.readeck-env.path;
           WorkingDirectory = config.services.readeck.settings.main.data_directory;
           ExecStartPre = [
