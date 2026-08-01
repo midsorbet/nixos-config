@@ -21,6 +21,13 @@ in {
     group = "staff";
   };
 
+  age.secrets."omp-collab-tunnel" = {
+    file = "${secrets}/omp-collab-tunnel.age";
+    mode = "400";
+    owner = user;
+    group = "staff";
+  };
+
   age.secrets."github-ssh-key" = {
     symlink = true;
     path = "/Users/${user}/.ssh/id_github";
