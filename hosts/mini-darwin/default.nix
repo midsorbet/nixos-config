@@ -11,6 +11,38 @@
   moblinKey = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBO/2RV9P8Z2/CMbghca654D4sbQ5zbUc7tOJ+x2tcUWILJV3bXeAPI3O+Y65yDU7CojTYje22WBOAWqysmv4LTs= me@moblin";
   lizalfosKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIaUXyO37/x5lwDapVXjT3PGJwbxyrW3dZEH6/uh6i/k me@lizalfos";
   bokoblinKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICecYBAqFLx3p3f+cKEJI6GGkFRcbEUP9a2wIDNHwy/V bokoblin";
+  ompBrokerLocalPort = 18765;
+  ompBrokerRemotePort = 8765;
+  baymaxKnownHosts = pkgs.writeText "baymax-known-hosts" ''
+    ${baymaxLanAddress} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAx1gSRAypT/nq3PKlK54lGTJDPNM2QeK25QoBt0UNPD
+  '';
+  # Mini's existing age/SSH identity is already authorized on Baymax.
+  ompAuthBrokerTunnel = pkgs.writeShellApplication {
+    name = "omp-auth-broker-tunnel";
+    text = ''
+      exec ${pkgs.openssh}/bin/ssh \
+        -F /dev/null \
+        -N \
+        -T \
+        -i ${lib.escapeShellArg "${homeDir}/.ssh/id_ed25519"} \
+        -o BatchMode=yes \
+        -o ConnectTimeout=10 \
+        -o ExitOnForwardFailure=yes \
+        -o GlobalKnownHostsFile=/dev/null \
+        -o IdentitiesOnly=yes \
+        -o LogLevel=ERROR \
+        -o KbdInteractiveAuthentication=no \
+        -o PasswordAuthentication=no \
+        -o PreferredAuthentications=publickey \
+        -o ServerAliveCountMax=3 \
+        -o ServerAliveInterval=30 \
+        -o StrictHostKeyChecking=yes \
+        -o UpdateHostKeys=no \
+        -o UserKnownHostsFile=${baymaxKnownHosts} \
+        -L 127.0.0.1:${toString ompBrokerLocalPort}:127.0.0.1:${toString ompBrokerRemotePort} \
+        ${lib.escapeShellArg "${user}@${baymaxLanAddress}"}
+    '';
+  };
 in {
   imports = [
     ./secrets.nix
@@ -105,7 +137,7 @@ in {
   };
   local.omp = {
     enable = true;
-    authBrokerUrl = "http://${baymaxLanAddress}:8765";
+    authBrokerUrl = "http://127.0.0.1:${toString ompBrokerLocalPort}";
     collab = {
       enable = true;
       tunnelId = "99c3ef20-b6b7-4dc0-8fee-ee95f1165eeb";
@@ -256,6 +288,18 @@ in {
     "Thunderbolt Bridge"
     "Wi-Fi"
   ];
+
+  launchd.user.agents.omp-auth-broker-tunnel = {
+    command = lib.getExe ompAuthBrokerTunnel;
+    serviceConfig = {
+      RunAtLoad = true;
+      KeepAlive = true;
+      ProcessType = "Background";
+      StandardErrorPath = "${homeDir}/Library/Logs/omp-auth-broker-tunnel.err.log";
+      StandardOutPath = "${homeDir}/Library/Logs/omp-auth-broker-tunnel.out.log";
+      ThrottleInterval = 10;
+    };
+  };
 
   programs.ssh.extraConfig = ''
     Host *

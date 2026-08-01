@@ -5,6 +5,11 @@
   ...
 }: let
   cfg = config.local.omp;
+  authBrokerUrlIsSecure =
+    cfg.authBrokerUrl
+    == null
+    || builtins.match "https://.+" cfg.authBrokerUrl != null
+    || builtins.match "http://(127\\.0\\.0\\.1|localhost)(:[0-9]+)?(/.*)?" cfg.authBrokerUrl != null;
 
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/refs/tags/v${cfg.package.version}.tar.gz";
@@ -462,8 +467,8 @@ in {
     authBrokerUrl = lib.mkOption {
       type = with lib.types; nullOr str;
       default = null;
-      example = "http://192.0.2.1:8765";
-      description = "Auth broker URL to add to the managed OMP config; null leaves broker mode disabled.";
+      example = "http://127.0.0.1:18765";
+      description = "Auth broker URL to add to the managed OMP config; non-loopback endpoints must use HTTPS.";
     };
 
     collab = {
@@ -590,40 +595,47 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = lib.optionals cfg.collab.enable [
-      {
-        assertion = pkgs.stdenv.isDarwin;
-        message = "local.omp.collab is only supported on Darwin.";
-      }
-      {
-        assertion = cfg.collab.tunnelId != "";
-        message = "local.omp.collab.tunnelId must be set.";
-      }
-      {
-        assertion = cfg.collab.credentialsFile != "";
-        message = "local.omp.collab.credentialsFile must be set.";
-      }
-      {
-        assertion = cfg.collab.accessAudience != "";
-        message = "local.omp.collab.accessAudience must be set.";
-      }
-      {
-        assertion = cfg.collab.metricsPort != cfg.collab.port;
-        message = "local.omp.collab.metricsPort must differ from collab.port.";
-      }
-      {
-        assertion = cfg.collab.maxFrameBytes <= 16 * 1024 * 1024;
-        message = "local.omp.collab.maxFrameBytes cannot exceed 16 MiB.";
-      }
-      {
-        assertion = cfg.collab.maxSockets >= cfg.collab.maxGuestsPerRoom + 1;
-        message = "local.omp.collab.maxSockets must allow one host plus maxGuestsPerRoom.";
-      }
-      {
-        assertion = lib.elem cfg.collab.webUrl cfg.collab.allowedOrigins;
-        message = "local.omp.collab.allowedOrigins must include collab.webUrl.";
-      }
-    ];
+    assertions =
+      [
+        {
+          assertion = authBrokerUrlIsSecure;
+          message = "local.omp.authBrokerUrl must use HTTPS unless it targets loopback over HTTP.";
+        }
+      ]
+      ++ lib.optionals cfg.collab.enable [
+        {
+          assertion = pkgs.stdenv.isDarwin;
+          message = "local.omp.collab is only supported on Darwin.";
+        }
+        {
+          assertion = cfg.collab.tunnelId != "";
+          message = "local.omp.collab.tunnelId must be set.";
+        }
+        {
+          assertion = cfg.collab.credentialsFile != "";
+          message = "local.omp.collab.credentialsFile must be set.";
+        }
+        {
+          assertion = cfg.collab.accessAudience != "";
+          message = "local.omp.collab.accessAudience must be set.";
+        }
+        {
+          assertion = cfg.collab.metricsPort != cfg.collab.port;
+          message = "local.omp.collab.metricsPort must differ from collab.port.";
+        }
+        {
+          assertion = cfg.collab.maxFrameBytes <= 16 * 1024 * 1024;
+          message = "local.omp.collab.maxFrameBytes cannot exceed 16 MiB.";
+        }
+        {
+          assertion = cfg.collab.maxSockets >= cfg.collab.maxGuestsPerRoom + 1;
+          message = "local.omp.collab.maxSockets must allow one host plus maxGuestsPerRoom.";
+        }
+        {
+          assertion = lib.elem cfg.collab.webUrl cfg.collab.allowedOrigins;
+          message = "local.omp.collab.allowedOrigins must include collab.webUrl.";
+        }
+      ];
 
     environment.systemPackages = [wrappedPackage];
 

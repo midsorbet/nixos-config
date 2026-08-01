@@ -144,7 +144,7 @@ in {
     firewall = {
       enable = true;
       interfaces.CloudflareWARP.allowedTCPPorts = [22 2283];
-      interfaces.enp1s0.allowedTCPPorts = [22 2283 ompBrokerPort];
+      interfaces.enp1s0.allowedTCPPorts = [22 2283];
     };
   };
 
@@ -446,7 +446,7 @@ in {
         environment.HOME = "/home/${user}";
         serviceConfig = {
           Type = "simple";
-          ExecStart = "${lib.getExe pkgs.omp} auth-broker serve --bind=0.0.0.0:${toString ompBrokerPort}";
+          ExecStart = "${lib.getExe pkgs.omp} auth-broker serve --bind=127.0.0.1:${toString ompBrokerPort}";
           Restart = "on-failure";
           RestartSec = "5s";
           User = user;
