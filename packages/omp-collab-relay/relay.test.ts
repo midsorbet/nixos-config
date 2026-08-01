@@ -229,6 +229,29 @@ describe("omp-collab-relay contract", () => {
 		expect((await fetch(`${relayHttpUrl()}/package.json`)).status).toBe(404);
 	});
 
+	it("rewrites loopback browser links to the authenticated same origin", async () => {
+		const key = "k".repeat(43);
+		const script = await Bun.file(join(WEB_ROOT, "relay-url.js")).text();
+		const replacements: string[] = [];
+		const window = {
+			location: {
+				hash: `#ws://127.0.0.1:17475/r/${ROOM}.${key}`,
+				hostname: "omp.midsorbet.me",
+				port: "",
+				pathname: "/",
+				protocol: "https:",
+				search: "",
+			},
+		};
+		const history = {
+			replaceState: (_state: unknown, _unused: string, url: string) => replacements.push(url),
+		};
+
+		new Function("window", "history", "URL", script)(window, history, URL);
+
+		expect(replacements).toEqual([`/#wss://omp.midsorbet.me/r/${ROOM}.${key}`]);
+	});
+
 	it("accepts OMP clients without an Origin header", async () => {
 		start();
 		const host = socket(`/r/${ROOM}?role=host`);

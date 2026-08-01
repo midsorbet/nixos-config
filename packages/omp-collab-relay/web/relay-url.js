@@ -8,9 +8,10 @@
 			link.hostname === "localhost" ||
 			link.hostname === "[::1]" ||
 			link.hostname === "::1";
-		if (!loopback || link.protocol !== "ws:" || !/^\/r\/[A-Za-z0-9_-]{10,64}$/.test(link.pathname)) return;
+		if (!loopback || link.protocol !== "ws:" || !/^\/r\/[A-Za-z0-9_-]{10,64}\.[A-Za-z0-9_-]+$/.test(link.pathname)) return;
 		link.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-		link.host = window.location.host;
+		link.hostname = window.location.hostname;
+		link.port = window.location.port;
 		history.replaceState(null, "", `${window.location.pathname}${window.location.search}#${link.href}`);
 	} catch {
 		// The guest client reports malformed collab links after it loads.

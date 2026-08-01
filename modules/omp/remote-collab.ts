@@ -16,6 +16,21 @@ export default function (pi: ExtensionAPI) {
 		};
 	};
 
+	pi.on("input", async (event, ctx) => {
+		if (event.source !== "interactive") return;
+		const input = event.text.trim().toLowerCase();
+		if (input !== "/remote-collab" && input !== "/remote-collab view") return;
+
+		ctx.ui.notify("Starting the on-demand OMP collab tunnel…", "info");
+		const started = await run(START_COMMAND);
+		if (!started.ok) {
+			ctx.ui.notify(started.error, "error");
+			return { handled: true };
+		}
+		if (started.stdout.includes("OMP_COLLAB_STARTED=1")) ownsExposure = true;
+		return { text: "/collab view" };
+	});
+
 	pi.registerCommand("remote-collab", {
 		description: "Start, inspect, or stop the on-demand omp.midsorbet.me collab relay",
 		getArgumentCompletions(argumentPrefix) {
@@ -58,7 +73,8 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 			if (started.stdout.includes("OMP_COLLAB_STARTED=1")) ownsExposure = true;
-			pi.sendUserMessage("/collab view", { deliverAs: "followUp" });
+			ctx.ui.setEditorText("/collab view");
+			ctx.ui.notify("Press Enter to open the collab browser link", "info");
 		},
 	});
 
