@@ -17,32 +17,48 @@
     ${baymaxLanAddress} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAx1gSRAypT/nq3PKlK54lGTJDPNM2QeK25QoBt0UNPD
   '';
   # Mini's existing age/SSH identity is already authorized on Baymax.
-  ompAuthBrokerTunnel = pkgs.writeShellApplication {
-    name = "omp-auth-broker-tunnel";
-    text = ''
-      exec ${pkgs.openssh}/bin/ssh \
-        -F /dev/null \
-        -N \
-        -T \
-        -i ${lib.escapeShellArg "${homeDir}/.ssh/id_ed25519"} \
-        -o BatchMode=yes \
-        -o ConnectTimeout=10 \
-        -o ExitOnForwardFailure=yes \
-        -o GlobalKnownHostsFile=/dev/null \
-        -o IdentitiesOnly=yes \
-        -o LogLevel=ERROR \
-        -o KbdInteractiveAuthentication=no \
-        -o PasswordAuthentication=no \
-        -o PreferredAuthentications=publickey \
-        -o ServerAliveCountMax=3 \
-        -o ServerAliveInterval=30 \
-        -o StrictHostKeyChecking=yes \
-        -o UpdateHostKeys=no \
-        -o UserKnownHostsFile=${baymaxKnownHosts} \
-        -L 127.0.0.1:${toString ompBrokerLocalPort}:127.0.0.1:${toString ompBrokerRemotePort} \
-        ${lib.escapeShellArg "${user}@${baymaxLanAddress}"}
-    '';
-  };
+  # Use Apple's stable signed client directly: background Nix-store binaries
+  # have no Local Network privacy grant and fail LAN connections with EHOSTUNREACH.
+  ompAuthBrokerTunnelArguments = [
+    "/usr/bin/ssh"
+    "-F"
+    "/dev/null"
+    "-N"
+    "-T"
+    "-i"
+    "${homeDir}/.ssh/id_ed25519"
+    "-o"
+    "BatchMode=yes"
+    "-o"
+    "ConnectTimeout=10"
+    "-o"
+    "ExitOnForwardFailure=yes"
+    "-o"
+    "GlobalKnownHostsFile=/dev/null"
+    "-o"
+    "IdentitiesOnly=yes"
+    "-o"
+    "LogLevel=ERROR"
+    "-o"
+    "KbdInteractiveAuthentication=no"
+    "-o"
+    "PasswordAuthentication=no"
+    "-o"
+    "PreferredAuthentications=publickey"
+    "-o"
+    "ServerAliveCountMax=3"
+    "-o"
+    "ServerAliveInterval=30"
+    "-o"
+    "StrictHostKeyChecking=yes"
+    "-o"
+    "UpdateHostKeys=no"
+    "-o"
+    "UserKnownHostsFile=${baymaxKnownHosts}"
+    "-L"
+    "127.0.0.1:${toString ompBrokerLocalPort}:127.0.0.1:${toString ompBrokerRemotePort}"
+    "${user}@${baymaxLanAddress}"
+  ];
 in {
   imports = [
     ./secrets.nix
@@ -290,8 +306,8 @@ in {
   ];
 
   launchd.user.agents.omp-auth-broker-tunnel = {
-    command = lib.getExe ompAuthBrokerTunnel;
     serviceConfig = {
+      ProgramArguments = ompAuthBrokerTunnelArguments;
       RunAtLoad = true;
       KeepAlive = true;
       ProcessType = "Background";
