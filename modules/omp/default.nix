@@ -16,6 +16,61 @@
     hash = "sha256-yh6iETM0pMzoW3SzYfx/SrPQiOCbKgcS094DicfO66A=";
   };
   runtimePath = lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage] ++ cfg.extraRuntimePackages);
+  computerUsePackage = pkgs.callPackage ../../packages/codex-computer-use-mcp.nix {};
+  computerUseConfigure = pkgs.writeShellApplication {
+    name = "omp-configure-computer-use";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.diffutils
+      pkgs.jq
+    ];
+    text = ''
+      set -euo pipefail
+
+      config_dir="$HOME/.omp/agent"
+      config_file="$config_dir/mcp.json"
+      mkdir -p "$config_dir"
+
+      input="$config_file"
+      seed=""
+      if [[ ! -f "$input" ]]; then
+        seed="$(mktemp "$config_dir/.mcp.seed.XXXXXX")"
+        printf '{}\n' >"$seed"
+        input="$seed"
+      fi
+
+      updated="$(mktemp "$config_dir/.mcp.json.XXXXXX")"
+      cleanup() {
+        rm -f "$seed" "$updated"
+      }
+      trap cleanup EXIT
+
+      jq --arg command "${lib.getExe computerUsePackage}" '
+        .["$schema"] //= "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json"
+        | .mcpServers = (.mcpServers // {})
+        | .mcpServers["chatgpt-computer-use"] = {
+            type: "stdio",
+            command: $command
+          }
+        | .disabledServers = (
+            (.disabledServers // [])
+            | if index("computer-use") == null
+              then . + ["computer-use"]
+              else .
+              end
+          )
+      ' "$input" >"$updated"
+
+      if [[ -f "$config_file" ]] && cmp -s "$config_file" "$updated"; then
+        exit 0
+      fi
+
+      mv "$updated" "$config_file"
+      trap - EXIT
+      rm -f "$seed"
+    '';
+  };
+
   papercutReviewScript = pkgs.writeShellApplication {
     name = "omp-papercut-review";
 
@@ -637,7 +692,11 @@ in {
         }
       ];
 
-    environment.systemPackages = [wrappedPackage];
+    environment.systemPackages = [
+      wrappedPackage
+      computerUsePackage
+      computerUseConfigure
+    ];
 
     hjem.users.${cfg.user} = {
       packages = lib.optionals cfg.collab.enable [
@@ -666,6 +725,11 @@ in {
         };
       };
     };
+
+    system.activationScripts.postActivation.text = lib.mkAfter ''
+      echo >&2 "Configuring OMP ChatGPT Computer Use MCP..."
+      /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe computerUseConfigure}
+    '';
 
     launchd.user.agents.omp-papercut-review = lib.mkIf cfg.papercutReview.enable {
       command = "${papercutReviewScript}/bin/omp-papercut-review";

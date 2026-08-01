@@ -9,7 +9,7 @@ astGrep:
   enabled: true
 # Accepted on this single-user host: OMP may capture and control the real desktop.
 computer:
-  enabled: true
+  enabled: false
 edit:
   enforceSeenLines: true
 error:
