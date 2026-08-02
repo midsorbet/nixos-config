@@ -19,75 +19,12 @@
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
   computerUsePackage = pkgs.callPackage ../../packages/codex-computer-use-mcp.nix {};
   cxporterPackage = pkgs.callPackage ../../packages/cxporter.nix {};
-  codexConnectorsSkill = pkgs.writeTextDir "share/agents/skills/codex-connectors/SKILL.md" ''
-    ---
-    name: codex-connectors
-    description: Use ChatGPT/Codex connectors from OMP when the user explicitly asks to access a configured service such as Gmail, Google Calendar, Drive, GitHub, Linear, Outlook, or Contacts.
-    ---
-
-    # Codex connectors
-
-    Access configured ChatGPT/Codex connectors directly through `cxporter`. Activate this
-    workflow only when the user explicitly asks to use connector-backed data or actions.
-    A general question about a service does not require connector access.
-
-    ## Context boundary
-
-    Use the `cxporter` CLI through OMP's `bash` tool. Do not start `cxporter serve` for
-    routine connector access: its MCP surface exports the full selected server catalog,
-    which defeats on-demand discovery and adds every connector tool to the live tool set.
-    `cxporter call` invokes the selected MCP tool directly; it does not start a Codex model
-    turn.
-
-    ## Workflow
-
-    1. Discover configured connectors when the target is not already clear:
-
-       ```bash
-       cxporter apps
-       ```
-
-       Add `--force` only when a newly configured connector is missing from the cached list.
-
-    2. Resolve the exact raw tool name. Never guess it:
-
-       ```bash
-       cxporter list --server codex_apps --connector "Google Calendar" --format text
-       ```
-
-       Use `--format json` when programmatic filtering is useful.
-
-    3. Read the current input schema before every unfamiliar call:
-
-       ```bash
-       cxporter schema codex_apps google_calendar.search_events
-       ```
-
-    4. Call the raw tool with the smallest sufficient argument object:
-
-       ```bash
-       cxporter call codex_apps google_calendar.search_events '{"query":"example"}'
-       ```
-
-       For nested or quote-heavy arguments, write a temporary JSON file and pass
-       `--args-file <path>` instead of building fragile shell quoting.
-
-    5. Check both the process exit status and the MCP result's `isError` field. Extract only
-       the information needed for the request; do not echo unrelated private connector data.
-
-    ## Safety
-
-    - Use a mutating tool only when the user explicitly requested that specific side effect.
-      Inspection or discovery is not authorization to create, send, update, delete, respond,
-      merge, transition, archive, or label.
-    - Keep the default `--retry 0` for mutations. A read-only call may use `--retry 1` only
-      after a concrete transient transport failure.
-    - Never use `--no-preflight`; fix arguments against the current schema instead.
-    - Never run `cxporter auth export --reveal` or print access tokens unless the user
-      explicitly requests credential export. Do not implement a parallel OAuth flow.
-    - On authentication failure, preserve the error and direct the user to refresh the
-      existing Codex/ChatGPT connector login.
-  '';
+  codexConnectorsSkill = pkgs.writeTextDir "share/agents/skills/codex-connectors/SKILL.md" (
+    builtins.readFile ./skills/codex-connectors/SKILL.md
+  );
+  skyComputerUseSkill = pkgs.writeTextDir "share/agents/skills/chatgpt-sky-computer-use/SKILL.md" (
+    builtins.readFile ./skills/chatgpt-sky-computer-use/SKILL.md
+  );
   computerUseConfigure = pkgs.writeShellApplication {
     name = "omp-configure-computer-use";
     runtimeInputs = [
@@ -786,6 +723,11 @@ in {
         ".agents/skills/codex-connectors" = {
           type = "symlink";
           source = "${codexConnectorsSkill}/share/agents/skills/codex-connectors";
+          clobber = true;
+        };
+        ".agents/skills/chatgpt-sky-computer-use" = {
+          type = "symlink";
+          source = "${skyComputerUseSkill}/share/agents/skills/chatgpt-sky-computer-use";
           clobber = true;
         };
         ".omp/agent/extensions/remote-collab.ts" = lib.mkIf cfg.collab.enable {
