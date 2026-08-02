@@ -58,7 +58,8 @@
         | .mcpServers = (.mcpServers // {})
         | .mcpServers["chatgpt-computer-use"] = {
             type: "stdio",
-            command: $command
+            command: $command,
+            enabled: (.mcpServers["chatgpt-computer-use"].enabled // false)
           }
         | .disabledServers = (
             (.disabledServers // [])
