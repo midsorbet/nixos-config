@@ -16,6 +16,7 @@
     cursor-style-blink = false
     window-save-state = never
     keybind = shift+enter=text:\x1b\r
+    keybind = global:alt+enter=new_window
   '';
 
   themes = {

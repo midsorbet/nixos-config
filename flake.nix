@@ -37,6 +37,11 @@
       url = "github:ogulcancelik/herdr/v0.7.5";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    paneru = {
+      url = "github:karinushka/paneru/v0.4.4";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nix-darwin.follows = "darwin";
+    };
     darwin = {
       url = "github:LnL7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -210,6 +210,24 @@
         "nixpkgs-lib": "nixpkgs-lib_2"
       },
       "locked": {
+        "lastModified": 1777898446,
+        "narHash": "sha256-tTEOTTjMHd8Vffn4hehLTPgOXXxJ27xfkf4DoyZgD7s=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "5d82aa3d6b5da25dbfec1a995750a70a03b8c659",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_3": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib_3"
+      },
+      "locked": {
         "lastModified": 1772408722,
         "narHash": "sha256-rHuJtdcOjK7rAHpHphUb1iCvgkU3GpfvicLMwwnfMT0=",
         "owner": "hercules-ci",
@@ -453,6 +471,21 @@
         "type": "github"
       }
     },
+    "import-tree_2": {
+      "locked": {
+        "lastModified": 1773693634,
+        "narHash": "sha256-BtZ2dtkBdSUnFPPFc+n0kcMbgaTxzFNPv2iaO326Ffg=",
+        "owner": "vic",
+        "repo": "import-tree",
+        "rev": "c41e7d58045f9057880b0d85e1152d6a4430dbf1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "vic",
+        "repo": "import-tree",
+        "type": "github"
+      }
+    },
     "lanzaboote": {
       "inputs": {
         "crane": "crane",
@@ -630,6 +663,21 @@
     },
     "nixpkgs-lib_2": {
       "locked": {
+        "lastModified": 1777168982,
+        "narHash": "sha256-GOkGPcboWE9BmGCRMLX3worL4EMnsnG8MyKmXNeYuhQ=",
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "rev": "f5901329dade4a6ea039af1433fb087bd9c1fe14",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "type": "github"
+      }
+    },
+    "nixpkgs-lib_3": {
+      "locked": {
         "lastModified": 1772328832,
         "narHash": "sha256-e+/T/pmEkLP6BHhYjx6GmwP5ivonQQn0bJdH9YrRB+Q=",
         "owner": "nix-community",
@@ -656,6 +704,32 @@
         "owner": "nixos",
         "ref": "nixos-unstable",
         "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "paneru": {
+      "inputs": {
+        "flake-parts": "flake-parts_2",
+        "import-tree": "import-tree_2",
+        "nix-darwin": [
+          "darwin"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785072436,
+        "narHash": "sha256-7S4wxQYjObNM1EKYYNy12OgTICpzr9Ya9SNiZmWFnOk=",
+        "owner": "karinushka",
+        "repo": "paneru",
+        "rev": "0d6c025bedf5fdba5473c1242625b518050f0cdd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "karinushka",
+        "ref": "v0.4.4",
+        "repo": "paneru",
         "type": "github"
       }
     },
@@ -748,6 +822,7 @@
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-darwin-compat": "nixpkgs-darwin-compat",
+        "paneru": "paneru",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
         "secrets": "secrets",
@@ -926,7 +1001,7 @@
     },
     "vscode-server": {
       "inputs": {
-        "flake-parts": "flake-parts_2"
+        "flake-parts": "flake-parts_3"
       },
       "locked": {
         "lastModified": 1784312229,

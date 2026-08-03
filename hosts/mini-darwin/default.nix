@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  paneru,
   ...
 }: let
   user = "me";
@@ -74,6 +75,7 @@ in {
     ../../modules/plannotator.nix
     ../../modules/shared
     agenix.darwinModules.default
+    paneru.darwinModules.paneru
   ];
 
   # nix-darwin manual generation currently calls a removed nixos-render-docs
@@ -335,126 +337,70 @@ in {
     enableMouse = true;
   };
 
-  services.aerospace = {
+  services.paneru = {
     enable = true;
     settings = {
-      config-version = 2;
-      enable-normalization-flatten-containers = false;
-      enable-normalization-opposite-orientation-for-nested-containers = false;
-      on-focus-changed = ["move-mouse window-lazy-center"];
-      gaps = {
-        inner.horizontal = 10;
-        inner.vertical = 10;
-        outer.left = 5;
-        outer.right = 5;
-        outer.top = 5;
-        outer.bottom = 5;
+      options = {
+        focus_follows_mouse = false;
+        mouse_follows_focus = true;
+        preset_column_widths = [0.5 0.66 0.75 1.0];
+        window_resize_cycle = false;
+        animation_speed = 15.0;
+        auto_center = false;
+        sliver_width = 5;
+        sliver_height = 1.0;
+        # The portrait display is logically below the landscape display.
+        horizontal_mouse_warp = -1;
       };
-      workspace-to-monitor-force-assignment = {
-        "1" = "main";
-        "2" = "main";
-        "3" = "main";
-        "4" = "main";
-        "5" = "main";
-        "6" = "main";
-        "7" = "main";
-        "8" = "main";
-        "9" = "main";
-        A = "secondary";
-        B = "secondary";
-        C = "secondary";
-        D = "secondary";
-        E = "secondary";
-        F = "secondary";
+      padding = {
+        top = 5;
+        bottom = 5;
+        left = 5;
+        right = 5;
       };
-      on-window-detected = [
-        {
-          "if".app-id = "org.mozilla.firefox";
-          run = "move-node-to-workspace A";
-        }
-        {
-          "if".app-id = "com.google.Chrome";
-          run = "move-node-to-workspace A";
-        }
-        {
-          "if".app-id = "com.openai.codex";
-          run = "move-node-to-workspace 1";
-        }
-        {
-          "if".app-id = "com.openai.chat";
-          run = "move-node-to-workspace 3";
-        }
-        {
-          "if".app-id = "com.microsoft.VSCode";
-          run = "move-node-to-workspace 2";
-        }
-        {
-          "if".app-id = "com.mitchellh.ghostty";
-          run = "move-node-to-workspace 1";
-        }
-        {
-          "if".app-id = "com.apple.systempreferences";
-          run = "layout floating";
-        }
-        {
-          "if".app-id = "com.renpho.health";
-          run = "layout floating";
-        }
-      ];
-      mode.main.binding = {
-        alt-h = "focus left";
-        alt-j = "focus down";
-        alt-k = "focus up";
-        alt-l = "focus right";
+      swipe = {
+        sensitivity = 0.35;
+        deceleration = 4.0;
+        continuous = false;
+        scroll.modifier = "alt";
+      };
+      bindings = {
+        window_focus_west = "alt - h";
+        window_focus_south = "alt - j";
+        window_focus_north = "alt - k";
+        window_focus_east = "alt - l";
+        window_focus_managed = "alt - tab";
 
-        alt-shift-h = "move left";
-        alt-shift-j = "move down";
-        alt-shift-k = "move up";
-        alt-shift-l = "move right";
+        window_swap_west = "alt + shift - h";
+        window_swap_south = "alt + shift - j";
+        window_swap_north = "alt + shift - k";
+        window_swap_east = "alt + shift - l";
 
-        alt-minus = "resize smart -50";
-        alt-equal = "resize smart +50";
+        window_shrink = "alt - minus";
+        window_grow = "alt - equal";
+        window_center = "alt - c";
+        window_fullwidth = "ctrl + alt - f";
+        window_manage = "alt + shift - space";
 
-        alt-slash = "layout tiles horizontal vertical";
-        alt-comma = "layout accordion horizontal vertical";
-        ctrl-alt-f = "fullscreen";
-        alt-shift-space = "layout floating tiling";
-        alt-enter = "exec-and-forget /usr/bin/osascript -e 'tell application \"Ghostty\" to new window' -e 'tell application \"Ghostty\" to activate'";
+        window_unstack = "alt - slash";
+        window_stack = "alt - comma";
+        window_balance = "alt - b";
 
-        alt-1 = "workspace 1";
-        alt-2 = "workspace 2";
-        alt-3 = "workspace 3";
-        alt-4 = "workspace 4";
-        alt-5 = "workspace 5";
-        alt-6 = "workspace 6";
-        alt-7 = "workspace 7";
-        alt-8 = "workspace 8";
-        alt-9 = "workspace 9";
-        alt-a = "workspace A";
-        alt-b = "workspace B";
-        alt-c = "workspace C";
-        alt-d = "workspace D";
-        alt-e = "workspace E";
-        alt-f = "workspace F";
-
-        alt-shift-1 = "move-node-to-workspace 1";
-        alt-shift-2 = "move-node-to-workspace 2";
-        alt-shift-3 = "move-node-to-workspace 3";
-        alt-shift-4 = "move-node-to-workspace 4";
-        alt-shift-5 = "move-node-to-workspace 5";
-        alt-shift-6 = "move-node-to-workspace 6";
-        alt-shift-7 = "move-node-to-workspace 7";
-        alt-shift-8 = "move-node-to-workspace 8";
-        alt-shift-9 = "move-node-to-workspace 9";
-        alt-shift-a = "move-node-to-workspace A";
-        alt-shift-b = "move-node-to-workspace B";
-        alt-shift-c = "move-node-to-workspace C";
-        alt-shift-d = "move-node-to-workspace D";
-        alt-shift-e = "move-node-to-workspace E";
-        alt-shift-f = "move-node-to-workspace F";
-
-        alt-tab = "workspace-back-and-forth";
-        alt-shift-tab = "move-node-to-monitor --focus-follows-window --wrap-around next";
+        window_nextdisplay = "alt + shift - tab";
+        window_snap = "alt - s";
+        quit = "ctrl + alt - q";
+      };
+      windows = {
+        system_settings = {
+          title = ".*";
+          bundle_id = "com.apple.systempreferences";
+          floating = true;
+        };
+        renpho_health = {
+          title = ".*";
+          bundle_id = "com.renpho.health";
+          floating = true;
+        };
       };
     };
   };
