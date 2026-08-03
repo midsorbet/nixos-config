@@ -345,6 +345,8 @@ in {
         mouse_follows_focus = true;
         preset_column_widths = [0.5 0.66 0.75 1.0];
         window_resize_cycle = false;
+        # Numbered virtual workspace rows are created on demand and remain stable.
+        reap_empty_workspaces = false;
         animation_speed = 15.0;
         auto_center = false;
         sliver_width = 5;
@@ -363,6 +365,7 @@ in {
         deceleration = 4.0;
         continuous = false;
         scroll.modifier = "alt";
+        scroll.vertical_modifier = "shift";
       };
       bindings = {
         window_focus_west = "alt - h";
@@ -370,11 +373,38 @@ in {
         window_focus_north = "alt - k";
         window_focus_east = "alt - l";
         window_focus_managed = "alt - tab";
+        window_focus_unmanaged = "ctrl + alt - tab";
+        window_raise_floating = "ctrl + alt - space";
 
         window_swap_west = "alt + shift - h";
         window_swap_south = "alt + shift - j";
         window_swap_north = "alt + shift - k";
         window_swap_east = "alt + shift - l";
+
+        window_virtual_north = "ctrl + alt - k";
+        window_virtual_south = "ctrl + alt - j";
+        window_virtualmove_north = "ctrl + alt + shift - k";
+        window_virtualmove_south = "ctrl + alt + shift - j";
+
+        window_virtualnum_1 = "alt - 1";
+        window_virtualnum_2 = "alt - 2";
+        window_virtualnum_3 = "alt - 3";
+        window_virtualnum_4 = "alt - 4";
+        window_virtualnum_5 = "alt - 5";
+        window_virtualnum_6 = "alt - 6";
+        window_virtualnum_7 = "alt - 7";
+        window_virtualnum_8 = "alt - 8";
+        window_virtualnum_9 = "alt - 9";
+
+        window_virtualsendnum_1 = "alt + shift - 1";
+        window_virtualsendnum_2 = "alt + shift - 2";
+        window_virtualsendnum_3 = "alt + shift - 3";
+        window_virtualsendnum_4 = "alt + shift - 4";
+        window_virtualsendnum_5 = "alt + shift - 5";
+        window_virtualsendnum_6 = "alt + shift - 6";
+        window_virtualsendnum_7 = "alt + shift - 7";
+        window_virtualsendnum_8 = "alt + shift - 8";
+        window_virtualsendnum_9 = "alt + shift - 9";
 
         window_shrink = "alt - minus";
         window_grow = "alt - equal";
@@ -394,6 +424,11 @@ in {
         system_settings = {
           title = ".*";
           bundle_id = "com.apple.systempreferences";
+          floating = true;
+        };
+        chatgpt_browser_comment = {
+          title = "^Browser comment$";
+          bundle_id = "com.openai.codex";
           floating = true;
         };
         renpho_health = {
