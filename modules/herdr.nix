@@ -187,6 +187,7 @@ in {
 
         ui = {
           mouse_capture = true;
+          pane_scrollbars = false;
           copy_on_select = true;
           sidebar_width = 20;
           sidebar_min_width = 18;

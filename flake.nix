@@ -34,7 +34,7 @@
       inputs.bun2nix.inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
     };
     herdr = {
-      url = "github:ogulcancelik/herdr/v0.7.5";
+      url = "github:herdrdev/herdr/v0.8.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     paneru = {
