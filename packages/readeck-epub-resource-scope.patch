@@ -1,0 +1,74 @@
+diff --git a/internal/bookmarks/converter/epub.go b/internal/bookmarks/converter/epub.go
+index d755c5d4..89cefc20 100644
+--- a/internal/bookmarks/converter/epub.go
++++ b/internal/bookmarks/converter/epub.go
+@@ -77,9 +77,9 @@ func (e EPUBExporter) IterExport(ctx context.Context, w io.Writer, r *http.Reque
+ 		m.Close() //nolint:errcheck
+ 	}()
+ 
+-	ctx = dataset.WithURLReplacer(ctx, func(_ *bookmarks.Bookmark) func(name string) string {
++	ctx = dataset.WithURLReplacer(ctx, func(b *bookmarks.Bookmark) func(name string) string {
+ 		return func(name string) string {
+-			return "./Images/" + path.Base(name)
++			return "./" + epubResourceName(b.UID, name)
+ 		}
+ 	})
+ 
+@@ -161,6 +161,15 @@ func (m *epubMaker) addStylesheet() error {
+ 	return m.AddFile("stylesheet", "styles/stylesheet.css", "text/css", f)
+ }
+ 
++func epubResourceID(bookmarkID, name string) string {
++	id := uuid.NewSHA1(uuid.NameSpaceURL, []byte(name))
++	return "res-" + bookmarkID + "-" + id.String()
++}
++
++func epubResourceName(bookmarkID, name string) string {
++	return path.Join("Images", bookmarkID, path.Base(name))
++}
++
+ // addBookmark adds a bookmark, with all its resources, to the epub file.
+ func (m *epubMaker) addBookmark(ctx context.Context, r *http.Request, e EPUBExporter, b *dataset.Bookmark) (err error) {
+ 	var c *bookmarks.BookmarkContainer
+@@ -178,8 +187,8 @@ func (m *epubMaker) addBookmark(ctx context.Context, r *http.Request, e EPUBExpo
+ 			}
+ 			defer fp.Close() //nolint:errcheck
+ 			return m.AddImage(
+-				"res-"+strings.TrimSuffix(path.Base(x.Name), path.Ext(x.Name)),
+-				path.Join("Images", path.Base(x.Name)),
++				epubResourceID(b.UID, x.Name),
++				epubResourceName(b.UID, x.Name),
+ 				fp,
+ 			)
+ 		}()
+diff --git a/internal/bookmarks/converter/epub_test.go b/internal/bookmarks/converter/epub_test.go
+new file mode 100644
+--- /dev/null
++++ b/internal/bookmarks/converter/epub_test.go
+@@ -0,0 +1,26 @@
++// SPDX-FileCopyrightText: © 2026 Readeck contributors
++//
++// SPDX-License-Identifier: AGPL-3.0-only
++
++package converter
++
++import "testing"
++
++func TestEPUBResourceNamesAreBookmarkScoped(t *testing.T) {
++	first := epubResourceName("bookmark-a", "_resources/shared.jpg")
++	second := epubResourceName("bookmark-b", "_resources/shared.jpg")
++	if first == second {
++		t.Fatalf("resource names collide: %q", first)
++	}
++	if first != "Images/bookmark-a/shared.jpg" {
++		t.Fatalf("unexpected resource name: %q", first)
++	}
++}
++
++func TestEPUBResourceIDsIncludeFullSourceName(t *testing.T) {
++	first := epubResourceID("bookmark-a", "_resources/shared.jpg")
++	second := epubResourceID("bookmark-a", "other/shared.jpg")
++	if first == second {
++		t.Fatalf("resource IDs collide: %q", first)
++	}
++}
