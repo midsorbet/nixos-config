@@ -80,26 +80,6 @@
     '';
   };
 
-  papercutReviewScript = pkgs.writeShellApplication {
-    name = "omp-papercut-review";
-
-    text = ''
-      set -euo pipefail
-
-      export HOME="/Users/${cfg.user}"
-      export USER="${cfg.user}"
-      export PATH="${lib.makeBinPath [wrappedPackage cfg.bunPackage]}:/usr/bin:/bin:/usr/sbin:/sbin"
-
-      log_dir="$HOME/Library/Logs/omp"
-      project_path=${lib.escapeShellArg cfg.papercutReview.projectPath}
-      mkdir -p "$log_dir"
-      exec >> "$log_dir/papercut-review.log" 2>&1
-
-      echo "== $(date '+%Y-%m-%d %H:%M:%S') OMP papercut review =="
-      cd "$project_path"
-      exec ${lib.getExe cfg.bunPackage} "$project_path/src/cli.ts" review
-    '';
-  };
   collabRelayPackage = pkgs.callPackage ../../packages/omp-collab-relay {};
   yamlFormat = pkgs.formats.yaml {};
   collabHome = "/Users/${cfg.user}";
@@ -634,28 +614,6 @@ in {
         description = "Path to the agenix-managed per-tunnel credentials JSON.";
       };
     };
-
-    papercutReview = {
-      enable = lib.mkEnableOption "nightly papercut review";
-
-      hour = lib.mkOption {
-        type = lib.types.int;
-        default = 23;
-        description = "Local hour for the papercut review launchd job.";
-      };
-
-      minute = lib.mkOption {
-        type = lib.types.int;
-        default = 30;
-        description = "Local minute for the papercut review launchd job.";
-      };
-
-      projectPath = lib.mkOption {
-        type = lib.types.str;
-        default = "/Users/${cfg.user}/vault/projects/omp-papercuts";
-        description = "Mutable standalone checkout containing the papercut review CLI.";
-      };
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -750,17 +708,6 @@ in {
       echo >&2 "Configuring OMP ChatGPT Computer Use MCP..."
       /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe computerUseConfigure}
     '';
-
-    launchd.user.agents.omp-papercut-review = lib.mkIf cfg.papercutReview.enable {
-      command = "${papercutReviewScript}/bin/omp-papercut-review";
-      serviceConfig = {
-        RunAtLoad = false;
-        StartCalendarInterval = {
-          Hour = cfg.papercutReview.hour;
-          Minute = cfg.papercutReview.minute;
-        };
-      };
-    };
 
     launchd.user.agents.omp-collab = lib.mkIf cfg.collab.enable {
       command = lib.getExe collabRunner;

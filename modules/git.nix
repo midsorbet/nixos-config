@@ -76,9 +76,6 @@ in {
       xdg.config.files."git/ignore" = {
         text = ''
           **/.claude/settings.local.json
-          **/PAPERCUTS.md
-          **/PAPERCUTS.md.lock*/
-          **/.PAPERCUTS.md.*.tmp
         '';
         clobber = true;
       };
