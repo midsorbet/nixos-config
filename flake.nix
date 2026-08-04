@@ -29,7 +29,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hunk = {
-      url = "github:modem-dev/hunk/v0.17.6";
+      url = "github:modem-dev/hunk/v0.17.7";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
     };
