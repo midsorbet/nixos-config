@@ -5,7 +5,7 @@
     "": {
       "name": "omp-collab-relay",
       "dependencies": {
-        "@oh-my-pi/pi-wire": "17.2.6",
+        "@oh-my-pi/pi-wire": "17.2.7",
       },
       "devDependencies": {
         "@types/bun": "^1.3.14",
@@ -13,7 +13,7 @@
     },
   },
   "packages": {
-    "@oh-my-pi/pi-wire": ["@oh-my-pi/pi-wire@17.2.6", "", {}, "sha512-D6Mjo8W2sZh/NPzqFVF3fATCChISYwLh4kAxoxjo/mz+8EXnZop36huHmFPL/4lSOA+iXNBmZDaQek21F5yWdw=="],
+    "@oh-my-pi/pi-wire": ["@oh-my-pi/pi-wire@17.2.7", "", {}, "sha512-4mlyAXQTVnZu3SoLC3M+aLS9yWn872dd/uXK0oClR6wmINFa48uAQEQXcz1u7n7Mnjiq7U8YCV7Je8aD3t5NSA=="],
 
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 
