@@ -7,7 +7,9 @@ exa:
   enableWebsets: false
 astGrep:
   enabled: true
-# Accepted on this single-user host: OMP may capture and control the real desktop.
+browser:
+  relay: true
+# Native control is available session-locally via /computer on; keep it off by default so dedicated interfaces and Sky retain priority.
 computer:
   enabled: false
 edit:

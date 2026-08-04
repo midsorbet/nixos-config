@@ -1,5 +1,5 @@
 /**
- * Contract tests mirror OMP v17.2.3's local relay. Hardening tests defend the
+ * Contract tests mirror OMP v17.2.6's local relay. Hardening tests defend the
  * additional public-exposure boundaries in this package.
  *
  * Run with: bun test packages/omp-collab-relay/relay.test.ts
@@ -462,7 +462,7 @@ describe("omp-collab-relay hardening", () => {
 });
 
 describe("upstream wire conformance", () => {
-	it("matches OMP 17.2.3 relay assumptions", () => {
+	it("matches OMP 17.2.6 relay assumptions", () => {
 		expect(ENVELOPE_HEADER_LENGTH).toBe(4);
 		const roomIdLength = Math.ceil((ROOM_ID_BYTES * 8) / 6);
 		expect(ROOM_PATH_RE.test(`/r/${"A".repeat(roomIdLength)}`)).toBe(true);
