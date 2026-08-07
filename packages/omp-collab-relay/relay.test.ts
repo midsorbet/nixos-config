@@ -462,7 +462,7 @@ describe("omp-collab-relay hardening", () => {
 });
 
 describe("upstream wire conformance", () => {
-	it("matches OMP 17.2.6 relay assumptions", () => {
+	it("matches the pinned OMP relay assumptions", () => {
 		expect(ENVELOPE_HEADER_LENGTH).toBe(4);
 		const roomIdLength = Math.ceil((ROOM_ID_BYTES * 8) / 6);
 		expect(ROOM_PATH_RE.test(`/r/${"A".repeat(roomIdLength)}`)).toBe(true);

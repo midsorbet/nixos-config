@@ -2,9 +2,6 @@ defaultThinkingLevel: xhigh
 textVerbosity: low
 exa:
   enabled: true
-  enableSearch: true
-  enableResearcher: true
-  enableWebsets: false
 astGrep:
   enabled: true
 browser:
