@@ -29,7 +29,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hunk = {
-      url = "github:modem-dev/hunk/v0.17.7";
+      url = "github:modem-dev/hunk/v0.18.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.bun2nix.inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
     };
@@ -87,7 +87,7 @@
     };
     vscode-server.url = "github:nix-community/nixos-vscode-server";
     mdfried = {
-      url = "github:benjajaja/mdfried/v0.22.4";
+      url = "github:benjajaja/mdfried/v0.22.5";
       inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
     };
   };

@@ -1,5 +1,5 @@
 diff --git a/relay/herdr_relay.py b/relay/herdr_relay.py
-index d528a94..4307471 100644
+index 1e4a862..4307471 100644
 --- a/relay/herdr_relay.py
 +++ b/relay/herdr_relay.py
 @@ -4,7 +4,7 @@
@@ -58,7 +58,7 @@ index d528a94..4307471 100644
  
  # --- Audit logging ---
  _audit_handler = RotatingFileHandler(AUDIT_FILE, maxBytes=5 * 1024 * 1024, backupCount=3)
-@@ -325,105 +347,77 @@ async def event_push():
+@@ -325,113 +347,77 @@ async def event_push():
              await broadcast(update)
  
  
@@ -127,6 +127,25 @@ index d528a94..4307471 100644
 -        ])
 -        return Response(204, "No Content", headers, b"")
 -
+-    # ⚠ EVENT PUSH MUST BE HANDLED FIRST — ORDER IS LOAD-BEARING.
+-    # A pushed event arrives as `?d=<urlencoded json>` on ANY path.
+-    # The README shows POST to :8375 without naming a path, so `/` is common.
+-    # Every static route below `return`s, so if reached first the event is
+-    # dropped while caller still gets 200. Add new static routes BELOW, never above.
+-    import urllib.parse
+-    if "?" in (request.path or ""):
+-        _, qs = (request.path or "").split("?", 1)
+-        params = urllib.parse.parse_qs(qs)
+-        if "d" in params:
+-            try:
+-                event = json.loads(params["d"][0])  # parse_qs already decodes
+-                event_queue.put_nowait(event)
+-                log.debug("push: received event type=%s", event.get("type", "unknown"))
+-            except Exception as e:
+-                log.warning("push: unparseable event payload (%d bytes): %s", len(params["d"][0]), e)
+-            headers = Headers([("Access-Control-Allow-Origin", "*")])
+-            return Response(200, "OK", headers, b"ok\n")
+-
 -    # Serve web app for GET / or GET /index.html
 -    path = (request.path or "/").split("?")[0]
 -    if path in ("/", "/index.html"):
@@ -173,18 +192,6 @@ index d528a94..4307471 100644
 -                body = f.read()
 -            headers = Headers([("Content-Type", "image/svg+xml")])
 -            return Response(200, "OK", headers, body)
--
--    # HTTP POST — parse event from URL query params as fallback
--    import urllib.parse
--    if "?" in (request.path or ""):
--        _, qs = request.path.split("?", 1)
--        params = urllib.parse.parse_qs(qs)
--        if "d" in params:
--            try:
--                event = json.loads(urllib.parse.unquote(params["d"][0]))
--                event_queue.put_nowait(event)
--            except Exception:
--                pass
 +        origin = request_header(request, "Origin")
 +        if ALLOWED_ORIGIN and origin != ALLOWED_ORIGIN:
 +            return http_response(403, "Forbidden", b"Invalid WebSocket origin\n", "text/plain; charset=utf-8")
@@ -209,8 +216,9 @@ index d528a94..4307471 100644
 +    return http_response(404, "Not Found", b"Not found\n", "text/plain; charset=utf-8")
 +
  
+-    # Fallback for unmatched paths
 -    headers = Headers([("Access-Control-Allow-Origin", "*")])
--    return Response(200, "OK", headers, b"ok\n")
+-    return Response(404, "Not Found", headers, b"not found\n")
 +def access_token_lifetime(request) -> int | None:
 +    token = request_header(request, "Cf-Access-Jwt-Assertion")
 +    if not token:
