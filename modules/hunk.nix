@@ -11,8 +11,14 @@
     postInstall =
       (old.postInstall or "")
       + lib.optionalString pkgs.stdenv.isDarwin ''
-        /usr/bin/codesign --force --sign - "$out/bin/hunk"
+        /usr/bin/codesign --force --sign - "$out/bin/.hunk-wrapped"
       '';
+    doInstallCheck = pkgs.stdenv.isDarwin;
+    installCheckPhase = lib.optionalString pkgs.stdenv.isDarwin ''
+      runHook preInstallCheck
+      "$out/bin/hunk" --version
+      runHook postInstallCheck
+    '';
   });
 in {
   options.local.hunk = {
