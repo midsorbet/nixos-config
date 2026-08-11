@@ -6,19 +6,20 @@
 }:
 rustPlatform.buildRustPackage rec {
   pname = "pdf-inspector";
-  version = "0.1.7";
+  version = "1.14.0";
 
   src = fetchCrate {
     inherit pname version;
-    hash = "sha256-S6/NohXpIHIcpCUOGiO9hHwK5cxDYS83cf646i5AREQ=";
+    hash = "sha256-uVnrgDwjz7wsn+OF7tHfpFlBBH7VYHPmQf4SljyuGfU=";
   };
 
-  cargoHash = "sha256-/PTqpmL2JdnK/Ejo3IAK/DqTSVrA9zTmFnmRPoc4tLc=";
+  cargoHash = "sha256-oY3VoY/gbY54Jvy/RcAj4hVSLS3RZfudMx8yFEJAKO0=";
 
   # The published crate excludes tests/fixtures to stay under crates.io's size cap.
   checkFlags = [
     "--skip=structure_tree::tests::test_bare_name_struct_types"
     "--skip=structure_tree::tests::test_parse_real_tagged_pdf"
+    "--skip=tests::items_json_uses_supplied_pdf_password"
     "--skip=vector_grid_tests::"
   ];
 
