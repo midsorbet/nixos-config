@@ -6,14 +6,14 @@
   "description": "Hardened loopback relay for on-demand OMP collab sessions",
   "webClient": {
     "repository": "https://github.com/can1357/oh-my-pi",
-    "version": "17.2.11",
-    "commit": "4dc97f89ab78fab003f40142ca0b4ebe68224b14"
+    "version": "17.2.12",
+    "commit": "45e12e5bb758198a920c6070e7e64cb33b21beac"
   },
   "scripts": {
     "test": "bun test"
   },
   "dependencies": {
-    "@oh-my-pi/pi-wire": "17.2.11"
+    "@oh-my-pi/pi-wire": "17.2.12"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14"
