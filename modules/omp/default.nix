@@ -140,6 +140,7 @@
       ${lib.getExe cfg.collab.package} \
         --bind 127.0.0.1 \
         --port ${toString cfg.collab.port} \
+        --max-rooms ${toString cfg.collab.maxRooms} \
         --max-guests-per-room ${toString cfg.collab.maxGuestsPerRoom} \
         --max-sockets ${toString cfg.collab.maxSockets} \
         --max-frame-bytes ${toString cfg.collab.maxFrameBytes} \
@@ -300,7 +301,6 @@
     startCommand = lib.getExe collabStart;
     stopCommand = lib.getExe collabStop;
     statusCommand = lib.getExe collabStatus;
-    registerUrl = "http://127.0.0.1:${toString cfg.collab.port}/api/rooms";
   };
 
   wrappedPackage =
@@ -555,6 +555,11 @@ in {
         description = "Browser origins allowed to open relay WebSockets; defaults to the self-hosted client origin.";
       };
 
+      maxRooms = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 1;
+        description = "Maximum simultaneous collab rooms.";
+      };
 
       maxGuestsPerRoom = lib.mkOption {
         type = lib.types.ints.positive;
@@ -564,8 +569,8 @@ in {
 
       maxSockets = lib.mkOption {
         type = lib.types.ints.positive;
-        default = 32;
-        description = "Maximum total relay WebSocket connections across all rooms.";
+        default = 8;
+        description = "Maximum total relay WebSocket connections.";
       };
 
       maxFrameBytes = lib.mkOption {
