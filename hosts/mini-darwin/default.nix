@@ -159,6 +159,8 @@ in {
       tunnelId = "99c3ef20-b6b7-4dc0-8fee-ee95f1165eeb";
       credentialsFile = config.age.secrets."omp-collab-tunnel".path;
       accessAudience = "0c8cb340a00d4dca1c879dc79a3b7926215f40589c833b9114867b55df4c5033";
+      idleTimeoutSeconds = 8 * 60 * 60;
+      maxConnectionSeconds = 8 * 60 * 60;
     };
   };
   local.plannotator.enable = true;

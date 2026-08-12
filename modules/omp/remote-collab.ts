@@ -4,6 +4,16 @@ const START_COMMAND = "@startCommand@";
 const STOP_COMMAND = "@stopCommand@";
 const STATUS_COMMAND = "@statusCommand@";
 
+type ShareMode = "write" | "view";
+
+const parseShareMode = (action: string): ShareMode | null => {
+	if (action === "" || action === "write") return "write";
+	if (action === "view") return "view";
+	return null;
+};
+
+const collabCommand = (mode: ShareMode): string => (mode === "write" ? "/collab" : "/collab view");
+
 export default function (pi: ExtensionAPI) {
 	let ownsExposure = false;
 
@@ -19,7 +29,9 @@ export default function (pi: ExtensionAPI) {
 	pi.on("input", async (event, ctx) => {
 		if (event.source !== "interactive") return;
 		const input = event.text.trim().toLowerCase();
-		if (input !== "/remote-collab" && input !== "/remote-collab view") return;
+		const action = input === "/remote-collab" ? "" : input.startsWith("/remote-collab ") ? input.slice(15).trim() : null;
+		const mode = action === null ? null : parseShareMode(action);
+		if (mode === null) return;
 
 		ctx.ui.notify("Starting the on-demand OMP collab tunnel…", "info");
 		const started = await run(START_COMMAND);
@@ -28,15 +40,16 @@ export default function (pi: ExtensionAPI) {
 			return { handled: true };
 		}
 		if (started.stdout.includes("OMP_COLLAB_STARTED=1")) ownsExposure = true;
-		return { text: "/collab view" };
+		return { text: collabCommand(mode) };
 	});
 
 	pi.registerCommand("remote-collab", {
-		description: "Start, inspect, or stop the on-demand omp.midsorbet.me collab relay",
+		description: "Start writable or read-only access through the on-demand omp.midsorbet.me collab relay",
 		getArgumentCompletions(argumentPrefix) {
 			if (argumentPrefix.includes(" ")) return null;
 			const prefix = argumentPrefix.trim().toLowerCase();
 			const items = [
+				{ label: "write", value: "write", description: "Start or show a full-control browser link" },
 				{ label: "view", value: "view", description: "Start or show a read-only browser link" },
 				{ label: "status", value: "status", description: "Show relay and tunnel health" },
 				{ label: "stop", value: "stop", description: "End collab and remove public exposure" },
@@ -61,8 +74,9 @@ export default function (pi: ExtensionAPI) {
 				ctx.ui.notify(stopped.stdout || "Remote collab stopped", "info");
 				return;
 			}
-			if (action !== "" && action !== "view") {
-				ctx.ui.notify("Usage: /remote-collab [view|status|stop]", "error");
+			const mode = parseShareMode(action);
+			if (mode === null) {
+				ctx.ui.notify("Usage: /remote-collab [write|view|status|stop]", "error");
 				return;
 			}
 
@@ -73,8 +87,11 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 			if (started.stdout.includes("OMP_COLLAB_STARTED=1")) ownsExposure = true;
-			ctx.ui.setEditorText("/collab view");
-			ctx.ui.notify("Press Enter to open the collab browser link", "info");
+			ctx.ui.setEditorText(collabCommand(mode));
+			ctx.ui.notify(
+				`Press Enter to open the ${mode === "write" ? "full-control" : "read-only"} collab browser link`,
+				"info",
+			);
 		},
 	});
 
