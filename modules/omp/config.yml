@@ -50,6 +50,8 @@ advisor:
   immuneTurns: 5
 tier:
   openai: priority
+  # Keep the interactive agent fast; concurrent/background subagents do not need premium priority processing.
+  subagent: default
 task:
   eager: default
   prewalk: true
