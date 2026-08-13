@@ -558,7 +558,7 @@ export function createHerdrDashboard(
 			herdrResult(
 				await request("agent.prompt", {
 					target: paneId,
-					text: "/remote-collab",
+					text: "/collab",
 				}),
 				"agent_prompted",
 			);

@@ -171,6 +171,10 @@ describe("Herdr socket dashboard", () => {
 			"plugin.pane.open",
 			"agent.prompt",
 		]);
+		expect(transport.requests.at(-1)?.params).toEqual({
+			target: PANE.id,
+			text: "/collab",
+		});
 		dashboard.stop();
 	});
 });
