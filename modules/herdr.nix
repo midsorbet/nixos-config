@@ -9,6 +9,10 @@
   tomlFormat = pkgs.formats.toml {};
   yamlFormat = pkgs.formats.yaml {};
   remotePackage = pkgs.callPackage ../packages/herdr-remote.nix {};
+  ompDashboardPlugin = pkgs.callPackage ../packages/herdr-omp-dashboard.nix {
+    ompPackage = config.local.omp.package;
+    vaultRoot = "/Users/${cfg.user}/vault";
+  };
 
   integrationHelper = pkgs.writeShellScriptBin "herdr-install-agent-integrations" ''
     set -euo pipefail
@@ -17,6 +21,14 @@
     ${lib.getExe cfg.package} integration install omp
     ${lib.getExe cfg.package} integration status
   '';
+
+  linkOmpDashboardPlugin = pkgs.writeShellApplication {
+    name = "herdr-link-omp-dashboard-plugin";
+    text = ''
+      export HERDR_SOCKET_PATH=/var/empty/herdr-plugin-link.sock
+      ${lib.getExe cfg.package} plugin link ${ompDashboardPlugin}
+    '';
+  };
 
   remoteHome = "/Users/${cfg.user}";
   remoteLogDirectory = "${remoteHome}/Library/Logs/herdr-remote";
@@ -236,6 +248,12 @@ in {
       description = "Install Herdr's OMP agent-state extension into the user's OMP agent directory.";
     };
 
+    installOmpDashboardPlugin = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Link the Nix-managed OMP dashboard plugin into Herdr.";
+    };
+
     remote = {
       enable = lib.mkEnableOption "hardened read-only Herdr browser relay";
 
@@ -346,6 +364,10 @@ in {
         })
       ];
     };
+
+    system.activationScripts.postActivation.text = lib.mkIf cfg.installOmpDashboardPlugin (lib.mkAfter ''
+      /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe linkOmpDashboardPlugin}
+    '');
 
     launchd.user.agents = lib.mkIf cfg.remote.enable {
       herdr-remote-relay = {

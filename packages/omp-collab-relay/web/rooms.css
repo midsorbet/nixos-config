@@ -9,16 +9,25 @@
 	--rooms-accent: #e75aae;
 	--rooms-cyan: #68d7e8;
 	--rooms-live: #72d89f;
+	--rooms-working: #72d89f;
+	--rooms-idle: #e6bd70;
+	--rooms-blocked: #ef8b93;
 	--ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 * {
 	box-sizing: border-box;
 }
+
 body {
 	margin: 0;
 	background: var(--rooms-bg);
 	color: var(--rooms-text);
+}
+
+button,
+a {
+	font: inherit;
 }
 
 .rooms-shell {
@@ -35,17 +44,33 @@ body {
 	gap: 28px;
 	margin-bottom: 30px;
 }
-.rooms-brand {
+
+.rooms-masthead,
+.rooms-toolbar,
+.rooms-actions,
+.rooms-card-top {
 	display: flex;
 	align-items: center;
+}
+
+.rooms-masthead,
+.rooms-toolbar {
+	justify-content: space-between;
+}
+
+.rooms-brand {
+	display: inline-flex;
+	align-items: center;
 	gap: 8px;
+	color: var(--rooms-muted);
+	text-decoration: none;
 	font:
 		650 14px / 1 ui-monospace,
 		SFMono-Regular,
 		Menlo,
 		monospace;
-	color: var(--rooms-muted);
 }
+
 .rooms-mark {
 	width: 8px;
 	height: 8px;
@@ -53,10 +78,12 @@ body {
 	background: var(--rooms-accent);
 	box-shadow: 0 0 20px color-mix(in srgb, var(--rooms-accent) 70%, transparent);
 }
+
 .rooms-pi {
 	color: var(--rooms-text);
 	font-size: 18px;
 }
+
 .rooms-eyebrow {
 	margin: 0 0 9px;
 	color: var(--rooms-cyan);
@@ -67,6 +94,7 @@ body {
 		monospace;
 	letter-spacing: 0.14em;
 }
+
 h1 {
 	margin: 0;
 	max-width: 700px;
@@ -74,19 +102,57 @@ h1 {
 	line-height: 0.98;
 	letter-spacing: -0.045em;
 }
+
 .rooms-subtitle {
 	margin: 15px 0 0;
 	color: var(--rooms-muted);
 	font-size: 15px;
 	line-height: 1.5;
 }
-.rooms-toolbar {
-	display: flex;
+
+.rooms-service {
+	display: inline-flex;
 	align-items: center;
-	justify-content: space-between;
-	padding-top: 5px;
-	border-top: 1px solid var(--rooms-border);
+	gap: 9px;
+	color: var(--rooms-muted);
+	font-size: 12px;
 }
+
+.rooms-service strong,
+.rooms-service small {
+	display: block;
+}
+
+.rooms-service small {
+	margin-top: 3px;
+	color: var(--rooms-faint);
+	font-size: 11px;
+}
+
+.rooms-service-dot {
+	width: 8px;
+	height: 8px;
+	flex: 0 0 auto;
+	border-radius: 50%;
+	background: var(--rooms-idle);
+	box-shadow: 0 0 12px color-mix(in srgb, currentColor 65%, transparent);
+}
+
+.rooms-service-available .rooms-service-dot {
+	background: var(--rooms-live);
+}
+
+.rooms-service-stopping .rooms-service-dot,
+.rooms-service-unavailable .rooms-service-dot {
+	background: var(--rooms-blocked);
+}
+
+.rooms-toolbar {
+	padding-top: 12px;
+	border-top: 1px solid var(--rooms-border);
+	gap: 14px;
+}
+
 .rooms-count {
 	color: var(--rooms-muted);
 	font:
@@ -95,26 +161,43 @@ h1 {
 		Menlo,
 		monospace;
 }
-.rooms-refresh {
-	border: 0;
-	padding: 8px 10px;
+
+.rooms-actions {
+	gap: 8px;
+}
+
+.rooms-button {
+	border: 1px solid var(--rooms-border);
+	padding: 9px 12px;
 	border-radius: 8px;
 	background: transparent;
 	color: var(--rooms-muted);
-	font:
-		600 12px / 1 ui-sans-serif,
-		sans-serif;
 	cursor: pointer;
 	transition:
 		color 140ms ease,
 		background-color 140ms ease,
+		border-color 140ms ease,
 		transform 120ms var(--ease-out);
 }
-.rooms-refresh:active {
-	transform: scale(0.97);
+
+.rooms-button:disabled {
+	cursor: wait;
+	opacity: 0.6;
 }
-.rooms-refresh:focus-visible,
-.rooms-card:focus-visible {
+
+.rooms-new {
+	border-color: color-mix(
+		in srgb,
+		var(--rooms-accent) 55%,
+		var(--rooms-border)
+	);
+	color: var(--rooms-text);
+	background: color-mix(in srgb, var(--rooms-accent) 14%, transparent);
+}
+
+.rooms-button:focus-visible,
+.rooms-card:focus-visible,
+.rooms-brand:focus-visible {
 	outline: 2px solid var(--rooms-cyan);
 	outline-offset: 3px;
 }
@@ -124,6 +207,7 @@ h1 {
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
 	gap: 12px;
 }
+
 .rooms-card {
 	position: relative;
 	min-height: 220px;
@@ -131,18 +215,18 @@ h1 {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
-	text-align: left;
 	color: inherit;
 	background: var(--rooms-panel);
 	border: 1px solid var(--rooms-border);
 	border-radius: 16px;
-	cursor: pointer;
+	text-decoration: none;
 	overflow: hidden;
 	transition:
 		transform 140ms var(--ease-out),
 		border-color 140ms ease,
 		background-color 140ms ease;
 }
+
 .rooms-card::after {
 	content: "";
 	position: absolute;
@@ -153,15 +237,18 @@ h1 {
 	background: color-mix(in srgb, var(--rooms-accent) 9%, transparent);
 	filter: blur(2px);
 }
-.rooms-card:active {
-	transform: scale(0.985);
+
+.rooms-card-top {
+	width: 100%;
+	gap: 9px;
+	margin-bottom: 36px;
 }
+
 .rooms-status {
 	display: inline-flex;
 	align-items: center;
 	gap: 7px;
-	margin-bottom: 36px;
-	color: var(--rooms-live);
+	color: var(--rooms-idle);
 	font:
 		650 10px / 1 ui-monospace,
 		SFMono-Regular,
@@ -170,6 +257,7 @@ h1 {
 	text-transform: uppercase;
 	letter-spacing: 0.12em;
 }
+
 .rooms-status::before {
 	content: "";
 	width: 7px;
@@ -178,12 +266,40 @@ h1 {
 	background: currentColor;
 	box-shadow: 0 0 12px color-mix(in srgb, currentColor 75%, transparent);
 }
+
+.rooms-status-working {
+	color: var(--rooms-working);
+}
+
+.rooms-status-idle {
+	color: var(--rooms-idle);
+}
+
+.rooms-status-blocked {
+	color: var(--rooms-blocked);
+}
+
+.rooms-badge {
+	padding: 4px 6px;
+	border-radius: 99px;
+	color: var(--rooms-cyan);
+	background: color-mix(in srgb, var(--rooms-cyan) 12%, transparent);
+	font:
+		650 10px / 1 ui-monospace,
+		SFMono-Regular,
+		Menlo,
+		monospace;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
 .rooms-card strong {
 	max-width: 90%;
 	font-size: 20px;
 	line-height: 1.2;
 	letter-spacing: -0.02em;
 }
+
 .rooms-cwd {
 	width: 100%;
 	margin-top: 7px;
@@ -197,12 +313,14 @@ h1 {
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+
 .rooms-meta {
 	margin-top: auto;
 	padding-top: 28px;
 	color: var(--rooms-muted);
 	font-size: 12px;
 }
+
 .rooms-arrow {
 	position: absolute;
 	right: 20px;
@@ -212,29 +330,94 @@ h1 {
 	font-size: 12px;
 	font-weight: 650;
 }
+
 .rooms-empty {
 	grid-column: 1 / -1;
 	min-height: 220px;
 	display: grid;
 	place-content: center;
+	justify-items: center;
 	gap: 8px;
+	padding: 24px;
 	text-align: center;
 	color: var(--rooms-muted);
 	border: 1px dashed var(--rooms-border);
 	border-radius: 16px;
 }
+
 .rooms-empty strong {
 	color: var(--rooms-text);
 	font-size: 17px;
 }
+
 .rooms-empty span {
+	max-width: 42ch;
 	font-size: 13px;
+	line-height: 1.45;
 }
-.rooms-empty code {
-	color: var(--rooms-cyan);
-}
+
 .rooms-error {
-	color: #f29a9a;
+	color: var(--rooms-blocked);
+}
+
+.rooms-empty .rooms-button {
+	margin-top: 8px;
+}
+
+.rooms-open-shell {
+	max-width: 640px;
+}
+
+.rooms-open {
+	min-height: 55vh;
+	display: grid;
+	align-content: center;
+	justify-items: start;
+}
+
+.rooms-open-detail {
+	max-width: 48ch;
+	margin: 18px 0 0;
+	color: var(--rooms-muted);
+	line-height: 1.5;
+}
+
+.rooms-attempt {
+	margin: 10px 0 0;
+	color: var(--rooms-faint);
+	font-size: 12px;
+}
+
+.rooms-spinner {
+	width: 24px;
+	height: 24px;
+	margin-bottom: 34px;
+	border: 2px solid var(--rooms-border);
+	border-top-color: var(--rooms-cyan);
+	border-radius: 50%;
+	animation: rooms-spin 800ms linear infinite;
+}
+
+.rooms-spinner[hidden] {
+	display: none;
+}
+
+.rooms-open-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 24px;
+}
+
+.rooms-button-secondary {
+	display: inline-block;
+	text-decoration: none;
+}
+
+@keyframes rooms-spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -247,7 +430,8 @@ h1 {
 		);
 		background: var(--rooms-panel-hover);
 	}
-	.rooms-refresh:hover {
+
+	.rooms-button:hover {
 		color: var(--rooms-text);
 		background: rgba(255, 255, 255, 0.06);
 	}
@@ -258,14 +442,30 @@ h1 {
 		width: min(100% - 22px, 960px);
 		padding-top: 26px;
 	}
+
 	.rooms-header {
 		gap: 22px;
 	}
+
+	.rooms-toolbar {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.rooms-actions {
+		width: 100%;
+	}
+
+	.rooms-button {
+		flex: 1;
+	}
+
 	.rooms-card {
 		min-height: 190px;
 		padding: 19px;
 	}
-	.rooms-status {
+
+	.rooms-card-top {
 		margin-bottom: 28px;
 	}
 }
@@ -282,20 +482,26 @@ h1 {
 		--rooms-accent: #c23487;
 		--rooms-cyan: #147d91;
 		--rooms-live: #218b55;
+		--rooms-working: #218b55;
+		--rooms-idle: #9a6c13;
+		--rooms-blocked: #b34154;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
 	.rooms-card,
-	.rooms-refresh {
+	.rooms-button,
+	.rooms-spinner {
+		animation: none;
 		transition:
 			color 120ms ease,
 			background-color 120ms ease,
 			border-color 120ms ease;
 	}
+
 	.rooms-card:active,
 	.rooms-card:hover,
-	.rooms-refresh:active {
+	.rooms-button:active {
 		transform: none;
 	}
 }

@@ -91,6 +91,25 @@
     lib.concatMapStringsSep " "
     (origin: "--allowed-origin ${lib.escapeShellArg origin}")
     cfg.collab.allowedOrigins;
+  scheduleStartHour = lib.toIntBase10 (builtins.elemAt (lib.splitString ":" cfg.collab.schedule.start) 0);
+  scheduleStartMinute = lib.toIntBase10 (builtins.elemAt (lib.splitString ":" cfg.collab.schedule.start) 1);
+  scheduleStopHour = lib.toIntBase10 (builtins.elemAt (lib.splitString ":" cfg.collab.schedule.stop) 0);
+  scheduleStopMinute = lib.toIntBase10 (builtins.elemAt (lib.splitString ":" cfg.collab.schedule.stop) 1);
+  scheduleStartIntervals =
+    map (weekday: {
+      Weekday = weekday;
+      Hour = scheduleStartHour;
+      Minute = scheduleStartMinute;
+    })
+    cfg.collab.schedule.weekdays;
+  scheduleStopIntervals =
+    map (weekday: {
+      Weekday = weekday;
+      Hour = scheduleStopHour;
+      Minute = scheduleStopMinute;
+    })
+    cfg.collab.schedule.weekdays;
+  scheduleWeekdays = lib.concatStringsSep " " (map toString cfg.collab.schedule.weekdays);
   collabTunnelConfig = yamlFormat.generate "omp-collab-cloudflared.yml" {
     tunnel = cfg.collab.tunnelId;
     "credentials-file" = cfg.collab.credentialsFile;
@@ -145,10 +164,18 @@
         --max-frame-bytes ${toString cfg.collab.maxFrameBytes} \
         --idle-timeout-secs ${toString cfg.collab.idleTimeoutSeconds} \
         --max-connection-secs ${toString cfg.collab.maxConnectionSeconds} \
+        --herdr-socket-path ${lib.escapeShellArg cfg.collab.herdrSocketPath} \
+        --vault-root ${lib.escapeShellArg cfg.collab.vaultRoot} \
+        --public-origin ${lib.escapeShellArg cfg.collab.webUrl} \
+        --activation-timeout-secs ${toString cfg.collab.activationTimeoutSeconds} \
+        --reconnect-delay-ms ${toString cfg.collab.reconnectDelayMilliseconds} \
+        --schedule-weekdays ${lib.escapeShellArg (lib.concatStringsSep "," (map toString cfg.collab.schedule.weekdays))} \
+        --schedule-start ${lib.escapeShellArg cfg.collab.schedule.start} \
+        --schedule-stop ${lib.escapeShellArg cfg.collab.schedule.stop} \
+        --manual-override-secs ${toString cfg.collab.schedule.manualOverrideSeconds} \
         --require-access-jwt \
         ${collabOriginArgs} &
       relay_pid=$!
-
       attempts=0
       until [[ "$(${lib.getExe pkgs.curl} --fail --silent --max-time 2 \
         "http://127.0.0.1:${toString cfg.collab.port}/healthz" 2>/dev/null || true)" == "omp-collab-relay" ]]; do
@@ -201,8 +228,23 @@
         curl --fail --silent --max-time 2 \
           "http://127.0.0.1:${toString cfg.collab.metricsPort}/ready" >/dev/null 2>&1
       }
+      in_schedule() {
+        local weekday weekdays now
+        weekday="$(/bin/date +%u)"
+        weekdays=" ${scheduleWeekdays} "
+        now="$(/bin/date +%H:%M)"
+        case "$weekdays" in
+          *" $weekday "*) [[ ! "$now" < ${lib.escapeShellArg cfg.collab.schedule.start} ]] && [[ "$now" < ${lib.escapeShellArg cfg.collab.schedule.stop} ]] ;;
+          *) return 1 ;;
+        esac
+      }
+      request_override() {
+        curl --fail --silent --show-error --max-time 2 \
+          -X POST "http://127.0.0.1:${toString cfg.collab.port}/api/service/override" >/dev/null
+      }
 
       if local_health && tunnel_health; then
+        if ! in_schedule; then request_override; fi
         echo "OMP_COLLAB_STARTED=0"
         echo "OMP collab already available at ${collabOrigin}"
         exit 0
@@ -231,6 +273,7 @@
         fi
         /bin/sleep 1
       done
+      if ! in_schedule; then request_override; fi
 
       echo "OMP_COLLAB_STARTED=1"
       echo "OMP collab started at ${collabOrigin}"
@@ -253,14 +296,14 @@
         exit 0
       fi
 
-      domain="gui/$(/usr/bin/id -u)"
-      /bin/launchctl kill SIGTERM "$domain/org.nixos.omp-collab" 2>/dev/null || true
+      curl --fail --silent --show-error --max-time 2 \
+        -X POST "http://127.0.0.1:${toString cfg.collab.port}/api/service/stop" >/dev/null
 
       attempts=0
       while local_health; do
         attempts=$((attempts + 1))
-        if [[ "$attempts" -ge 30 ]]; then
-          echo "OMP collab relay did not stop" >&2
+        if [[ "$attempts" -ge 120 ]]; then
+          echo "OMP collab relay did not stop after soft shutdown" >&2
           exit 1
         fi
         /bin/sleep 1
@@ -295,12 +338,26 @@
       fi
     '';
   };
+  collabScheduleStart = pkgs.writeShellApplication {
+    name = "omp-collab-schedule-start";
+    text = ''
+      set -euo pipefail
+      exec ${lib.getExe collabStart}
+    '';
+  };
+
+  collabScheduleStop = pkgs.writeShellApplication {
+    name = "omp-collab-schedule-stop";
+    text = ''
+      set -euo pipefail
+      exec ${lib.getExe collabStop}
+    '';
+  };
 
   collabExtension = pkgs.replaceVars ./remote-collab.ts {
     startCommand = lib.getExe collabStart;
     stopCommand = lib.getExe collabStop;
     statusCommand = lib.getExe collabStatus;
-    registerUrl = "http://127.0.0.1:${toString cfg.collab.port}/api/rooms";
   };
 
   wrappedPackage =
@@ -548,13 +605,60 @@ in {
         default = collabOrigin;
         description = "Same-origin browser client used in generated OMP collab links.";
       };
+      vaultRoot = lib.mkOption {
+        type = lib.types.path;
+        default = "/Users/${cfg.user}/vault";
+        description = "Vault root passed to the remote dashboard's Herdr integration.";
+      };
+      herdrSocketPath = lib.mkOption {
+        type = lib.types.str;
+        default = "/Users/${cfg.user}/.config/herdr/herdr.sock";
+        description = "Herdr v0.8 local API socket used by the dashboard state subscriber.";
+      };
+
+      reconnectDelayMilliseconds = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 250;
+        description = "Delay before reconnecting the Herdr event subscriber.";
+      };
+
+      activationTimeoutSeconds = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 30;
+        description = "Bounded timeout used while activating a Herdr-backed OMP pane.";
+      };
+
+      schedule = {
+        weekdays = lib.mkOption {
+          type = with lib.types; listOf (ints.between 1 7);
+          default = [1 2 3 4 5];
+          description = "Local weekdays on which the dashboard is available.";
+        };
+
+        start = lib.mkOption {
+          type = lib.types.strMatching "((0[0-9])|(1[0-9])|(2[0-3])):[0-5][0-9]";
+          default = "08:00";
+          description = "Local start time for scheduled dashboard availability.";
+        };
+
+        stop = lib.mkOption {
+          type = lib.types.strMatching "((0[0-9])|(1[0-9])|(2[0-3])):[0-5][0-9]";
+          default = "18:00";
+          description = "Local stop time for scheduled dashboard availability.";
+        };
+
+        manualOverrideSeconds = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 7200;
+          description = "Out-of-hours manual availability override duration.";
+        };
+      };
 
       allowedOrigins = lib.mkOption {
         type = with lib.types; listOf str;
         default = [collabOrigin];
         description = "Browser origins allowed to open relay WebSockets; defaults to the self-hosted client origin.";
       };
-
 
       maxGuestsPerRoom = lib.mkOption {
         type = lib.types.ints.positive;
@@ -577,7 +681,7 @@ in {
       idleTimeoutSeconds = lib.mkOption {
         type = lib.types.ints.positive;
         default = 1800;
-        description = "Inactivity window before the relay and tunnel shut down.";
+        description = "Inactivity window before an idle room is closed.";
       };
 
       maxConnectionSeconds = lib.mkOption {
@@ -653,6 +757,18 @@ in {
           assertion = lib.elem cfg.collab.webUrl cfg.collab.allowedOrigins;
           message = "local.omp.collab.allowedOrigins must include collab.webUrl.";
         }
+        {
+          assertion = scheduleStartHour < 24 && scheduleStopHour < 24;
+          message = "local.omp.collab.schedule start and stop hours must be between 00 and 23.";
+        }
+        {
+          assertion = cfg.collab.schedule.start < cfg.collab.schedule.stop;
+          message = "local.omp.collab.schedule.start must be earlier than schedule.stop.";
+        }
+        {
+          assertion = cfg.collab.schedule.weekdays != [];
+          message = "local.omp.collab.schedule.weekdays must not be empty.";
+        }
       ];
 
     environment.systemPackages = [
@@ -710,6 +826,23 @@ in {
       serviceConfig = {
         RunAtLoad = false;
         KeepAlive = false;
+        ProcessType = "Background";
+      };
+    };
+    launchd.user.agents.omp-collab-schedule-start = lib.mkIf cfg.collab.enable {
+      command = lib.getExe collabScheduleStart;
+      serviceConfig = {
+        RunAtLoad = false;
+        StartCalendarInterval = scheduleStartIntervals;
+        ProcessType = "Background";
+      };
+    };
+
+    launchd.user.agents.omp-collab-schedule-stop = lib.mkIf cfg.collab.enable {
+      command = lib.getExe collabScheduleStop;
+      serviceConfig = {
+        RunAtLoad = false;
+        StartCalendarInterval = scheduleStopIntervals;
         ProcessType = "Background";
       };
     };
