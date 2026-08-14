@@ -45,7 +45,6 @@ modelProviderOrder:
   - opencode-zen
 advisor:
   enabled: true
-  subagents: true
   syncBacklog: off
   immuneTurns: 5
 tier:
@@ -62,6 +61,8 @@ task:
   softRequestBudgetNotice: true
   agentModelOverrides:
     reviewer: openai-codex/gpt-5.6-sol:high
+  agentAdvisor:
+    task: on
 secrets:
   enabled: true
 startup:
