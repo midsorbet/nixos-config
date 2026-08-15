@@ -9,8 +9,6 @@
     "plannotator-annotate"
     "plannotator-last"
     "plannotator-review"
-    "plannotator-setup-goal"
-    "plannotator-visual-explainer"
   ];
 in {
   options.local.plannotator = {
