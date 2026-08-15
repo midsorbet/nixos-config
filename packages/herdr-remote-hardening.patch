@@ -1,13 +1,13 @@
 diff --git a/relay/herdr_relay.py b/relay/herdr_relay.py
-index 1e4a862..4307471 100644
+index 20f94b7..d23b934 100644
 --- a/relay/herdr_relay.py
 +++ b/relay/herdr_relay.py
 @@ -4,7 +4,7 @@
  # dependencies = ["websockets>=14.0", "zeroconf>=0.80.0", "pywebpush>=2.0.0", "py-vapid>=1.9.0"]
  # ///
  """herdr-remote relay — polls herdr, accepts push events (HTTP POST + WebSocket + UDP), broadcasts to clients."""
--import asyncio, json, logging, os, re, shutil, signal, socket, subprocess, time
-+import asyncio, base64, json, logging, os, re, shutil, signal, socket, subprocess, time
+-import asyncio, json, logging, os, re, shutil, signal, socket, subprocess, threading, time
++import asyncio, base64, json, logging, os, re, shutil, signal, socket, subprocess, threading, time
  
  from agent_state import complete_agent_update_message
  
@@ -25,12 +25,9 @@ index 1e4a862..4307471 100644
  def _get_log_dir():
      if sys.platform == "darwin":
          return os.path.expanduser("~/Library/Logs/herdr-remote")
-@@ -42,9 +49,15 @@ log.addHandler(_console_handler)
- logging.getLogger("websockets").setLevel(logging.WARNING)
- 
- HERDR = os.environ.get("HERDR_BIN") or shutil.which("herdr") or "/opt/homebrew/bin/herdr"
-+BIND_ADDRESS = os.environ.get("HERDR_RELAY_BIND", "127.0.0.1")
+@@ -53,7 +60,12 @@ REMOTE_HERDR = os.environ.get("HERDR_REMOTE_BIN", "herdr")
  WS_PORT = int(os.environ.get("HERDR_RELAY_PORT", "8375"))
+ RELAY_HOST = os.environ.get("HERDR_RELAY_HOST", "127.0.0.1")
  POLL_INTERVAL = 2
 -AUTH_TOKEN = os.environ.get("HERDR_RELAY_TOKEN", "")  # Optional: shared secret for relay auth
 +READ_ONLY = env_bool("HERDR_RELAY_READ_ONLY", True)
@@ -42,23 +39,26 @@ index 1e4a862..4307471 100644
  
  # VAPID Web Push
  VAPID_PUBLIC_KEY = os.environ.get("HERDR_VAPID_PUBLIC", "")
-@@ -77,6 +90,15 @@ SAFE_RESPONSES = {"y", "n", "a", "yes", "no", "trust", "yes, single permission",
+@@ -62,8 +74,8 @@ VAPID_SUBJECT = os.environ.get("HERDR_VAPID_SUBJECT", "mailto:herdr@localhost")
+ push_subscriptions = []  # list of PushSubscription dicts
+ PUSH_SUBS_FILE = os.path.join(LOG_DIR, "push_subs.json")
+ 
+-if RELAY_HOST not in {"127.0.0.1", "localhost", "::1"} and not AUTH_TOKEN:
+-    raise SystemExit("HERDR_RELAY_TOKEN is required when HERDR_RELAY_HOST binds beyond loopback")
++if RELAY_HOST not in {"127.0.0.1", "localhost", "::1"}:
++    raise SystemExit("The hardened Herdr relay only supports loopback binds")
+ 
+ # Remote hosts: comma-separated SSH targets
+ REMOTES = [r.strip() for r in os.environ.get("HERDR_REMOTES", "").split(",") if r.strip()]
+@@ -91,6 +103,7 @@ SAFE_RESPONSES = {"y", "n", "a", "yes", "no", "trust", "yes, single permission",
  SAFE_KEYS = {"y", "n", "a", "Enter", "Tab", "Escape", "C-c", "Up", "Down", "Left", "Right", "BSpace"} | {
      str(number) for number in range(10)
  }
-+MUTATING_MESSAGE_TYPES = {
-+    "agent_event",
-+    "create_tab",
-+    "push_subscribe",
-+    "push_unsubscribe",
-+    "respond",
-+    "send_keys",
-+    "send_text",
-+}
++READ_ONLY_MESSAGE_TYPES = {"read_pane", "get_history"}
  
  # --- Audit logging ---
  _audit_handler = RotatingFileHandler(AUDIT_FILE, maxBytes=5 * 1024 * 1024, backupCount=3)
-@@ -325,113 +347,77 @@ async def event_push():
+@@ -377,113 +390,78 @@ async def event_push():
              await broadcast(update)
  
  
@@ -132,10 +132,10 @@ index 1e4a862..4307471 100644
 -    # The README shows POST to :8375 without naming a path, so `/` is common.
 -    # Every static route below `return`s, so if reached first the event is
 -    # dropped while caller still gets 200. Add new static routes BELOW, never above.
--    import urllib.parse
+-    import urllib.parse as _urlparse
 -    if "?" in (request.path or ""):
 -        _, qs = (request.path or "").split("?", 1)
--        params = urllib.parse.parse_qs(qs)
+-        params = _urlparse.parse_qs(qs)
 -        if "d" in params:
 -            try:
 -                event = json.loads(params["d"][0])  # parse_qs already decodes
@@ -192,6 +192,10 @@ index 1e4a862..4307471 100644
 -                body = f.read()
 -            headers = Headers([("Content-Type", "image/svg+xml")])
 -            return Response(200, "OK", headers, body)
+-
+-    # Fallback for unmatched paths
+-    headers = Headers([("Access-Control-Allow-Origin", "*")])
+-    return Response(404, "Not Found", headers, b"not found\n")
 +        origin = request_header(request, "Origin")
 +        if ALLOWED_ORIGIN and origin != ALLOWED_ORIGIN:
 +            return http_response(403, "Forbidden", b"Invalid WebSocket origin\n", "text/plain; charset=utf-8")
@@ -204,6 +208,7 @@ index 1e4a862..4307471 100644
 +        "/": ("index.html", "text/html; charset=utf-8"),
 +        "/index.html": ("index.html", "text/html; charset=utf-8"),
 +        "/logo.svg": ("logo.svg", "image/svg+xml"),
++        "/HackNerdFont-Regular.woff2": ("HackNerdFont-Regular.woff2", "font/woff2"),
 +    }
 +    static_file = static_files.get(path)
 +    if static_file:
@@ -215,10 +220,7 @@ index 1e4a862..4307471 100644
 +
 +    return http_response(404, "Not Found", b"Not found\n", "text/plain; charset=utf-8")
 +
- 
--    # Fallback for unmatched paths
--    headers = Headers([("Access-Control-Allow-Origin", "*")])
--    return Response(404, "Not Found", headers, b"not found\n")
++
 +def access_token_lifetime(request) -> int | None:
 +    token = request_header(request, "Cf-Access-Jwt-Assertion")
 +    if not token:
@@ -238,7 +240,7 @@ index 1e4a862..4307471 100644
  
  
  async def handle_client(ws):
-@@ -452,6 +446,16 @@ async def handle_client(ws):
+@@ -512,6 +490,16 @@ async def handle_client(ws):
      log.info("Client connected: ip=%s device=%s origin=%s", ip, device, origin or "-")
      clients.add(ws)
      connected_at = time.monotonic()
@@ -255,18 +257,18 @@ index 1e4a862..4307471 100644
      try:
          async for raw in ws:
              try:
-@@ -459,6 +463,10 @@ async def handle_client(ws):
+@@ -519,6 +507,10 @@ async def handle_client(ws):
              except json.JSONDecodeError:
                  continue
              msg_type = msg.get("type")
-+            if READ_ONLY and msg_type in MUTATING_MESSAGE_TYPES:
++            if READ_ONLY and msg_type not in READ_ONLY_MESSAGE_TYPES:
 +                audit("read_only_reject", ip, device, msg.get("pane_id", ""), f"type={msg_type}")
 +                await ws.send(json.dumps({"type": "error", "message": "relay is read-only"}))
 +                continue
              if msg_type == "respond":
                  pane_id = msg["pane_id"]
                  if pane_id not in known_panes:
-@@ -544,6 +552,7 @@ async def handle_client(ws):
+@@ -642,6 +634,7 @@ async def handle_client(ws):
      except (ConnectionClosedError, ConnectionClosedOK):
          pass
      finally:
@@ -274,7 +276,7 @@ index 1e4a862..4307471 100644
          duration = int(time.monotonic() - connected_at)
          log.info("Client disconnected: ip=%s device=%s duration=%ds", ip, device, duration)
          clients.discard(ws)
-@@ -558,6 +567,8 @@ class UDPPlugin(asyncio.DatagramProtocol):
+@@ -656,6 +649,8 @@ class UDPPlugin(asyncio.DatagramProtocol):
  
  
  def start_mdns():
@@ -283,22 +285,27 @@ index 1e4a862..4307471 100644
      try:
          from zeroconf import Zeroconf, ServiceInfo
          import socket as sock_mod
-@@ -585,10 +596,10 @@ async def main():
-         log.warning("UDP 8376 in use, plugin push disabled")
-     asyncio.create_task(poll_loop())
-     asyncio.create_task(event_push())
--    server = await serve(handle_client, "0.0.0.0", WS_PORT, process_request=process_request)
-+    server = await serve(handle_client, BIND_ADDRESS, WS_PORT, process_request=process_request)
-     hosts = ["local"] + REMOTES
--    log.info("herdr-remote relay on :%d (WebSocket + HTTP POST)", WS_PORT)
--    log.info("Polling: %s", ", ".join(hosts))
-+    log.info("herdr-remote relay on %s:%d", BIND_ADDRESS, WS_PORT)
-+    log.info("Polling: %s; read_only=%s; access_jwt=%s", ", ".join(hosts), READ_ONLY, REQUIRE_ACCESS_JWT)
+@@ -675,6 +670,7 @@ def start_mdns():
+ 
+ async def main():
+     loop = asyncio.get_running_loop()
++
      stop = loop.create_future()
-     for sig in (signal.SIGINT, signal.SIGTERM):
-         loop.add_signal_handler(sig, stop.set_result, None)
+     zc = info = udp_transport = server = None
+     tasks = []
+@@ -699,8 +695,8 @@ async def main():
+         tasks = [asyncio.create_task(poll_loop()), asyncio.create_task(event_push())]
+         server = await serve(handle_client, RELAY_HOST, WS_PORT, process_request=process_request)
+         hosts = ["local"] + REMOTES
+-        log.info("herdr-remote relay on %s:%d (WebSocket + HTTP POST)", RELAY_HOST, WS_PORT)
+-        log.info("Polling: %s", ", ".join(hosts))
++        log.info("herdr-remote relay on %s:%d", RELAY_HOST, WS_PORT)
++        log.info("Polling: %s; read_only=%s; access_jwt=%s", ", ".join(hosts), READ_ONLY, REQUIRE_ACCESS_JWT)
+         for sig in (signal.SIGINT, signal.SIGTERM):
+             try:
+                 loop.add_signal_handler(sig, request_stop)
 diff --git a/web/index.html b/web/index.html
-index c14df8a..49d2263 100644
+index 8cfb0b9..a2a14b0 100644
 --- a/web/index.html
 +++ b/web/index.html
 @@ -7,11 +7,6 @@
@@ -310,10 +317,10 @@ index c14df8a..49d2263 100644
 -window.cue = play;
 -document.addEventListener('DOMContentLoaded', () => bind());
 -</script>
- <style>
- :root {
-   --bg: #e1e2e7; --surface: #d8d9e0; --border: #b6bbd1; --text: #1f2f66; --muted: #68709a;
-@@ -52,6 +47,7 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
+ <style data-font-face>
+ @font-face {
+   font-family: 'Hack Nerd Font';
+@@ -61,6 +56,7 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
  .setting-group button { margin-top: 8px; padding: 8px 16px; border-radius: 6px; border: none; background: var(--green); color: #000; font-weight: 600; font-size: 13px; cursor: pointer; }
  
  
@@ -321,7 +328,7 @@ index c14df8a..49d2263 100644
  /* Agent list */
  .agents { padding: 12px; }
  .section-header { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; display: flex; align-items: center; gap: 5px; }
-@@ -149,19 +145,9 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
+@@ -184,26 +180,9 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
  <div class="settings" id="settingsView">
    <h2>Settings</h2>
    <div class="setting-group">
@@ -331,6 +338,13 @@ index c14df8a..49d2263 100644
 -    <input id="relayToken" type="password" placeholder="shared secret" />
 -    <button onclick="saveAndConnect()">Connect</button>
 -    <div class="hint">Run <code>./relay/start.sh</code> to get a URL. <a href="https://github.com/dcolinmorgan/herdr-remote/blob/main/QUICKSTART.md" style="color:var(--blue)">Setup guide →</a></div>
+-  </div>
+-
+-  <div class="setting-group">
+-    <label>Saved Sessions</label>
+-    <div id="sessionList" style="margin:8px 0"></div>
+-    <button onclick="saveCurrentSession()" style="font-size:0.8rem;padding:8px 12px">+ Save Current Session</button>
+-    <div class="hint">Switch between multiple herdr relays.</div>
 -  </div>
 -
 -  <div class="setting-group">
@@ -344,8 +358,8 @@ index c14df8a..49d2263 100644
    </div>
    <div class="setting-group">
      <label>Status</label>
-@@ -184,15 +170,15 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
-     <button class="refresh-btn" onclick="refreshPane()" aria-label="Refresh pane"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg></button>
+@@ -242,15 +221,15 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
+     <button onclick="toggleSearch()" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
    </div>
    <div class="term-content" id="termContent">Loading…</div>
 -  <div class="quick-actions" id="quickActions"></div>
@@ -363,7 +377,7 @@ index c14df8a..49d2263 100644
      <!-- Key queue strip (visible when composing) -->
      <div id="keyQueueStrip" style="display:none;width:100%;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px;flex-wrap:wrap;gap:4px;align-items:center"></div>
      <!-- Tab toggle -->
-@@ -230,7 +216,7 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
+@@ -288,7 +267,7 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
      <div id="actionKeys" style="width:100%;margin-top:4px"></div>
    </div>
    <!-- Quick actions dock -->
@@ -372,16 +386,21 @@ index c14df8a..49d2263 100644
      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:8px">
        <span style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted)">Quick Actions</span>
        <button onclick="toggleQuickDock()" aria-label="Close" style="background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer">✕</button>
-@@ -253,7 +239,7 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
- </div>
+@@ -312,11 +291,11 @@ body { font-family: -apple-system, system-ui, -webkit-system-font, sans-serif; b
  
  <!-- Command palette -->
+ <!-- Context Menu -->
+-<div id="contextMenu" style="display:none;position:fixed;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);min-width:160px;padding:4px;">
++<div class="write-control" id="contextMenu" style="display:none;position:fixed;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.3);min-width:160px;padding:4px;">
+   <div id="contextMenuItems"></div>
+ </div>
+ 
 -<div id="cmdPalette" style="display:none;position:fixed;inset:0;z-index:100;">
 +<div class="write-control" id="cmdPalette" style="display:none;position:fixed;inset:0;z-index:100;">
    <div onclick="closePalette()" style="position:absolute;inset:0;background:rgba(0,0,0,0.5)"></div>
    <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:420px;max-height:50dvh;background:var(--surface);border-top-left-radius:16px;border-top-right-radius:16px;border-top:1px solid var(--border);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,8px)">
      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
-@@ -271,18 +257,22 @@ let ws = null, agents = [], activePane = null, refreshInterval = null, userScrol
+@@ -334,18 +313,22 @@ let ws = null, agents = [], activePane = null, refreshInterval = null, userScrol
  let timeline = [], prevStatuses = {};
  let activeWorkspace = null;
  let activeTab = null;
@@ -414,20 +433,21 @@ index c14df8a..49d2263 100644
  
  
  
-@@ -293,9 +283,9 @@ function toggleSettings() {
+@@ -356,10 +339,9 @@ function toggleSettings() {
    document.getElementById('agentListView').style.display = show ? 'none' : '';
    document.getElementById('timelineView').style.display = 'none';
    if (show) {
 -    document.getElementById('settingsStatus').innerHTML = ws && ws.readyState === 1
 -      ? `<span style="color:var(--green)">● Connected</span> · ${agents.length} agents`
 -      : `<span style="color:var(--red)">● Disconnected</span>`;
+-    renderSessions();
 +    document.getElementById('settingsStatus').textContent = ws && ws.readyState === 1
 +      ? `Connected · ${agents.length} agents`
 +      : 'Disconnected';
    }
  }
  
-@@ -314,36 +304,43 @@ function renderTimeline() {
+@@ -378,20 +360,10 @@ function renderTimeline() {
    el.innerHTML = timeline.map(e => {
      const t = e.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
      const color = e.status==='blocked'?'var(--red)':e.status==='working'?'var(--green)':'var(--muted)';
@@ -446,6 +466,10 @@ index c14df8a..49d2263 100644
 -  connect();
 -  toggleSettings();
 -}
+ 
+ // Session switcher
+ function getSessions() {
+@@ -458,19 +430,36 @@ function renderSessions() {
  
  // Connection
  function connect() {
@@ -492,7 +516,7 @@ index c14df8a..49d2263 100644
  }
  
  function setStatus(s) {
-@@ -356,25 +353,17 @@ function setStatus(s) {
+@@ -483,23 +472,10 @@ function setStatus(s) {
  
  function showSetup() {
    document.getElementById('agents').innerHTML = `<div class="empty">
@@ -516,6 +540,11 @@ index c14df8a..49d2263 100644
 -  connect();
 -}
  
+ const ANSI_COLORS = ['#000000','#cd3131','#0dbc79','#e5e510','#2472c8','#bc3fbc','#11a8cd','#e5e5e5','#666666','#f14c4c','#23d18b','#f5f543','#3b8eea','#d670d6','#29b8db','#ffffff'];
+ 
+@@ -573,6 +549,11 @@ function ansiFragment(input) {
+ }
+ 
  function handleMessage(msg) {
 +  if (msg.type === 'relay_config') {
 +    readOnly = msg.read_only !== false;
@@ -525,7 +554,7 @@ index c14df8a..49d2263 100644
    if (msg.type === 'agents') {
      // Track timeline on status changes
      for (const a of msg.agents) {
-@@ -451,7 +440,8 @@ function renderWorkspaces(workspaces) {
+@@ -678,7 +659,8 @@ function renderWorkspaces(workspaces) {
      const wsAgents = agents.filter(a => a.workspace_id === wsId);
      const hasBlocked = wsAgents.some(a => a.status === 'blocked');
      const name = wsAgents[0]?.project || wsId.slice(0, 8);
@@ -535,19 +564,20 @@ index c14df8a..49d2263 100644
    }
    html += `</div>`;
    // Tab chip strip (always show when workspace selected)
-@@ -465,9 +455,9 @@ function renderWorkspaces(workspaces) {
+@@ -692,9 +674,10 @@ function renderWorkspaces(workspaces) {
        const tabAgents = agents.filter(a => a.tab_id === tid);
        const hasBlocked = tabAgents.some(a => a.status === 'blocked');
        const tabLabel = tabAgents[0]?.label || 'Tab '+(i+1);
--      html += `<button class="chip${activeTab===tid?' active':''}${hasBlocked?' alert':''}" onclick="selectTab('${tid}')">${tabLabel}</button>`;
-+      html += `<button class="chip${activeTab===tid?' active':''}${hasBlocked?' alert':''}" onclick="selectTab('${safeIdentifier(tid)}')">${escapeHtml(tabLabel)}</button>`;
+-      html += `<button class="chip${activeTab===tid?' active':''}${hasBlocked?' alert':''}" id="tab-${tid}" onclick="selectTab('${tid}')" data-tab-id="${tid}" data-tab-name="${tabLabel}">${tabLabel}</button>`;
++      const safeTid = safeIdentifier(tid);
++      html += `<button class="chip${activeTab===tid?' active':''}${hasBlocked?' alert':''}" id="tab-${safeTid}" onclick="selectTab('${safeTid}')" data-tab-id="${safeTid}" data-tab-name="${escapeHtml(tabLabel)}">${escapeHtml(tabLabel)}</button>`;
      });
 -    html += `<button class="chip chip-add" onclick="createTab('${activeWorkspace}')">+</button>`;
 +    if (!readOnly) html += `<button class="chip chip-add write-control" onclick="createTab('${safeIdentifier(activeWorkspace)}')">+</button>`;
      html += `</div>`;
    }
    // Agent list (filtered)
-@@ -513,12 +503,13 @@ function createTab(workspaceId) {
+@@ -756,12 +739,13 @@ function createTab(workspaceId) {
  function agentCard(a) {
    const color = a.status==='blocked'?'var(--red)':a.status==='working'?'var(--green)':'var(--muted)';
    const pulseClass = a.status==='working'?' pulse':'';
@@ -556,25 +586,37 @@ index c14df8a..49d2263 100644
 +  const host = a.host&&a.host!=='local'?` <span style="color:var(--orange);font-size:0.6rem">@${escapeHtml(a.host)}</span>`:'';
 +  const cwd = a.cwd ? `<span style="font-family:monospace;opacity:0.7">${escapeHtml(a.cwd.split('/').slice(-2).join('/'))}</span>` : '';
    const label = a.label||a.project||a.agent;
--  return `<div class="agent${a.status==='blocked'?' blocked':''}" role="button" tabindex="0" aria-label="${label}, ${a.status}" onclick="openTerminal('${a.pane_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTerminal('${a.pane_id}')}">
+-  return `<div class="agent${a.status==='blocked'?' blocked':''}" role="button" tabindex="0" aria-label="${label}, ${a.status}" data-pane-id="${a.pane_id}" data-agent-name="${label}" onclick="openTerminal('${a.pane_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTerminal('${a.pane_id}')}">
 +  const paneId = safeIdentifier(a.pane_id);
-+  return `<div class="agent${a.status==='blocked'?' blocked':''}" role="button" tabindex="0" aria-label="${escapeHtml(label)}, ${escapeHtml(a.status)}" onclick="openTerminal('${paneId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTerminal('${paneId}')}">
++  return `<div class="agent${a.status==='blocked'?' blocked':''}" role="button" tabindex="0" aria-label="${escapeHtml(label)}, ${escapeHtml(a.status)}" data-pane-id="${paneId}" data-agent-name="${escapeHtml(label)}" onclick="openTerminal('${paneId}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTerminal('${paneId}')}">
      <span class="dot${pulseClass}" style="background:${color}" aria-hidden="true"></span>
 -    <div class="info"><div class="project">${label}${host}</div><div class="meta">${a.agent} · ${cwd}</div></div>
 +    <div class="info"><div class="project">${escapeHtml(label)}${host}</div><div class="meta">${escapeHtml(a.agent)} · ${cwd}</div></div>
      <span style="color:var(--muted);font-size:1.2rem" aria-hidden="true">›</span>
    </div>`;
  }
-@@ -536,7 +527,7 @@ function openTerminal(paneId) {
-   document.getElementById('terminalView').classList.add('active');
-   const qa = document.getElementById('quickActions');
+@@ -782,7 +766,7 @@ function openTerminal(paneId) {
    const ak = document.getElementById('actionKeys');
+   qa.replaceChildren();
+   ak.replaceChildren();
 -  if (a&&a.status==='blocked') {
 +  if (!readOnly && a&&a.status==='blocked') {
-     const opts = a.options||['yes, single permission','trust, always allow','no (tab to edit)'];
-     qa.innerHTML = opts.map(o => {
-       const cls = o.includes('yes')||o.includes('approve')?'btn-yes':o.includes('trust')?'btn-trust':'btn-no';
-@@ -721,7 +712,7 @@ document.getElementById('termContent').addEventListener('scroll', function() {
+     const opts = a.interaction==='omp_question'&&a.multi
+       ? (Array.isArray(a.multi_options)?a.multi_options:[])
+       : (Array.isArray(a.options)?a.options:[]);
+@@ -889,11 +873,6 @@ function renderHistory(messages) {
+   `).join('');
+ }
+ 
+-function escapeHtml(text) {
+-  const div = document.createElement('div');
+-  div.textContent = text;
+-  return div.innerHTML;
+-}
+ 
+ function doSearch() {
+   const query = document.getElementById('searchInput').value.toLowerCase();
+@@ -1249,7 +1228,7 @@ document.getElementById('termContent').addEventListener('scroll', function() {
    if (el.scrollTop === 0 && paneLines < 5000) loadMore();
  });
  
@@ -583,7 +625,7 @@ index c14df8a..49d2263 100644
  
  // --- Command Palette ---
  const COMMANDS = {
-@@ -808,83 +799,6 @@ function runCommand(cmd) {
+@@ -1336,83 +1315,6 @@ function runCommand(cmd) {
    setTimeout(refreshPane, 500);
  }
  

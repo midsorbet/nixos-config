@@ -9,13 +9,13 @@
 in
   stdenvNoCC.mkDerivation {
     pname = "herdr-remote";
-    version = "0.7.0-unstable-2026-08-10";
+    version = "0.7.3";
 
     src = fetchFromGitHub {
       owner = "dcolinmorgan";
       repo = "herdr-remote";
-      rev = "a713d319d841c5b4706229370a49232de8b7d979";
-      hash = "sha256-FVm/UzytyBgBy/xhjSmrW05K8feglPc0OnnkLrTBMF0=";
+      rev = "2f7213111f7262f7b2daf2cd59b5abefff52a925";
+      hash = "sha256-ZL3TGot+UP6ihgFDsV2BkmdmdkUZMgRh+19TitlyT0c=";
     };
 
     patches = [./herdr-remote-hardening.patch];

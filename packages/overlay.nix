@@ -15,6 +15,19 @@
         });
     };
 
+    libmamba = _final: prev: {
+      libmamba = prev.libmamba.overrideAttrs (old: {
+        patches =
+          (old.patches or [])
+          ++ [
+            (prev.fetchpatch {
+              url = "https://github.com/mamba-org/mamba/commit/792c6efb644fa063c9c76f2d9d6bebd5589e743f.patch";
+              hash = "sha256-kKMOfT6e/lO9+mf9pbqVNBKNXVP7+1wvME8Kq24R914=";
+            })
+          ];
+      });
+    };
+
     apyanki = final: prev: {
       apyanki = final.callPackage ./apyanki.nix {inherit inputs;};
     };
@@ -59,6 +72,7 @@
 
   overlayList = [
     overlays.direnv
+    overlays.libmamba
     overlays.apyanki
     overlays.github-copilot-cli
     overlays.mdfried

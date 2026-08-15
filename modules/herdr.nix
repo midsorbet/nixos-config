@@ -58,7 +58,7 @@
       export HOME=${lib.escapeShellArg remoteHome}
       export HERDR_BIN=${lib.escapeShellArg (lib.getExe cfg.package)}
       export HERDR_LOG_DIR=${lib.escapeShellArg remoteLogDirectory}
-      export HERDR_RELAY_BIND=127.0.0.1
+      export HERDR_RELAY_HOST=127.0.0.1
       export HERDR_RELAY_PORT=${toString cfg.remote.port}
       export HERDR_RELAY_READ_ONLY=1
       export HERDR_REQUIRE_ACCESS_JWT=1
