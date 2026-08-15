@@ -351,7 +351,7 @@ in {
       files = lib.mkMerge [
         (lib.mkIf cfg.installCodexSkill {
           ".codex/skills/herdr/SKILL.md" = {
-            source = "${herdr}/SKILL.md";
+            source = "${herdr}/skills/herdr/SKILL.md";
             clobber = true;
           };
         })
