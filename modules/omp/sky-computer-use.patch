@@ -1,0 +1,45 @@
+--- a/index.ts
++++ b/index.ts
+@@ -91,4 +91,4 @@
+ 
+-export function setInitialComputerUseTools(pi: Pick<ExtensionAPI, "getActiveTools" | "setActiveTools">): void {
+-  pi.setActiveTools([...new Set([...pi.getActiveTools(), ...COMPUTER_USE_TOOL_NAMES])]);
++export async function setInitialComputerUseTools(pi: Pick<ExtensionAPI, "getActiveTools" | "setActiveTools">): Promise<void> {
++  await pi.setActiveTools([...new Set([...pi.getActiveTools(), ...COMPUTER_USE_TOOL_NAMES])]);
+ }
+@@ -295,2 +295,3 @@
+       description: toolDescription(method),
++      defaultInactive: true,
+       ...inspectionPromptMetadata,
+@@ -327,3 +328,30 @@
+ 
+-  pi.on("session_start", () => setInitialComputerUseTools(pi));
++  pi.registerTool({
++    name: "sky_computer_use",
++    label: "Enable Sky Computer Use",
++    description: "Enable ChatGPT Sky's ten typed Computer Use tools for the current assistant turn after reading the chatgpt-sky-computer-use skill.",
++    parameters: Type.Object({}, { additionalProperties: false }),
++    async execute() {
++      await setInitialComputerUseTools(pi);
++      return {
++        content: [{ type: "text", text: "Sky Computer Use tools activated for this assistant turn." }],
++        details: { active: true },
++      };
++    },
++  });
++
++  const releaseComputerUse = async () => {
++    await sessionExecutor.close();
++    const active = pi.getActiveTools();
++    const withoutComputerUse = active.filter(
++      (name) => !COMPUTER_USE_TOOL_NAMES.some((toolName) => toolName === name),
++    );
++    if (withoutComputerUse.length !== active.length) {
++      await pi.setActiveTools(withoutComputerUse);
++    }
++  };
++
++  pi.on("session_start", releaseComputerUse);
++  pi.on("session_switch", releaseComputerUse);
++  pi.on("agent_end", releaseComputerUse);
+   pi.on("session_shutdown", () => sessionExecutor.close());

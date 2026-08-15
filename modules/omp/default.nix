@@ -29,30 +29,24 @@
     cp ${./skills/chatgpt-sky-computer-use/SKILL.md} "$skill_dir/SKILL.md"
     cp ${./skills/chatgpt-sky-computer-use/REFERENCE.md} "$skill_dir/REFERENCE.md"
   '';
-  computerUseConfigure = pkgs.writeShellApplication {
-    name = "omp-configure-computer-use";
+  skyComputerUseExtension =
+    pkgs.runCommand "chatgpt-sky-computer-use-extension" {
+      nativeBuildInputs = [pkgs.patch];
+    } ''
+      extension_dir="$out/integrations/pi"
+      mkdir -p "$extension_dir"
+      cp ${computerUsePackage}/lib/node_modules/codex-computer-use-mcp/integrations/pi/index.ts "$extension_dir/index.ts"
+      ln -s ${computerUsePackage}/lib/node_modules/codex-computer-use-mcp/dist "$out/dist"
+      patch "$extension_dir/index.ts" < ${./sky-computer-use.patch}
+    '';
+  computerUseMcpReconcile = pkgs.writeShellApplication {
+    name = "omp-reconcile-computer-use-mcp";
     runtimeInputs = [
       pkgs.coreutils
-      pkgs.diffutils
       pkgs.jq
     ];
     text = ''
       set -euo pipefail
-
-      mode="''${1:-disable}"
-      if (( $# > 1 )); then
-        echo "usage: omp-configure-computer-use [enable|disable]" >&2
-        exit 64
-      fi
-
-      case "$mode" in
-        enable) enabled=true ;;
-        disable) enabled=false ;;
-        *)
-          echo "usage: omp-configure-computer-use [enable|disable]" >&2
-          exit 64
-          ;;
-      esac
 
       config_dir="$HOME/.omp/agent"
       config_file="$config_dir/mcp.json"
@@ -72,26 +66,17 @@
       }
       trap cleanup EXIT
 
-      jq \
-        --arg command "${lib.getExe computerUsePackage}" \
-        --argjson enabled "$enabled" \
-        '
-          .["$schema"] //= "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json"
-          | .mcpServers = (.mcpServers // {})
-          | .mcpServers["chatgpt-computer-use"] = {
-              type: "stdio",
-              command: $command,
-              enabled: $enabled
-            }
-          | .disabledServers = (
-              (.disabledServers // [])
-              | map(select(. != "chatgpt-computer-use"))
-              | if index("computer-use") == null
-                then . + ["computer-use"]
-                else .
-                end
-            )
-        ' "$input" >"$updated"
+      jq '
+        .["$schema"] //= "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json"
+        | del(.mcpServers["chatgpt-computer-use"])
+        | .disabledServers = (
+            (.disabledServers // [])
+            | if index("computer-use") == null
+              then . + ["computer-use"]
+              else .
+              end
+          )
+      ' "$input" >"$updated"
 
       if [[ -f "$config_file" ]] && cmp -s "$config_file" "$updated"; then
         exit 0
@@ -795,9 +780,7 @@ in {
 
     environment.systemPackages = [
       wrappedPackage
-      computerUsePackage
       cxporterPackage
-      computerUseConfigure
     ];
 
     hjem.users.${cfg.user} = {
@@ -823,6 +806,11 @@ in {
           source = "${skyComputerUseSkill}/share/agents/skills/chatgpt-sky-computer-use";
           clobber = true;
         };
+        ".omp/agent/extensions/sky-computer-use.ts" = {
+          type = "symlink";
+          source = "${skyComputerUseExtension}/integrations/pi/index.ts";
+          clobber = true;
+        };
         ".omp/agent/extensions/remote-collab.ts" = lib.mkIf cfg.collab.enable {
           source = collabExtension;
           clobber = true;
@@ -839,8 +827,8 @@ in {
     };
 
     system.activationScripts.postActivation.text = lib.mkAfter ''
-      echo >&2 "Configuring OMP ChatGPT Computer Use MCP..."
-      /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe computerUseConfigure}
+      echo >&2 "Reconciling OMP Computer Use routing..."
+      /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe computerUseMcpReconcile}
     '';
 
     launchd.user.agents.omp-collab = lib.mkIf cfg.collab.enable {

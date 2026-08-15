@@ -26,8 +26,8 @@ Compare the returned field value with the intended value. A successful response 
 
 A Computer Use safety refusal is final for that app. Do not retry with its name, bundle identifier, or filesystem path. Switch to its CLI, a dedicated API or browser interface, or a manual handoff.
 
-## Catalog or bridge recovery
+## Native adapter recovery
 
-If the user enabled the server but no Sky devices mounted, start one fresh OMP session once. Do not guess device URIs or invoke the MCP executable directly.
+If `sky_computer_use` is absent after this skill was read successfully, start one fresh OMP session once so the managed adapter can load. Do not enable `chatgpt-computer-use` through `/mcp`; that restores the generic catalog this gate replaces.
 
-If devices mounted but calls fail, use `computer_use_status` when available. Report a broker, permission, or transport failure rather than silently escalating to native computer control.
+If the activator succeeds but the `computer_use_*` tools remain absent, do not call it again. Report an adapter-routing failure. For an unfamiliar argument schema, read only that mounted device's `xd://` docs. If a direct call fails, report its broker, permission, routing, or safety error. The user can run `/computer-use-status` for additional signed-bridge diagnostics; do not silently escalate to native computer control.
