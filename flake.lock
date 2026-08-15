@@ -830,6 +830,13 @@
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
         "secrets": "secrets",
+        "skill-agent-stuff": "skill-agent-stuff",
+        "skill-bro": "skill-bro",
+        "skill-diagnosing-bugs": "skill-diagnosing-bugs",
+        "skill-effective-html": "skill-effective-html",
+        "skill-humanlayer": "skill-humanlayer",
+        "skill-ideonomy": "skill-ideonomy",
+        "skill-modem": "skill-modem",
         "uv2nix": "uv2nix",
         "vscode-server": "vscode-server"
       }
@@ -911,6 +918,118 @@
       "original": {
         "type": "git",
         "url": "ssh://git@github.com/midsorbet/nix-secrets.git"
+      }
+    },
+    "skill-agent-stuff": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786377215,
+        "narHash": "sha256-PmIfimUsSw+UnnWwth+x1gF1MHtAInZBfpx2Whvfbhw=",
+        "owner": "mitsuhiko",
+        "repo": "agent-stuff",
+        "rev": "13bc8f87970bec8830aab0f1c0487d35aa7c0917",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mitsuhiko",
+        "repo": "agent-stuff",
+        "type": "github"
+      }
+    },
+    "skill-bro": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786468920,
+        "narHash": "sha256-27SNtbTTN1wTjFrP8oc4kXZimKHUMWnqI8C+e8//kHg=",
+        "owner": "backnotprop",
+        "repo": "bro",
+        "rev": "3abce5a58fbb92c19c1e93f6bd72f9960a229e5c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "backnotprop",
+        "repo": "bro",
+        "type": "github"
+      }
+    },
+    "skill-diagnosing-bugs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786821924,
+        "narHash": "sha256-KZQDdBXa0eToj+ZXSuSZ+0RmDFTvXaWM2kTSeu/D+XA=",
+        "owner": "dmmulroy",
+        "repo": ".dotfiles",
+        "rev": "a8bb98e2f5ada7639442b51d3dc4580cb62b7b24",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dmmulroy",
+        "repo": ".dotfiles",
+        "type": "github"
+      }
+    },
+    "skill-effective-html": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785799141,
+        "narHash": "sha256-5j212fdzcLd3yG6cUOpcZPLaLFevlBBqtEyay2tCKXk=",
+        "owner": "plannotator",
+        "repo": "effective-html",
+        "rev": "d95debbaef15af1d201fc6c10c77cf92b524a0d6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "plannotator",
+        "repo": "effective-html",
+        "type": "github"
+      }
+    },
+    "skill-humanlayer": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786633530,
+        "narHash": "sha256-lJvu9CGAN/+dzmzck0CodRXn/p7GUkCbfyZxys4nIoU=",
+        "owner": "humanlayer",
+        "repo": "skills",
+        "rev": "3c2629142c5d437428269b1b722b08c0b87f574d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "humanlayer",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
+    "skill-ideonomy": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780467315,
+        "narHash": "sha256-YILnhcOGjGukiqXMz2KFhvc85Zo/WZWf6xpmY+Kb3e4=",
+        "owner": "latentwill",
+        "repo": "ideonomy-skill",
+        "rev": "3339f3eff61a13fff2558ae9a202ef4fa6099c92",
+        "type": "github"
+      },
+      "original": {
+        "owner": "latentwill",
+        "repo": "ideonomy-skill",
+        "type": "github"
+      }
+    },
+    "skill-modem": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1784555544,
+        "narHash": "sha256-xLUM5Wg168xFn/55WFOrnXvoiVuyUVPDPk52ITEldmA=",
+        "owner": "modem-dev",
+        "repo": "skills",
+        "rev": "edcdedb38a545f67c065f4084b3627517f0d79cf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "modem-dev",
+        "repo": "skills",
+        "type": "github"
       }
     },
     "systems": {

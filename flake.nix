@@ -4,6 +4,35 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     # Isolate Hunk's x86_64-darwin formatter and mdfried's Python 3.14 remarshal incompatibility.
     nixpkgs-darwin-compat.url = "github:nixos/nixpkgs/nixpkgs-26.05-darwin";
+    # Shared agent skill revisions are pinned only by flake.lock.
+    skill-agent-stuff = {
+      url = "github:mitsuhiko/agent-stuff";
+      flake = false;
+    };
+    skill-bro = {
+      url = "github:backnotprop/bro";
+      flake = false;
+    };
+    skill-diagnosing-bugs = {
+      url = "github:dmmulroy/.dotfiles";
+      flake = false;
+    };
+    skill-effective-html = {
+      url = "github:plannotator/effective-html";
+      flake = false;
+    };
+    skill-humanlayer = {
+      url = "github:humanlayer/skills";
+      flake = false;
+    };
+    skill-ideonomy = {
+      url = "github:latentwill/ideonomy-skill";
+      flake = false;
+    };
+    skill-modem = {
+      url = "github:modem-dev/skills";
+      flake = false;
+    };
     agenix.url = "github:ryantm/agenix";
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";

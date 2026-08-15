@@ -71,6 +71,7 @@ in {
     ../../modules/neovim.nix
     ../../modules/omp
     ../../modules/plannotator.nix
+    ../../modules/shared-agent-skills.nix
     ../../modules/shared
     agenix.darwinModules.default
     paneru.darwinModules.paneru
@@ -164,6 +165,7 @@ in {
     };
   };
   local.plannotator.enable = true;
+  local.sharedAgentSkills.enable = true;
   local.zsh = {
     enable = true;
     inherit user;
