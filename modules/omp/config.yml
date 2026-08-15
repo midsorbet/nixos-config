@@ -65,11 +65,19 @@ task:
     task: on
 secrets:
   enabled: true
-# Chronicle/Skysight is ChatGPT App-owned; OMP's browser supersedes the Codex Playwright CLI skill.
+# Chronicle/Skysight and OpenAI's curated Codex skills are App-owned; OMP uses its native tools and subagents.
 skills:
   ignoredSkills:
     - chronicle
+    - define-goal
+    - jupyter-notebook
+    - pdf
     - playwright
+    - playwright-interactive
+    - screenshot
+    - security-best-practices
+    - security-ownership-map
+    - security-threat-model
 startup:
   setupWizard: false
 tui:
