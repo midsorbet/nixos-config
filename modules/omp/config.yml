@@ -65,6 +65,10 @@ task:
     task: on
 secrets:
   enabled: true
+# Chronicle/Skysight is ChatGPT App-owned and historically over-triggered in OMP.
+skills:
+  ignoredSkills:
+    - chronicle
 startup:
   setupWizard: false
 tui:

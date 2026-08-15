@@ -23,9 +23,12 @@
   codexConnectorsSkill = pkgs.writeTextDir "share/agents/skills/codex-connectors/SKILL.md" (
     builtins.readFile ./skills/codex-connectors/SKILL.md
   );
-  skyComputerUseSkill = pkgs.writeTextDir "share/agents/skills/chatgpt-sky-computer-use/SKILL.md" (
-    builtins.readFile ./skills/chatgpt-sky-computer-use/SKILL.md
-  );
+  skyComputerUseSkill = pkgs.runCommand "chatgpt-sky-computer-use-skill" {} ''
+    skill_dir="$out/share/agents/skills/chatgpt-sky-computer-use"
+    mkdir -p "$skill_dir"
+    cp ${./skills/chatgpt-sky-computer-use/SKILL.md} "$skill_dir/SKILL.md"
+    cp ${./skills/chatgpt-sky-computer-use/REFERENCE.md} "$skill_dir/REFERENCE.md"
+  '';
   computerUseConfigure = pkgs.writeShellApplication {
     name = "omp-configure-computer-use";
     runtimeInputs = [
@@ -35,6 +38,21 @@
     ];
     text = ''
       set -euo pipefail
+
+      mode="''${1:-disable}"
+      if (( $# > 1 )); then
+        echo "usage: omp-configure-computer-use [enable|disable]" >&2
+        exit 64
+      fi
+
+      case "$mode" in
+        enable) enabled=true ;;
+        disable) enabled=false ;;
+        *)
+          echo "usage: omp-configure-computer-use [enable|disable]" >&2
+          exit 64
+          ;;
+      esac
 
       config_dir="$HOME/.omp/agent"
       config_file="$config_dir/mcp.json"
@@ -54,22 +72,26 @@
       }
       trap cleanup EXIT
 
-      jq --arg command "${lib.getExe computerUsePackage}" '
-        .["$schema"] //= "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json"
-        | .mcpServers = (.mcpServers // {})
-        | .mcpServers["chatgpt-computer-use"] = {
-            type: "stdio",
-            command: $command,
-            enabled: (.mcpServers["chatgpt-computer-use"].enabled // false)
-          }
-        | .disabledServers = (
-            (.disabledServers // [])
-            | if index("computer-use") == null
-              then . + ["computer-use"]
-              else .
-              end
-          )
-      ' "$input" >"$updated"
+      jq \
+        --arg command "${lib.getExe computerUsePackage}" \
+        --argjson enabled "$enabled" \
+        '
+          .["$schema"] //= "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json"
+          | .mcpServers = (.mcpServers // {})
+          | .mcpServers["chatgpt-computer-use"] = {
+              type: "stdio",
+              command: $command,
+              enabled: $enabled
+            }
+          | .disabledServers = (
+              (.disabledServers // [])
+              | map(select(. != "chatgpt-computer-use"))
+              | if index("computer-use") == null
+                then . + ["computer-use"]
+                else .
+                end
+            )
+        ' "$input" >"$updated"
 
       if [[ -f "$config_file" ]] && cmp -s "$config_file" "$updated"; then
         exit 0
