@@ -1,18 +1,31 @@
 defaultThinkingLevel: xhigh
 textVerbosity: low
+power:
+  sleepPrevention: system
+steeringMode: all
+followUpMode: all
 exa:
   enabled: true
 astGrep:
+  enabled: true
+bashInterceptor:
   enabled: true
 browser:
   relay: true
 computer:
   enabled: false
+checkpoint:
+  enabled: true
 edit:
   enforceSeenLines: true
 error:
   notify: on
+display:
+  showTokenUsage: true
+  cacheMissMarker: true
 generate_image:
+  enabled: true
+github:
   enabled: true
 read:
   renderMarkdown: true
@@ -34,7 +47,7 @@ modelRoles:
   commit: openai-codex/gpt-5.6-luna:medium
   tiny: openai-codex/gpt-5.6-luna:low
   task: openai-codex/gpt-5.6-luna:medium
-  advisor: anthropic/claude-fable-5:high
+  advisor: anthropic/claude-opus-5:high
 modelProviderOrder:
   - anthropic
   - zai
@@ -46,6 +59,8 @@ advisor:
   enabled: true
   syncBacklog: off
   immuneTurns: 5
+prewalk:
+  enabled: true
 tier:
   openai: priority
   subagent: default
@@ -54,9 +69,10 @@ task:
   prewalk: true
   enableEffort: true
   maxEffort: high
-  maxConcurrency: 8
+  maxConcurrency: 32
   maxRecursionDepth: 2
   softRequestBudgetNotice: true
+  showResolvedModelBadge: true
   agentAdvisor:
     task: on
 secrets:
@@ -77,6 +93,8 @@ startup:
   setupWizard: false
 statusLine:
   preset: custom
+  transparent: true
+  compactThinkingLevel: true
   leftSegments:
     - pi
     - model
@@ -88,8 +106,11 @@ statusLine:
     - context_pct
     - cost
   rightSegments:
+    # The status line follows the active provider; /usage shows primary and advisor quotas.
     - usage
     - session_name
+terminal:
+  showProgress: true
 tui:
   codexResetFireworks: true
 symbolPreset: nerd

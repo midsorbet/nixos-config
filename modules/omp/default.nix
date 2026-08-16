@@ -390,8 +390,11 @@
   managedSettingsSuffix =
     lib.optionalString (cfg.authBrokerUrl != null)
     "\nauth:\n  broker:\n    url: ${builtins.toJSON cfg.authBrokerUrl}\n"
-    + lib.optionalString cfg.collab.enable
-    "\ncollab:\n  relayUrl: ${builtins.toJSON collabHostUrl}\n  webUrl: ${builtins.toJSON cfg.collab.webUrl}\n";
+    + lib.optionalString cfg.collab.enable (
+      "\ncollab:\n  relayUrl: ${builtins.toJSON collabHostUrl}\n  webUrl: ${builtins.toJSON cfg.collab.webUrl}\n"
+      + lib.optionalString (cfg.collab.displayName != null)
+      "  displayName: ${builtins.toJSON cfg.collab.displayName}\n"
+    );
   managedSettingsFile =
     if managedSettingsSuffix == ""
     then cfg.settingsFile
@@ -593,6 +596,12 @@ in {
         type = lib.types.str;
         default = "omp.midsorbet.me";
         description = "Public hostname for the dedicated Cloudflare Tunnel.";
+      };
+      displayName = lib.mkOption {
+        type = with lib.types; nullOr str;
+        default = null;
+        example = "mini-me";
+        description = "Name shown to OMP collab participants; null uses OMP's OS username fallback.";
       };
 
       port = lib.mkOption {
