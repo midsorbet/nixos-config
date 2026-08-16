@@ -805,6 +805,10 @@ in {
           source = managedSettingsFile;
           clobber = true;
         };
+        ".omp/agent/commands/spinoff.md" = {
+          source = ./commands/spinoff.md;
+          clobber = true;
+        };
         ".agents/skills/codex-connectors" = {
           type = "symlink";
           source = "${codexConnectorsSkill}/share/agents/skills/codex-connectors";
