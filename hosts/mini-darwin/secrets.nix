@@ -14,13 +14,6 @@ in {
     group = "wheel";
   };
 
-  age.secrets."herdr-remote-tunnel" = {
-    file = "${secrets}/herdr-remote-tunnel.age";
-    mode = "400";
-    owner = user;
-    group = "staff";
-  };
-
   age.secrets."omp-collab-tunnel" = {
     file = "${secrets}/omp-collab-tunnel.age";
     mode = "400";

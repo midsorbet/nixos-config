@@ -134,7 +134,7 @@ Intended Access posture:
 - `rss.midsorbet.me`, `paperless.midsorbet.me`, `photos.midsorbet.me`, `ntfy.midsorbet.me`, and `budget.midsorbet.me` are the gated hostnames.
 - `lab.midsorbet.me` should not have standing DNS records, tunnel ingress rules, or Access app entries.
 - `omp.midsorbet.me` belongs to the separate, Mini-hosted `omp-collab` Tunnel and Access app. Its DNS and Access entries are standing, but the relay and tunnel run only on demand; never add it to `baymax-apps`.
-- `herdr.midsorbet.me` belongs to the separate, Mini-hosted `herdr-remote` Tunnel and Access app; never add it to `baymax-apps`.
+- `herdr.midsorbet.me` is retired locally; its dedicated Cloudflare Tunnel, DNS route, and Access application remain dormant pending authenticated control-plane cleanup. Never add it to `baymax-apps`.
 - If a wildcard Access app matches `*.midsorbet.me`, make sure `readeck.midsorbet.me` is explicitly excluded or otherwise not covered by that policy.
 
 Useful symptoms:
