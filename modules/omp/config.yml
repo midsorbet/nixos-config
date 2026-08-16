@@ -75,6 +75,21 @@ skills:
     - security-threat-model
 startup:
   setupWizard: false
+statusLine:
+  preset: custom
+  leftSegments:
+    - pi
+    - model
+    - mode
+    - collab
+    - path
+    - git
+    - pr
+    - context_pct
+    - cost
+  rightSegments:
+    - usage
+    - session_name
 tui:
   codexResetFireworks: true
 symbolPreset: nerd
