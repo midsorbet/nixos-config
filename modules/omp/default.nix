@@ -1,9 +1,14 @@
 {
   config,
+  herdr-omp-plugins,
   lib,
   pkgs,
   ...
 }: let
+  inherit (herdr-omp-plugins.lib.buildersFor pkgs)
+    mkRemoteCollabExtension
+    mkSpinoffExtension
+    ;
   cfg = config.local.omp;
   authBrokerUrlIsSecure =
     cfg.authBrokerUrl
@@ -361,7 +366,7 @@
     '';
   };
 
-  collabExtension = pkgs.replaceVars ./remote-collab.ts {
+  collabExtension = mkRemoteCollabExtension {
     startCommand = lib.getExe collabStart;
     stopCommand = lib.getExe collabStop;
     statusCommand = lib.getExe collabStatus;
@@ -387,6 +392,11 @@
         --set-default PI_JS 1 \
         --set-default PI_PACKAGE_DIR "$out/share/omp"
     '';
+  spinoffExtension = mkSpinoffExtension {
+    ompCommand = "${wrappedPackage}/bin/omp";
+    herdrCommand = lib.getExe config.local.herdr.package;
+    vaultRoot = "/Users/${cfg.user}/vault";
+  };
   managedSettingsSuffix =
     lib.optionalString (cfg.authBrokerUrl != null)
     "\nauth:\n  broker:\n    url: ${builtins.toJSON cfg.authBrokerUrl}\n"
@@ -805,8 +815,9 @@ in {
           source = managedSettingsFile;
           clobber = true;
         };
-        ".omp/agent/commands/spinoff.md" = {
-          source = ./commands/spinoff.md;
+        ".omp/agent/extensions/spinoff" = {
+          type = "symlink";
+          source = spinoffExtension;
           clobber = true;
         };
         ".agents/skills/codex-connectors" = {
@@ -825,7 +836,7 @@ in {
           clobber = true;
         };
         ".omp/agent/extensions/remote-collab.ts" = lib.mkIf cfg.collab.enable {
-          source = collabExtension;
+          source = "${collabExtension}/remote-collab.ts";
           clobber = true;
         };
         ".omp/agent/themes/kanagawa-wave.json" = {

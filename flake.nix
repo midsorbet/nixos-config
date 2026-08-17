@@ -66,6 +66,10 @@
       url = "github:herdrdev/herdr/v0.8.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    herdr-omp-plugins = {
+      url = "git+ssh://git@github.com/midsorbet/herdr-omp-plugins.git";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     paneru = {
       url = "github:karinushka/paneru/v0.4.4";
       inputs.nixpkgs.follows = "nixpkgs";

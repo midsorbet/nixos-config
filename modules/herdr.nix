@@ -1,14 +1,16 @@
 {
   config,
   herdr,
+  herdr-omp-plugins,
   lib,
   pkgs,
   ...
 }: let
   cfg = config.local.herdr;
   tomlFormat = pkgs.formats.toml {};
-  ompDashboardPlugin = pkgs.callPackage ../packages/herdr-omp-dashboard.nix {
-    ompPackage = config.local.omp.package;
+  inherit (herdr-omp-plugins.lib.buildersFor pkgs) mkHerdrDashboardPlugin;
+  ompDashboardPlugin = mkHerdrDashboardPlugin {
+    ompCommand = lib.getExe config.local.omp.package;
     vaultRoot = "/Users/${cfg.user}/vault";
   };
 

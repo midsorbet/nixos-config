@@ -306,6 +306,26 @@
         "type": "github"
       }
     },
+    "herdr-omp-plugins": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786926923,
+        "narHash": "sha256-ybv4lzXWJTOZGWMytacuGFPBNo8LIfHV6UoYEvx7YIc=",
+        "ref": "refs/heads/main",
+        "rev": "3ba2d3e9a7ffed65623fe5f395e217bb909bf75d",
+        "revCount": 5,
+        "type": "git",
+        "url": "ssh://git@github.com/midsorbet/herdr-omp-plugins.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/midsorbet/herdr-omp-plugins.git"
+      }
+    },
     "hjem": {
       "inputs": {
         "nixpkgs": [
@@ -812,6 +832,7 @@
         "darwin": "darwin_2",
         "disko": "disko",
         "herdr": "herdr",
+        "herdr-omp-plugins": "herdr-omp-plugins",
         "hjem": "hjem",
         "homebrew-bundle": "homebrew-bundle",
         "homebrew-cask": "homebrew-cask",
