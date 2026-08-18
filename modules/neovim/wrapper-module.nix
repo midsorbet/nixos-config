@@ -1,6 +1,7 @@
 {
   jdtlsWrapper,
   metalsWrapper,
+  nixdWrapper,
 }: {
   config,
   lib,
@@ -23,6 +24,7 @@
         "html"
         "jdtls"
         "marksman"
+        "nixd"
       ];
     };
 
@@ -82,6 +84,7 @@
         runtimePkgs = [
           jdtlsWrapper
           metalsWrapper
+          nixdWrapper
           pkgs.jdk
           pkgs.maven
           pkgs.marksman

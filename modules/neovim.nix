@@ -50,8 +50,13 @@
     package = pkgs.jdt-language-server;
   };
 
+  nixdWrapper = mkFlakeEnvWrapper {
+    name = "nixd";
+    package = pkgs.nixd;
+  };
+
   neovimWrapperModule = import ./neovim/wrapper-module.nix {
-    inherit jdtlsWrapper metalsWrapper;
+    inherit jdtlsWrapper metalsWrapper nixdWrapper;
   };
 
   wrappedNeovim = nix-wrapper-modules.lib.evalPackage [

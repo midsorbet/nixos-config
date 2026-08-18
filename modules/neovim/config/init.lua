@@ -231,6 +231,12 @@ local function setup_lsp()
     root_markers = { 'build.sbt', 'build.sc', { 'build.gradle', 'build.gradle.kts' }, 'pom.xml', 'flake.nix', '.git' },
   })
 
+  vim.lsp.config('nixd', {
+    cmd = { 'nixd' },
+    filetypes = { 'nix' },
+    root_markers = { 'flake.nix', '.git' },
+  })
+
   local root_markers1 = { 'mvnw', 'gradlew', 'settings.gradle', 'settings.gradle.kts', '.git' }
   local root_markers2 = { 'build.xml', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'flake.nix' }
   vim.lsp.config('jdtls', {
@@ -253,7 +259,7 @@ local function setup_lsp()
     init_options = {},
   })
 
-  vim.lsp.enable(nixInfo({ 'metals', 'html', 'jdtls', 'marksman' }, 'settings', 'lspServers'))
+  vim.lsp.enable(nixInfo({ 'metals', 'nixd', 'html', 'jdtls', 'marksman' }, 'settings', 'lspServers'))
 end
 
 if nixInfo.lze then
