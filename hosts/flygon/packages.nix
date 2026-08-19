@@ -17,6 +17,7 @@ with pkgs; [
   pavucontrol
   playerctl
   polkit_gnome
+  rsync
   swappy
   thunar
   tmux
@@ -24,5 +25,6 @@ with pkgs; [
   waybar
   wl-clipboard
   xdg-utils
+  zstd
   zoom-us
 ]
