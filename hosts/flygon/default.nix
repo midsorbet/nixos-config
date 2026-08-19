@@ -45,10 +45,7 @@ in {
   programs = {
     dconf.enable = true;
     nix-ld.enable = true;
-    sway = {
-      enable = true;
-      wrapperFeatures.gtk = true;
-    };
+    niri.enable = true;
     zsh.enable = true;
   };
 
@@ -59,7 +56,7 @@ in {
     greetd = {
       enable = true;
       settings.default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --remember --cmd sway";
+        command = "${pkgs.tuigreet}/bin/tuigreet --remember --cmd ${pkgs.niri}/bin/niri-session";
         user = "greeter";
       };
     };
@@ -100,17 +97,12 @@ in {
     powerOnBoot = true;
   };
 
-  virtualisation.docker = {
-    enable = true;
-    enableOnBoot = false;
-  };
-
   systemd.user.services = {
     flygon-kanshi = {
       description = "Apply Flygon display profiles";
-      wantedBy = ["sway-session.target"];
-      partOf = ["sway-session.target"];
-      after = ["sway-session.target"];
+      wantedBy = ["graphical-session.target"];
+      partOf = ["graphical-session.target"];
+      after = ["graphical-session.target"];
       serviceConfig = {
         ExecStart = "${pkgs.kanshi}/bin/kanshi";
         Restart = "on-failure";
@@ -118,24 +110,24 @@ in {
       };
     };
     flygon-mako = {
-      description = "Sway notification daemon";
-      wantedBy = ["sway-session.target"];
-      partOf = ["sway-session.target"];
-      after = ["sway-session.target"];
+      description = "Wayland notification daemon";
+      wantedBy = ["graphical-session.target"];
+      partOf = ["graphical-session.target"];
+      after = ["graphical-session.target"];
       serviceConfig.ExecStart = "${pkgs.mako}/bin/mako";
     };
     flygon-networkmanager-applet = {
       description = "NetworkManager status applet";
-      wantedBy = ["sway-session.target"];
-      partOf = ["sway-session.target"];
-      after = ["sway-session.target"];
+      wantedBy = ["graphical-session.target"];
+      partOf = ["graphical-session.target"];
+      after = ["graphical-session.target"];
       serviceConfig.ExecStart = "${pkgs.networkmanagerapplet}/bin/nm-applet --indicator";
     };
     flygon-polkit-agent = {
       description = "Polkit authentication agent";
-      wantedBy = ["sway-session.target"];
-      partOf = ["sway-session.target"];
-      after = ["sway-session.target"];
+      wantedBy = ["graphical-session.target"];
+      partOf = ["graphical-session.target"];
+      after = ["graphical-session.target"];
       serviceConfig.ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
     };
   };

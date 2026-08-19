@@ -3,11 +3,9 @@ with pkgs; [
   alacritty
   btop
   cliphist
-  docker-compose
   firefox
   fuzzel
   gimp
-  gtklock
   kanshi
   mako
   networkmanagerapplet
@@ -19,12 +17,14 @@ with pkgs; [
   polkit_gnome
   rsync
   swappy
+  swaylock
   thunar
   tmux
   vscode
   waybar
   wl-clipboard
   xdg-utils
+  xwayland-satellite
   zstd
   zoom-us
 ]
