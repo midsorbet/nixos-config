@@ -157,8 +157,11 @@ in {
     };
   };
 
+  users.groups.${user}.gid = 1000;
+
   users.users.${user} = {
     uid = 1000;
+    group = user;
     isNormalUser = true;
     extraGroups = ["networkmanager" "wheel"];
     openssh.authorizedKeys.keys = [loginKey];
