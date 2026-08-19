@@ -5,7 +5,8 @@
   pkgs,
   ...
 }: let
-  inherit (herdr-omp-plugins.lib.buildersFor pkgs)
+  inherit
+    (herdr-omp-plugins.lib.buildersFor pkgs)
     mkRemoteCollabExtension
     mkSpinoffExtension
     ;
@@ -16,10 +17,10 @@
     || builtins.match "https://.+" cfg.authBrokerUrl != null
     || builtins.match "http://(127\\.0\\.0\\.1|localhost)(:[0-9]+)?(/.*)?" cfg.authBrokerUrl != null;
 
-  assetRevision = "37eee71978951fccf66b21f7e3e2b74596ac9d74";
+  assetRevision = "858f7dd91fff9b84cf8a2c6a6bb85aa0e6d03a55";
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/${assetRevision}.tar.gz";
-    hash = "sha256-z7rV2HjYEHnMeh8nY/gYM7iDYkOIVTPQJoUbssbROfs=";
+    hash = "sha256-4ffZoaprz5rXso4xc9JIKpebB7yxzM4S3nK+/ObQKZ8=";
   };
   runtimePath =
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
