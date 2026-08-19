@@ -4,11 +4,6 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     # Isolate Hunk's x86_64-darwin formatter and mdfried's Python 3.14 remarshal incompatibility.
     nixpkgs-darwin-compat.url = "github:nixos/nixpkgs/nixpkgs-26.05-darwin";
-    # Build the official Linux payload locally; do not accept this input's Cachix config.
-    codex-desktop-linux = {
-      url = "github:ilysenko/codex-desktop-linux";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     # Shared agent skill revisions are pinned only by flake.lock.
     skill-agent-stuff = {
       url = "github:mitsuhiko/agent-stuff";
@@ -143,7 +138,6 @@
     impermanence,
     lanzaboote,
     vscode-server,
-    codex-desktop-linux,
     ...
   } @ inputs: let
     user = "me";
@@ -264,10 +258,6 @@
         };
         specialArgs = inputs;
         modules = [
-          codex-desktop-linux.nixosModules.default
-          {
-            programs.codexDesktopLinux.enable = true;
-          }
           hjem.nixosModules.default
           nix-index-database.nixosModules.nix-index
           {
