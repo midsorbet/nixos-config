@@ -1,0 +1,28 @@
+{pkgs}:
+with pkgs; [
+  alacritty
+  btop
+  cliphist
+  docker-compose
+  firefox
+  fuzzel
+  gimp
+  gtklock
+  kanshi
+  mako
+  networkmanagerapplet
+  nwg-drawer
+  obsidian
+  pamixer
+  pavucontrol
+  playerctl
+  polkit_gnome
+  swappy
+  thunar
+  tmux
+  vscode
+  waybar
+  wl-clipboard
+  xdg-utils
+  zoom-us
+]

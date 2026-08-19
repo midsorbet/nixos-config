@@ -94,6 +94,10 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -133,6 +137,7 @@
     homebrew-cask,
     nixpkgs,
     disko,
+    nixos-hardware,
     nixos-wsl,
     nix-index-database,
     impermanence,
@@ -271,6 +276,31 @@
           impermanence.nixosModules.impermanence
           lanzaboote.nixosModules.lanzaboote
           ./hosts/baymax
+        ];
+      };
+
+      flygon = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        pkgs = import ./packages {
+          inherit inputs;
+          system = "x86_64-linux";
+          config.allowUnfreePredicate = pkg:
+            builtins.elem (nixpkgs.lib.getName pkg) [
+              "obsidian"
+              "vscode"
+              "zoom"
+            ];
+        };
+        specialArgs = inputs;
+        modules = [
+          hjem.nixosModules.default
+          nix-index-database.nixosModules.nix-index
+          {
+            programs.nix-index-database.comma.enable = true;
+          }
+          disko.nixosModules.disko
+          nixos-hardware.nixosModules.framework-13th-gen-intel
+          ./hosts/flygon
         ];
       };
 
