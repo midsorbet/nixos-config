@@ -116,20 +116,6 @@ in {
       after = ["graphical-session.target"];
       serviceConfig.ExecStart = "${pkgs.mako}/bin/mako";
     };
-    flygon-networkmanager-applet = {
-      description = "NetworkManager status applet";
-      wantedBy = ["graphical-session.target"];
-      partOf = ["graphical-session.target"];
-      after = ["graphical-session.target"];
-      serviceConfig.ExecStart = "${pkgs.networkmanagerapplet}/bin/nm-applet --indicator";
-    };
-    flygon-polkit-agent = {
-      description = "Polkit authentication agent";
-      wantedBy = ["graphical-session.target"];
-      partOf = ["graphical-session.target"];
-      after = ["graphical-session.target"];
-      serviceConfig.ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
-    };
   };
 
   local.githubCli = {
