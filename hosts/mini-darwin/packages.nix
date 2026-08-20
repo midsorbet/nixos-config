@@ -9,6 +9,5 @@ in
     frog
     fswatch
     gh
-    neovim
     uv
   ]

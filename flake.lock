@@ -558,6 +558,23 @@
         "type": "github"
       }
     },
+    "minimax": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786793376,
+        "narHash": "sha256-jqJVspYwrKWjaOW69RrR3qcCQ1pJw2SEwlYeGC1hakk=",
+        "owner": "nvim-mini",
+        "repo": "MiniMax",
+        "rev": "73420d884a6117e77e6d1df4d6ca7144c8444814",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nvim-mini",
+        "repo": "MiniMax",
+        "rev": "73420d884a6117e77e6d1df4d6ca7144c8444814",
+        "type": "github"
+      }
+    },
     "nix-homebrew": {
       "inputs": {
         "brew-src": "brew-src"
@@ -861,6 +878,7 @@
         "impermanence": "impermanence",
         "lanzaboote": "lanzaboote",
         "mdfried": "mdfried",
+        "minimax": "minimax",
         "nix-homebrew": "nix-homebrew",
         "nix-index-database": "nix-index-database",
         "nix-wrapper-modules": "nix-wrapper-modules",

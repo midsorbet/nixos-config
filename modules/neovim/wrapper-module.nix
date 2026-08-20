@@ -1,6 +1,7 @@
 {
   jdtlsWrapper,
   metalsWrapper,
+  minimaxConfig,
   nixdWrapper,
 }: {
   config,
@@ -13,19 +14,8 @@
 
   config = {
     settings = {
-      config_directory = ./config;
+      config_directory = minimaxConfig;
       info_plugin_name = "nix-minimax";
-      theme = {
-        dark = "kanagawa-wave";
-        light = "everforest";
-      };
-      lspServers = [
-        "metals"
-        "html"
-        "jdtls"
-        "marksman"
-        "nixd"
-      ];
     };
 
     hosts = {
@@ -45,20 +35,9 @@
     runtimePkgs = config.specCollect (acc: spec: acc ++ (spec.runtimePkgs or [])) [];
 
     specs = {
-      lazyLoader = {
-        lazy = false;
-        data = with pkgs.vimPlugins; [
-          lze
-          lzextras
-        ];
-      };
-
       mini = {
         lazy = false;
-        data = with pkgs.vimPlugins; [
-          mini-nvim
-          mini-icons
-        ];
+        data = [pkgs.vimPlugins.mini-nvim];
       };
 
       colorschemes = {
@@ -69,24 +48,19 @@
         ];
       };
 
-      general = {
-        lazy = true;
+      externalPlugins = {
+        lazy = false;
         data = with pkgs.vimPlugins; [
           conform-nvim
           friendly-snippets
-          gitsigns-nvim
           nvim-lspconfig
           nvim-treesitter.withAllGrammars
           nvim-treesitter-textobjects
-          vim-sleuth
-          which-key-nvim
         ];
         runtimePkgs = [
           jdtlsWrapper
           metalsWrapper
           nixdWrapper
-          pkgs.jdk
-          pkgs.maven
           pkgs.marksman
           pkgs.vscode-langservers-extracted
         ];

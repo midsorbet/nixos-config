@@ -57,6 +57,10 @@
       url = "github:BirdeeHub/nix-wrapper-modules";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    minimax = {
+      url = "github:nvim-mini/MiniMax/73420d884a6117e77e6d1df4d6ca7144c8444814";
+      flake = false;
+    };
     hunk = {
       url = "github:modem-dev/hunk/v0.18.2";
       inputs.nixpkgs.follows = "nixpkgs";
