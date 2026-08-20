@@ -2,7 +2,6 @@
   config,
   lib,
   nix-wrapper-modules,
-  minimax,
   pkgs,
   ...
 }: let
@@ -56,25 +55,8 @@
     package = pkgs.nixd;
   };
 
-  minimaxConfig = pkgs.runCommandLocal "minimax-config" {} ''
-    cp -R ${minimax}/configs/nvim-0.12 "$out"
-    chmod -R u+w "$out"
-
-    substituteInPlace "$out/init.lua" \
-      --replace-fail \
-      "vim.pack.add({ 'https://github.com/nvim-mini/mini.nvim' })" \
-      "-- Nix supplies mini.nvim in the wrapped runtime."
-    substituteInPlace "$out/plugin/40_plugins.lua" \
-      --replace-fail \
-      "local add = vim.pack.add" \
-      "local add = function() end -- Nix supplies external plugins in the wrapped runtime."
-
-    rm "$out/nvim-pack-lock.json" "$out/after/lsp/lua_ls.lua"
-    cp ${./neovim/minimax-local.lua} "$out/plugin/90_nix.lua"
-  '';
-
   neovimWrapperModule = import ./neovim/wrapper-module.nix {
-    inherit jdtlsWrapper metalsWrapper minimaxConfig nixdWrapper;
+    inherit jdtlsWrapper metalsWrapper nixdWrapper;
   };
 
   wrappedNeovim = nix-wrapper-modules.lib.evalPackage [

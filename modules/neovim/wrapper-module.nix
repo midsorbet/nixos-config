@@ -1,7 +1,6 @@
 {
   jdtlsWrapper,
   metalsWrapper,
-  minimaxConfig,
   nixdWrapper,
 }: {
   config,
@@ -14,7 +13,7 @@
 
   config = {
     settings = {
-      config_directory = minimaxConfig;
+      config_directory = ./config;
       info_plugin_name = "nix-minimax";
     };
 
