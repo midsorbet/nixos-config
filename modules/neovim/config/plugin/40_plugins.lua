@@ -3,7 +3,7 @@
 -- └─────────────────────────┘
 --
 -- This file configures plugins outside of MINI. Nix installs these plugins in
--- the wrapped runtime; keep that package list in '../../wrapper-module.nix'
+-- the wrapped runtime; keep that package list in '../../default.nix'
 -- aligned with every `require()` and runtime dependency used here.
 
 local now_if_args, later = Config.now_if_args, Config.later
@@ -26,7 +26,7 @@ local now_if_args, later = Config.now_if_args, Config.later
 --   textobjects (see `:h text-objects`, `:h MiniAi.gen_spec.treesitter()`).
 --
 -- Nix supplies both plugins and all Tree-sitter grammars. Update the package
--- specification in '../../wrapper-module.nix' rather than installing parsers
+-- specification in '../../default.nix' rather than installing parsers
 -- into Neovim's data directory.
 now_if_args(function()
 

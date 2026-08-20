@@ -51,7 +51,7 @@
 -- └───────────────────┘
 --
 -- Nix supplies every plugin in the wrapped Neovim runtime. Keep the plugin
--- package list in '../wrapper-module.nix' aligned with usage in 'plugin/'.
+-- package list in '../default.nix' aligned with usage in 'plugin/'.
 -- Do not use `vim.pack.add()` here: runtime downloads would bypass the pinned
 -- Nix closure and fail when this configuration is mounted read-only.
 

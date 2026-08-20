@@ -7,7 +7,7 @@ in {
     ./hardware-configuration.nix
     ../../modules/github-cli.nix
     ../../modules/hunk.nix
-    ../../modules/neovim.nix
+    ../../modules/neovim
     ../../modules/shared
   ];
 

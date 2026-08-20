@@ -68,7 +68,7 @@ in {
     ../../modules/ghostty.nix
     ../../modules/herdr.nix
     ../../modules/hunk.nix
-    ../../modules/neovim.nix
+    ../../modules/neovim
     ../../modules/omp
     ../../modules/plannotator.nix
     ../../modules/shared-agent-skills.nix
