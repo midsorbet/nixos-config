@@ -143,6 +143,13 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    environment.variables = {
+      EDITOR = "nvim";
+      VISUAL = "nvim";
+    };
+
+    local.git.settings.core.editor = lib.mkDefault "nvim";
+
     hjem.users.${cfg.user}.packages = [cfg.package];
   };
 }

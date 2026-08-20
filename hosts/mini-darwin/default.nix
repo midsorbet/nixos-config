@@ -269,8 +269,6 @@ in {
     ++ (import ./packages.nix {inherit pkgs;});
 
   environment.variables = {
-    EDITOR = "nvim";
-    VISUAL = "nvim";
     NH_FLAKE = "/Users/${user}/vault/projects/nixos-config";
     CODEX_JS_REPL_NODE_PATH = "${pkgs.nodejs}/bin/node";
     # Let terminals provide TERMINFO and fall back to the system database.
