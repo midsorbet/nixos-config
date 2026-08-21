@@ -17,10 +17,10 @@
     || builtins.match "https://.+" cfg.authBrokerUrl != null
     || builtins.match "http://(127\\.0\\.0\\.1|localhost)(:[0-9]+)?(/.*)?" cfg.authBrokerUrl != null;
 
-  assetRevision = "858f7dd91fff9b84cf8a2c6a6bb85aa0e6d03a55";
+  assetRevision = "9350b7990d26ebf69a604edc82d8558ef04adf30";
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/${assetRevision}.tar.gz";
-    hash = "sha256-4ffZoaprz5rXso4xc9JIKpebB7yxzM4S3nK+/ObQKZ8=";
+    hash = "sha256-945Ol6MkOJ3LofJxfwDJJ2NfSS0h9lPkGOWX9KHvFes=";
   };
   runtimePath =
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
@@ -812,6 +812,10 @@ in {
       ];
 
       files = {
+        ".omp/agent/PERSONALITY.md" = {
+          source = ./PERSONALITY.md;
+          clobber = true;
+        };
         ".omp/agent/config.yml" = {
           source = managedSettingsFile;
           clobber = true;

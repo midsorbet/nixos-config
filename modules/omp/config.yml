@@ -1,5 +1,5 @@
 defaultThinkingLevel: xhigh
-textVerbosity: low
+textVerbosity: medium
 power:
   sleepPrevention: system
 steeringMode: all
@@ -37,6 +37,9 @@ autolearn:
   minToolCalls: 12
 mnemopi:
   scoping: per-project-tagged
+providers:
+  openai-codex:
+    codeMode: off
 modelRoles:
   default: openai-codex/gpt-5.6-sol:high
   smol: openai-codex/gpt-5.6-luna:high
