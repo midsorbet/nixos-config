@@ -1,26 +1,26 @@
 --- a/index.ts
 +++ b/index.ts
-@@ -91,4 +91,4 @@
- 
--export function setInitialComputerUseTools(pi: Pick<ExtensionAPI, "getActiveTools" | "setActiveTools">): void {
--  pi.setActiveTools([...new Set([...pi.getActiveTools(), ...COMPUTER_USE_TOOL_NAMES])]);
-+export async function setInitialComputerUseTools(pi: Pick<ExtensionAPI, "getActiveTools" | "setActiveTools">): Promise<void> {
-+  await pi.setActiveTools([...new Set([...pi.getActiveTools(), ...COMPUTER_USE_TOOL_NAMES])]);
- }
-@@ -295,2 +295,3 @@
-       description: toolDescription(method),
+@@ -142,6 +142,7 @@
+       name: piName,
+       label: titleFor(method),
+       description: TOOL_METADATA[method].description,
 +      defaultInactive: true,
-       ...inspectionPromptMetadata,
-@@ -327,3 +328,30 @@
+       // SAFETY: Pi accepts standard JSON Schema objects; these schemas are generated directly from the tool's Zod parser.
+       parameters: TOOL_INPUT_SCHEMAS[method] as any,
+       async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+@@ -179,7 +180,33 @@
+     });
+   }
  
--  pi.on("session_start", () => setInitialComputerUseTools(pi));
+-  pi.on("session_start", () => pi.setActiveTools([...new Set([...pi.getActiveTools(), ...toolNames])]));
+-  pi.on("agent_settled", () => sessionExecutor.close());
 +  pi.registerTool({
 +    name: "sky_computer_use",
 +    label: "Enable Sky Computer Use",
 +    description: "Enable ChatGPT Sky's ten typed Computer Use tools for the current assistant turn after reading the chatgpt-sky-computer-use skill.",
-+    parameters: Type.Object({}, { additionalProperties: false }),
++    parameters: { type: "object", properties: {}, additionalProperties: false } as any,
 +    async execute() {
-+      await setInitialComputerUseTools(pi);
++      await pi.setActiveTools([...new Set([...pi.getActiveTools(), ...toolNames])]);
 +      return {
 +        content: [{ type: "text", text: "Sky Computer Use tools activated for this assistant turn." }],
 +        details: { active: true },
@@ -32,7 +32,7 @@
 +    await sessionExecutor.close();
 +    const active = pi.getActiveTools();
 +    const withoutComputerUse = active.filter(
-+      (name) => !COMPUTER_USE_TOOL_NAMES.some((toolName) => toolName === name),
++      (name) => !toolNames.some((toolName) => toolName === name),
 +    );
 +    if (withoutComputerUse.length !== active.length) {
 +      await pi.setActiveTools(withoutComputerUse);
@@ -41,5 +41,6 @@
 +
 +  pi.on("session_start", releaseComputerUse);
 +  pi.on("session_switch", releaseComputerUse);
-+  pi.on("agent_end", releaseComputerUse);
++  pi.on("agent_settled", releaseComputerUse);
    pi.on("session_shutdown", () => sessionExecutor.close());
+ }

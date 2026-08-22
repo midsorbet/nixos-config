@@ -1,5 +1,11 @@
 {pkgs}: let
-  version = "0.3.4";
+  version = "0.4.0";
+  sourceSrc = pkgs.fetchFromGitHub {
+    owner = "tmustier";
+    repo = "codex-computer-use-mcp";
+    tag = "v${version}";
+    hash = "sha256-FN9u7cfK2/gDPHvzmspSdeoD3Ry6wI4dfVzELdcClEc=";
+  };
 in
   pkgs.buildNpmPackage {
     pname = "codex-computer-use-mcp";
@@ -7,11 +13,14 @@ in
 
     src = pkgs.fetchurl {
       url = "https://registry.npmjs.org/codex-computer-use-mcp/-/codex-computer-use-mcp-${version}.tgz";
-      hash = "sha256-PH2lA661Y6Rt+HDnkGzDwIAN1KZcsBeRpcC6/ddBLCw=";
+      hash = "sha256-6PNeB0QcZJA3FMr3UDsHCKJskxEE2DPnal683wCgDw0=";
     };
     sourceRoot = "package";
 
-    npmDepsHash = "sha256-xaBPKf6kW6RKOxOeJoyM/XVAHnB/zkjd8/SB8kD3Z5w=";
+    npmDepsHash = "sha256-GkHGN7oOm9X3V1SAmlIkoQUQTbSq9bAZ3scHjOHAbAs=";
+    prePatch = ''
+      cp ${sourceSrc}/package-lock.json package-lock.json
+    '';
     postPatch = ''
       ${pkgs.lib.getExe pkgs.jq} '
         del(
@@ -22,8 +31,8 @@ in
         | .packages |= with_entries(
             select(.key == "" or ((.value.dev // false) | not))
           )
-      ' npm-shrinkwrap.json >npm-shrinkwrap.pruned.json
-      mv npm-shrinkwrap.pruned.json npm-shrinkwrap.json
+      ' package-lock.json >package-lock.pruned.json
+      mv package-lock.pruned.json package-lock.json
       ${pkgs.lib.getExe pkgs.jq} '
         del(.devDependencies, .peerDependencies, .peerDependenciesMeta)
       ' package.json >package.pruned.json
