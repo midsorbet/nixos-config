@@ -1,4 +1,34 @@
--- Nix-specific MiniMax customizations: appearance and managed language servers.
+-- Nix-managed MiniMax customizations: keymaps, appearance, and language servers.
+
+Config.now(function()
+  table.insert(Config.leader_group_clues, { mode = 'n', keys = '<Leader>y', desc = '+Yank' })
+  table.insert(Config.leader_group_clues, { mode = 'x', keys = '<Leader>y', desc = '+Yank' })
+
+  -- y is for 'Yank'. Common usage:
+  -- - `<Leader>yp` - copy the absolute path of the current file
+  -- - `<Leader>yr` - copy the current file and line reference
+  local copy_current_file_path = function()
+    vim.fn.setreg('+', vim.fn.expand('%:p'))
+    vim.notify('Copied absolute file path')
+  end
+  local copy_current_file_reference = function()
+    local file_reference = vim.fn.expand('%:p') .. ':' .. vim.fn.line('.')
+    vim.fn.setreg('+', file_reference)
+    vim.notify('Copied file and line reference')
+  end
+  local copy_selected_file_reference = function()
+    local start_line, end_line = vim.fn.line('v'), vim.fn.line('.')
+    if start_line > end_line then start_line, end_line = end_line, start_line end
+
+    local file_reference = vim.fn.expand('%:p') .. ':' .. start_line .. '-' .. end_line
+    vim.fn.setreg('+', file_reference)
+    vim.notify('Copied file and line range reference')
+  end
+
+  vim.keymap.set('n', '<Leader>yp', copy_current_file_path, { desc = 'Absolute path' })
+  vim.keymap.set('n', '<Leader>yr', copy_current_file_reference, { desc = 'File reference' })
+  vim.keymap.set('x', '<Leader>yr', copy_selected_file_reference, { desc = 'File range reference' })
+end)
 
 Config.now(function()
   vim.o.number = true
