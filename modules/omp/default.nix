@@ -43,6 +43,7 @@
       mkdir -p "$extension_dir"
       cp ${computerUsePackage}/lib/node_modules/codex-computer-use-mcp/integrations/pi/index.ts "$extension_dir/index.ts"
       ln -s ${computerUsePackage}/lib/node_modules/codex-computer-use-mcp/dist "$out/dist"
+      ln -s ${computerUsePackage}/lib/node_modules/codex-computer-use-mcp/node_modules "$out/node_modules"
       patch "$extension_dir/index.ts" < ${./sky-computer-use.patch}
     '';
   computerUseMcpReconcile = pkgs.writeShellApplication {
