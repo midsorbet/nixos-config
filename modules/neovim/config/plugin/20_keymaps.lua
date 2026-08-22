@@ -60,9 +60,11 @@ Config.leader_group_clues = {
   { mode = 'n', keys = '<Leader>s', desc = '+Session' },
   { mode = 'n', keys = '<Leader>t', desc = '+Terminal' },
   { mode = 'n', keys = '<Leader>v', desc = '+Visits' },
+  { mode = 'n', keys = '<Leader>y', desc = '+Yank' },
 
   { mode = 'x', keys = '<Leader>g', desc = '+Git' },
   { mode = 'x', keys = '<Leader>l', desc = '+Language' },
+  { mode = 'x', keys = '<Leader>y', desc = '+Yank' },
 }
 
 -- Helpers for a more concise `<Leader>` mappings.
@@ -246,4 +248,29 @@ nmap_leader('vv', '<Cmd>lua MiniVisits.add_label("core")<CR>',    'Add "core" la
 nmap_leader('vV', '<Cmd>lua MiniVisits.remove_label("core")<CR>', 'Remove "core" label')
 nmap_leader('vl', '<Cmd>lua MiniVisits.add_label()<CR>',          'Add label')
 nmap_leader('vL', '<Cmd>lua MiniVisits.remove_label()<CR>',       'Remove label')
+
+-- y is for 'Yank'. Common usage:
+-- - `<Leader>yp` - copy the absolute path of the current file
+-- - `<Leader>yr` - copy the current file and line reference
+local copy_current_file_path = function()
+  vim.fn.setreg('+', vim.fn.expand('%:p'))
+  vim.notify('Copied absolute file path')
+end
+local copy_current_file_reference = function()
+  local file_reference = vim.fn.expand('%:p') .. ':' .. vim.fn.line('.')
+  vim.fn.setreg('+', file_reference)
+  vim.notify('Copied file and line reference')
+end
+local copy_selected_file_reference = function()
+  local start_line, end_line = vim.fn.line('v'), vim.fn.line('.')
+  if start_line > end_line then start_line, end_line = end_line, start_line end
+
+  local file_reference = vim.fn.expand('%:p') .. ':' .. start_line .. '-' .. end_line
+  vim.fn.setreg('+', file_reference)
+  vim.notify('Copied file and line range reference')
+end
+
+nmap_leader('yp', copy_current_file_path,           'Absolute path')
+nmap_leader('yr', copy_current_file_reference,      'File reference')
+xmap_leader('yr', copy_selected_file_reference,     'File range reference')
 -- stylua: ignore end
