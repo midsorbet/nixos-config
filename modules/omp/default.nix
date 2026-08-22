@@ -17,10 +17,10 @@
     || builtins.match "https://.+" cfg.authBrokerUrl != null
     || builtins.match "http://(127\\.0\\.0\\.1|localhost)(:[0-9]+)?(/.*)?" cfg.authBrokerUrl != null;
 
-  assetRevision = "7ab849ade53d905c30ba2d1ae2126d92a47d2db8";
+  assetRevision = "96f42809764f0907f7d6b115eab5710de28941de";
   assetSrc = pkgs.fetchzip {
     url = "https://github.com/can1357/oh-my-pi/archive/${assetRevision}.tar.gz";
-    hash = "sha256-v2NFpxDbVTRhQHh4C06c9a0+OzLkPYL9UYVZhArzaFI=";
+    hash = "sha256-Wag6/NqyEJnkbtF8bnXJ+tN8ZQ28uqSG5Ta3z9zkUA8=";
   };
   runtimePath =
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
