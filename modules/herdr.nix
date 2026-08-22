@@ -75,8 +75,15 @@ in {
         theme = {
           name = "kanagawa";
           auto_switch = true;
-          light_name = "terminal";
+          light_name = "gruvbox-light";
           dark_name = "kanagawa";
+
+          # Keep light and dark secondary chrome legible on the host terminal palette.
+          custom = {
+            surface0 = "reset";
+            overlay0 = "reset";
+            overlay1 = "reset";
+          };
         };
 
         ui = {
