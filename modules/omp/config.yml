@@ -10,6 +10,9 @@ astGrep:
   enabled: true
 bashInterceptor:
   enabled: true
+bash:
+  autoBackground:
+    enabled: false
 browser:
   relay: true
 computer:
