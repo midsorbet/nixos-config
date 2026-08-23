@@ -9,6 +9,7 @@
   skillHumanlayer,
   skillIdeonomy,
   skillModem,
+  skillRem,
 }: let
   skillNames = [
     "bro"
@@ -27,6 +28,7 @@
     "librarian"
     "readback"
     "recap"
+    "rem-cli"
     "show-me"
     "uv"
     "write-discoverable-code"
@@ -63,6 +65,7 @@ in
     cp -R ${skillHumanlayer}/plugins/show-me/skills/show-me "$skillRoot/show-me"
     cp -R ${skillAgentStuff}/skills/uv "$skillRoot/uv"
     cp -R ${skillModem}/write-discoverable-code "$skillRoot/write-discoverable-code"
+    cp -R ${skillRem}/skills/rem-cli "$skillRoot/rem-cli"
 
     frogProject="$TMPDIR/frog-project"
     frogHome="$TMPDIR/frog-home"

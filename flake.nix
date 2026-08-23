@@ -33,6 +33,10 @@
       url = "github:modem-dev/skills";
       flake = false;
     };
+    skill-rem = {
+      url = "github:BRO3886/rem/v0.12.0";
+      flake = false;
+    };
     agenix.url = "github:ryantm/agenix";
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";

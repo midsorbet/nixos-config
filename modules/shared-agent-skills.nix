@@ -9,6 +9,7 @@
   skill-humanlayer,
   skill-ideonomy,
   skill-modem,
+  skill-rem,
   ...
 }: let
   cfg = config.local.sharedAgentSkills;
@@ -21,6 +22,7 @@
     skillHumanlayer = skill-humanlayer;
     skillIdeonomy = skill-ideonomy;
     skillModem = skill-modem;
+    skillRem = skill-rem;
   };
 in {
   options.local.sharedAgentSkills = {

@@ -1041,6 +1041,7 @@
         "skill-humanlayer": "skill-humanlayer",
         "skill-ideonomy": "skill-ideonomy",
         "skill-modem": "skill-modem",
+        "skill-rem": "skill-rem",
         "uv2nix": "uv2nix",
         "vscode-server": "vscode-server"
       }
@@ -1255,6 +1256,23 @@
       "original": {
         "owner": "modem-dev",
         "repo": "skills",
+        "type": "github"
+      }
+    },
+    "skill-rem": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1781103211,
+        "narHash": "sha256-sv+sIXaRiQi6Vhwh61lLPI/SOzLe7N3XJoBk9Rb4WQ8=",
+        "owner": "BRO3886",
+        "repo": "rem",
+        "rev": "9a788845ff232e838a28316973d7b57cbe38e03a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "BRO3886",
+        "ref": "v0.12.0",
+        "repo": "rem",
         "type": "github"
       }
     },
