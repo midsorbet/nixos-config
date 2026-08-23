@@ -12,7 +12,8 @@ bashInterceptor:
   enabled: true
 bash:
   autoBackground:
-    enabled: false
+    enabled: true
+    thresholdMs: 60000
 browser:
   relay: true
 computer:
@@ -42,7 +43,7 @@ mnemopi:
   scoping: per-project-tagged
 providers:
   openai-codex:
-    codeMode: off
+    codeMode: auto
 modelRoles:
   default: openai-codex/gpt-5.6-sol:xhigh
   smol: openai-codex/gpt-5.6-luna:high
