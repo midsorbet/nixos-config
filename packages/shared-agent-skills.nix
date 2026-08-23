@@ -9,7 +9,7 @@
   skillHumanlayer,
   skillIdeonomy,
   skillModem,
-  skillRem,
+  skillRemindctl,
 }: let
   skillNames = [
     "bro"
@@ -28,7 +28,7 @@
     "librarian"
     "readback"
     "recap"
-    "rem-cli"
+    "apple-reminders"
     "show-me"
     "uv"
     "write-discoverable-code"
@@ -65,7 +65,8 @@ in
     cp -R ${skillHumanlayer}/plugins/show-me/skills/show-me "$skillRoot/show-me"
     cp -R ${skillAgentStuff}/skills/uv "$skillRoot/uv"
     cp -R ${skillModem}/write-discoverable-code "$skillRoot/write-discoverable-code"
-    cp -R ${skillRem}/skills/rem-cli "$skillRoot/rem-cli"
+    mkdir -p "$skillRoot/apple-reminders"
+    cp ${skillRemindctl}/SKILL.md "$skillRoot/apple-reminders/SKILL.md"
 
     frogProject="$TMPDIR/frog-project"
     frogHome="$TMPDIR/frog-home"

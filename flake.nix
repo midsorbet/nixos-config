@@ -33,8 +33,8 @@
       url = "github:modem-dev/skills";
       flake = false;
     };
-    skill-rem = {
-      url = "github:BRO3886/rem/v0.12.0";
+    skill-remindctl = {
+      url = "github:openclaw/remindctl/v0.3.4";
       flake = false;
     };
     agenix.url = "github:ryantm/agenix";

@@ -1041,7 +1041,7 @@
         "skill-humanlayer": "skill-humanlayer",
         "skill-ideonomy": "skill-ideonomy",
         "skill-modem": "skill-modem",
-        "skill-rem": "skill-rem",
+        "skill-remindctl": "skill-remindctl",
         "uv2nix": "uv2nix",
         "vscode-server": "vscode-server"
       }
@@ -1259,20 +1259,20 @@
         "type": "github"
       }
     },
-    "skill-rem": {
+    "skill-remindctl": {
       "flake": false,
       "locked": {
-        "lastModified": 1781103211,
-        "narHash": "sha256-sv+sIXaRiQi6Vhwh61lLPI/SOzLe7N3XJoBk9Rb4WQ8=",
-        "owner": "BRO3886",
-        "repo": "rem",
-        "rev": "9a788845ff232e838a28316973d7b57cbe38e03a",
+        "lastModified": 1786329147,
+        "narHash": "sha256-+6HM80f+/FWYC0wL5gbHU9JpmaBt9riXsTcNenGxFuQ=",
+        "owner": "openclaw",
+        "repo": "remindctl",
+        "rev": "762ff39a6290aeca3779a139355a376c819b8b2e",
         "type": "github"
       },
       "original": {
-        "owner": "BRO3886",
-        "ref": "v0.12.0",
-        "repo": "rem",
+        "owner": "openclaw",
+        "ref": "v0.3.4",
+        "repo": "remindctl",
         "type": "github"
       }
     },
