@@ -8,6 +8,7 @@
   inherit
     (herdr-omp-plugins.lib.buildersFor pkgs)
     mkRemoteCollabExtension
+    mkSkyComputerUsePackage
     mkSpinoffExtension
     ;
   cfg = config.local.omp;
@@ -24,28 +25,11 @@
   };
   runtimePath =
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
-  computerUsePackage = pkgs.callPackage ../../packages/codex-computer-use-mcp.nix {};
   cxporterPackage = pkgs.callPackage ../../packages/cxporter.nix {};
+  skyComputerUsePackage = mkSkyComputerUsePackage {};
   codexConnectorsSkill = pkgs.writeTextDir "share/agents/skills/codex-connectors/SKILL.md" (
     builtins.readFile ./skills/codex-connectors/SKILL.md
   );
-  skyComputerUseSkill = pkgs.runCommand "chatgpt-sky-computer-use-skill" {} ''
-    skill_dir="$out/share/agents/skills/chatgpt-sky-computer-use"
-    mkdir -p "$skill_dir"
-    cp ${./skills/chatgpt-sky-computer-use/SKILL.md} "$skill_dir/SKILL.md"
-    cp ${./skills/chatgpt-sky-computer-use/REFERENCE.md} "$skill_dir/REFERENCE.md"
-  '';
-  skyComputerUseExtension =
-    pkgs.runCommand "chatgpt-sky-computer-use-extension" {
-      nativeBuildInputs = [pkgs.patch];
-    } ''
-      extension_dir="$out/integrations/pi"
-      mkdir -p "$extension_dir"
-      cp ${computerUsePackage}/lib/node_modules/codex-computer-use-mcp/integrations/pi/index.ts "$extension_dir/index.ts"
-      ln -s ${computerUsePackage}/lib/node_modules/codex-computer-use-mcp/dist "$out/dist"
-      ln -s ${computerUsePackage}/lib/node_modules/codex-computer-use-mcp/node_modules "$out/node_modules"
-      patch "$extension_dir/index.ts" < ${./sky-computer-use.patch}
-    '';
   computerUseMcpReconcile = pkgs.writeShellApplication {
     name = "omp-reconcile-computer-use-mcp";
     runtimeInputs = [
@@ -833,12 +817,12 @@ in {
         };
         ".agents/skills/chatgpt-sky-computer-use" = {
           type = "symlink";
-          source = "${skyComputerUseSkill}/share/agents/skills/chatgpt-sky-computer-use";
+          source = "${skyComputerUsePackage}/skills/chatgpt-sky-computer-use";
           clobber = true;
         };
         ".omp/agent/extensions/sky-computer-use.ts" = {
           type = "symlink";
-          source = "${skyComputerUseExtension}/integrations/pi/index.ts";
+          source = "${skyComputerUsePackage}/extension/index.ts";
           clobber = true;
         };
         ".omp/agent/extensions/remote-collab.ts" = lib.mkIf cfg.collab.enable {
