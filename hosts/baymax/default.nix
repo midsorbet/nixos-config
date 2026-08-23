@@ -437,6 +437,11 @@ in {
       # host degraded for this non-fatal compatibility failure.
       "systemd-tmpfiles-clean".serviceConfig.SuccessExitStatus = "CANTCREAT";
 
+      # Baymax uses a regular persisted user, not systemd-homed user records.
+      # Avoid systemd 261's dynamic login measurement, which cannot allocate
+      # its optional NvPCR index because the TPM NV store is full.
+      "systemd-pcrlogin@".enable = false;
+
       "omp-auth-broker" = {
         description = "OMP authentication broker";
         wantedBy = ["multi-user.target"];
