@@ -14,6 +14,7 @@ in
 
     dontConfigure = true;
     dontBuild = true;
+    dontStrip = true;
 
     nativeBuildInputs = [pkgs.unzip];
 
