@@ -28,9 +28,12 @@ in
     dontConfigure = true;
     dontBuild = true;
 
+    nativeBuildInputs = [pkgs.makeWrapper];
+
     installPhase = ''
       runHook preInstall
       install -Dm755 rem "$out/bin/rem"
+      wrapProgram "$out/bin/rem" --set REM_NO_UPDATE_CHECK 1
       runHook postInstall
     '';
 
