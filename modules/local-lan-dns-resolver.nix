@@ -150,9 +150,18 @@ in {
           ThrottleInterval = 10;
         };
 
-        system.activationScripts.postActivation.text = lib.mkAfter ''
-          /usr/libexec/ApplicationFirewall/socketfilterfw --add "${pkgs.unbound}/bin/unbound"
-          /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "${pkgs.unbound}/bin/unbound"
+        system.activationScripts.preActivation.text = lib.mkBefore ''
+          currentUnbound="${pkgs.unbound}/bin/unbound"
+          while IFS= read -r registeredUnbound; do
+            if [[ "$registeredUnbound" != "$currentUnbound" ]]; then
+              /usr/libexec/ApplicationFirewall/socketfilterfw --remove "$registeredUnbound"
+            fi
+          done < <(
+            /usr/libexec/ApplicationFirewall/socketfilterfw --listapps \
+              | /usr/bin/sed -nE 's|^[[:space:]]*[0-9]+ : (/nix/store/[^[:space:]]+-unbound-[^[:space:]]+/bin/unbound)[[:space:]]*$|\1|p'
+          )
+          /usr/libexec/ApplicationFirewall/socketfilterfw --add "$currentUnbound"
+          /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$currentUnbound"
         '';
       }
       else throw "local.lanDnsResolver: unsupported platform ${platform}"
