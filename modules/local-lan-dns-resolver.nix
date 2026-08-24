@@ -109,6 +109,15 @@
       unbound-checkconf ${darwinUnboundConfigUnchecked}
       cp ${darwinUnboundConfigUnchecked} "$out"
     '';
+  darwinResolverCommand = ''
+    while [ ! -x "${pkgs.unbound}/bin/unbound" ] || [ ! -r "${darwinUnboundConfig}" ]; do
+      /bin/sleep 1
+    done
+    while ! /sbin/ifconfig | /usr/bin/grep -q "inet ${cfg.listenAddress} "; do
+      /bin/sleep 1
+    done
+    exec "${pkgs.unbound}/bin/unbound" -d -c "${darwinUnboundConfig}"
+  '';
 in {
   options.local.lanDnsResolver = {
     enable = lib.mkEnableOption "LAN-only Unbound resolver with Cloudflare Gateway forwarding";
@@ -137,10 +146,9 @@ in {
       then {
         launchd.daemons.local-lan-dns-resolver.serviceConfig = {
           ProgramArguments = [
-            "${pkgs.unbound}/bin/unbound"
-            "-d"
+            "/bin/sh"
             "-c"
-            "${darwinUnboundConfig}"
+            darwinResolverCommand
           ];
           RunAtLoad = true;
           KeepAlive = true;
