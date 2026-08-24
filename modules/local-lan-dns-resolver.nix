@@ -149,6 +149,11 @@ in {
           StandardOutPath = "/var/log/local-lan-dns-resolver.out.log";
           ThrottleInterval = 10;
         };
+
+        system.activationScripts.postActivation.text = lib.mkAfter ''
+          /usr/libexec/ApplicationFirewall/socketfilterfw --add "${pkgs.unbound}/bin/unbound"
+          /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "${pkgs.unbound}/bin/unbound"
+        '';
       }
       else throw "local.lanDnsResolver: unsupported platform ${platform}"
     )
