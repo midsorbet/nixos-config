@@ -1,11 +1,11 @@
 {pkgs}:
 pkgs.stdenv.mkDerivation {
   pname = "codex";
-  version = "0.149.0";
+  version = "0.149.1";
 
   src = pkgs.fetchurl {
-    url = "https://github.com/openai/codex/releases/download/rust-v0.149.0/codex-x86_64-unknown-linux-musl.tar.gz";
-    hash = "sha256-c2iyBV7QIVf+omlbufWvPuew5AxaO+vIHfxZZwQkTP0=";
+    url = "https://github.com/openai/codex/releases/download/rust-v0.149.1/codex-x86_64-unknown-linux-musl.tar.gz";
+    hash = "sha256-4k+3hMfXEUDWevtiD1bpE3SWz39snhkhf6Nmbc8wYng=";
   };
 
   sourceRoot = ".";
@@ -40,7 +40,7 @@ pkgs.stdenv.mkDerivation {
   meta = {
     description = "Lightweight coding agent that runs in your terminal";
     homepage = "https://github.com/openai/codex";
-    changelog = "https://github.com/openai/codex/releases/tag/rust-v0.149.0";
+    changelog = "https://github.com/openai/codex/releases/tag/rust-v0.149.1";
     license = pkgs.lib.licenses.asl20;
     mainProgram = "codex";
     platforms = ["x86_64-linux"];

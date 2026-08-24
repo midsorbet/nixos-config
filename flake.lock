@@ -504,11 +504,11 @@
     "homebrew-cask": {
       "flake": false,
       "locked": {
-        "lastModified": 1787505945,
-        "narHash": "sha256-QQyDUXcJ33pWQsyaGGCptwpmzBYtg4JGs1g8eBgl99k=",
+        "lastModified": 1787599176,
+        "narHash": "sha256-qiRIUZ66HEc5X4kvzIabzWBYfbIS+ZA8NVUF9wYVv3o=",
         "owner": "homebrew",
         "repo": "homebrew-cask",
-        "rev": "883c4c1c4c72bd9d6dfa367bd63261aa21197372",
+        "rev": "a2c174e022a0d7dbe71a8c04ea74fce462317aa6",
         "type": "github"
       },
       "original": {
@@ -520,11 +520,11 @@
     "homebrew-core": {
       "flake": false,
       "locked": {
-        "lastModified": 1787506282,
-        "narHash": "sha256-Wpw4cwSkegKQiMoQ44+Xlja5B12XcsyviGYVHsi/u44=",
+        "lastModified": 1787598900,
+        "narHash": "sha256-5Hmj37MMv+xFO/lobs6vwiykjIIdu5CTj81QMYOKaoI=",
         "owner": "homebrew",
         "repo": "homebrew-core",
-        "rev": "c53ae0baea593d836ea7787154413f36607b8f82",
+        "rev": "1ffe10178a45a597cc2aae43a3ebd86dc05d156b",
         "type": "github"
       },
       "original": {
@@ -722,11 +722,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787399276,
-        "narHash": "sha256-g+OahR7f3bQYMQu5/3HeEO5hUbizcbrKGsO4TdIJEqA=",
+        "lastModified": 1787579952,
+        "narHash": "sha256-Dn6IPaLyltx8hBTyC4hgNWDb7T7WHRYUG6wWh6KBHXA=",
         "owner": "BirdeeHub",
         "repo": "nix-wrapper-modules",
-        "rev": "fcbc7ed975df6e79f295e3062c722f246af2a7fd",
+        "rev": "b56e973dd2bd62244b44d6542fb52182bc3a3cda",
         "type": "github"
       },
       "original": {
@@ -872,11 +872,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1787360063,
-        "narHash": "sha256-dt4WdcvsA8/RCe+VZZwqU0X+XMM3wBbGCWA0/sFWzGo=",
+        "lastModified": 1787498568,
+        "narHash": "sha256-9i/VTdusq/+NM/tz+J1Re+ojkMB8MBf0QshnYfzHz30=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "2c423e03bbafcff28bfadc6781a4a8257f205cb5",
+        "rev": "56c02bc00adcf003215cc4bd996d6efaf4cff188",
         "type": "github"
       },
       "original": {
@@ -1182,11 +1182,11 @@
     "skill-diagnosing-bugs": {
       "flake": false,
       "locked": {
-        "lastModified": 1787232900,
-        "narHash": "sha256-iEHc/y6Ucsp/MdOtZLLuS4oWP6YHvMiK1Cp4SEWD9CY=",
+        "lastModified": 1787589564,
+        "narHash": "sha256-kuVmXgX3v5Z551s+GVj5E5m2yzPQhcYhcZjG1T7XQ+I=",
         "owner": "dmmulroy",
         "repo": ".dotfiles",
-        "rev": "a7beb729d3a29237a3a02cb84d53e70fa9ab76a1",
+        "rev": "a6d5117c5c132775f21d66880bb364e4c784d4c0",
         "type": "github"
       },
       "original": {
