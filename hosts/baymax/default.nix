@@ -29,6 +29,7 @@ in {
     ./secrets.nix
     ./disk-config.nix
     ./cloudflared-module.nix
+    (import ../../modules/local-lan-dns-resolver.nix {platform = "nixos";})
     ../../modules/shared
     agenix.nixosModules.default
   ];
@@ -36,6 +37,10 @@ in {
   local.git = {
     enable = true;
     inherit user;
+  };
+  local.lanDnsResolver = {
+    enable = true;
+    listenAddress = "192.168.4.200";
   };
   local.zsh = {
     enable = true;
@@ -143,7 +148,8 @@ in {
     firewall = {
       enable = true;
       interfaces.CloudflareWARP.allowedTCPPorts = [22 2283];
-      interfaces.enp1s0.allowedTCPPorts = [22 2283];
+      interfaces.enp1s0.allowedTCPPorts = [22 53 2283];
+      interfaces.enp1s0.allowedUDPPorts = [53];
     };
   };
 

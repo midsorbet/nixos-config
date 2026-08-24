@@ -9,6 +9,7 @@
   user = "me";
   homeDir = config.hjem.users.${user}.directory;
   baymaxLanAddress = "192.168.4.200";
+  miniLanAddress = "192.168.4.194";
   dactylKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkcCO74k1FF3rHzIfX07QdaJXpOqyl3tUdLguL0kJzc dactyl";
   ompBrokerLocalPort = 18765;
   ompBrokerRemotePort = 8765;
@@ -68,6 +69,7 @@ in {
     ../../modules/ghostty.nix
     ../../modules/herdr.nix
     ../../modules/hunk.nix
+    (import ../../modules/local-lan-dns-resolver.nix {platform = "darwin";})
     ../../modules/neovim
     ../../modules/omp
     ../../modules/plannotator.nix
@@ -133,6 +135,10 @@ in {
   local.hunk = {
     enable = true;
     inherit user;
+  };
+  local.lanDnsResolver = {
+    enable = true;
+    listenAddress = miniLanAddress;
   };
   local.mole = {
     enable = true;
