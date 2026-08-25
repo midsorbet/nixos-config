@@ -1134,11 +1134,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1787622147,
-        "narHash": "sha256-qF1+a3aVAI405orqkMV+gbVzu/oo5zuhz9Q2YKKzGJ8=",
+        "lastModified": 1787625721,
+        "narHash": "sha256-WZtBZH7NBfdRql9wu2MhTbGdH2c9uqgqcpfQEB/n8/0=",
         "ref": "refs/heads/main",
-        "rev": "c9e0b347cfe0d633da7fcfc499dc34e9e40ee621",
-        "revCount": 31,
+        "rev": "add491639ccd51a07ae3ff522f089cc6b4fb4e50",
+        "revCount": 32,
         "type": "git",
         "url": "ssh://git@github.com/midsorbet/nix-secrets.git"
       },

@@ -42,7 +42,16 @@ in {
         }
       '';
     };
+    virtualHosts."home-managed-network" = {
+      hostName = "https://192.168.4.200:9443";
+      listenAddresses = ["192.168.4.200"];
+      logFormat = null;
+      extraConfig = ''
+        tls ${./home-managed-network-cert.pem} ${config.age.secrets."home-managed-network-key".path}
+        respond 204
+      '';
+    };
   };
 
-  networking.firewall.interfaces.enp1s0.allowedTCPPorts = [443];
+  networking.firewall.interfaces.enp1s0.allowedTCPPorts = [443 9443];
 }

@@ -24,4 +24,10 @@ in {
   age.secrets."hetzner-borg-hosts".file = "${secrets}/hetzner-borg-hosts.age";
   age.secrets."baymax-tunnel".file = "${secrets}/baymax-tunnel.age";
   age.secrets."cloudflare-acme-dns-token".file = "${secrets}/cloudflare-acme-dns-token.age";
+  age.secrets."home-managed-network-key" = {
+    file = "${secrets}/home-managed-network-key.age";
+    mode = "400";
+    owner = "caddy";
+    group = "caddy";
+  };
 }
