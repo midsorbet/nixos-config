@@ -1,5 +1,24 @@
-{config, ...}: let
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}: let
   photosHostname = "photos.midsorbet.me";
+  managedNetworkCaddyfile = pkgs.writeText "home-managed-network.Caddyfile" ''
+    {
+      admin off
+      auto_https off
+      log {
+        level ERROR
+      }
+    }
+    https://:9443 {
+      bind 192.168.4.200
+      tls ${./home-managed-network-cert.pem} ${config.age.secrets."home-managed-network-key".path}
+      respond 204
+    }
+  '';
 in {
   security.acme = {
     acceptTerms = true;
@@ -42,14 +61,38 @@ in {
         }
       '';
     };
-    virtualHosts."home-managed-network" = {
-      hostName = "https://:9443";
-      listenAddresses = ["192.168.4.200"];
-      logFormat = null;
-      extraConfig = ''
-        tls ${./home-managed-network-cert.pem} ${config.age.secrets."home-managed-network-key".path}
-        respond 204
-      '';
+  };
+
+  systemd.services.home-managed-network-beacon = {
+    description = "LAN-only Cloudflare Managed Network TLS beacon";
+    wantedBy = ["multi-user.target"];
+    wants = ["network-online.target"];
+    after = ["network-online.target"];
+    serviceConfig = {
+      ExecStart = "${lib.getExe config.services.caddy.package} run --config ${managedNetworkCaddyfile} --adapter caddyfile";
+      User = "caddy";
+      Group = "caddy";
+      Restart = "on-failure";
+      RestartSec = "5s";
+      NoNewPrivileges = true;
+      PrivateDevices = true;
+      PrivateTmp = true;
+      ProtectHome = true;
+      ProtectSystem = "strict";
+      ProtectKernelLogs = true;
+      ProtectKernelModules = true;
+      ProtectKernelTunables = true;
+      ProtectControlGroups = true;
+      ProtectClock = true;
+      ProtectHostname = true;
+      ProtectProc = "invisible";
+      ProcSubset = "pid";
+      RestrictAddressFamilies = ["AF_INET" "AF_UNIX"];
+      RestrictNamespaces = true;
+      RestrictRealtime = true;
+      RestrictSUIDSGID = true;
+      LockPersonality = true;
+      MemoryDenyWriteExecute = true;
     };
   };
 
