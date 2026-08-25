@@ -17,19 +17,6 @@
   baymaxKnownHosts = pkgs.writeText "baymax-known-hosts" ''
     ${baymaxLanAddress} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAx1gSRAypT/nq3PKlK54lGTJDPNM2QeK25QoBt0UNPD
   '';
-  firefoxExtensionPolicies = pkgs.writeText "firefox-policies.json" (builtins.toJSON {
-    policies.ExtensionSettings = {
-      "*".installation_mode = "allowed";
-      "{f0bda7ce-0cda-42dc-9ea8-126b20fed280}" = {
-        installation_mode = "force_installed";
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/hister/latest.xpi";
-      };
-      "{74145f27-f039-47ce-a470-a662b129930a}" = {
-        installation_mode = "force_installed";
-        install_url = "https://addons.mozilla.org/firefox/downloads/latest/clearurls/latest.xpi";
-      };
-    };
-  });
   chromeHisterExternalExtension = pkgs.writeText "hister-chrome-extension.json" (builtins.toJSON {
     external_update_url = "https://clients2.google.com/service/update2/crx";
   });
@@ -521,12 +508,18 @@ in {
     activationScripts.postActivation.text = lib.mkAfter ''
       set -eu
 
-      firefox_policy_directory='/Library/Application Support/Mozilla'
-      firefox_policy_target="$firefox_policy_directory/policies.json"
+      firefox_preferences=/Library/Preferences/org.mozilla.firefox
+      /usr/bin/defaults write "$firefox_preferences" EnterprisePoliciesEnabled -bool true
+      /usr/bin/defaults write "$firefox_preferences" Extensions__Install -array \
+        'https://addons.mozilla.org/firefox/downloads/latest/hister/latest.xpi' \
+        'https://addons.mozilla.org/firefox/downloads/latest/clearurls/latest.xpi'
+      /usr/sbin/chown root:wheel "$firefox_preferences.plist"
+      /bin/chmod 0644 "$firefox_preferences.plist"
+      /bin/rm -f '/Library/Application Support/Mozilla/policies.json'
+
       chrome_extension_directory='/Library/Google/Chrome/External Extensions'
       chrome_extension_target="$chrome_extension_directory/cciilamhchpmbdnniabclekddabkifhb.json"
-      /usr/bin/install -d -m 0755 -o root -g wheel "$firefox_policy_directory" "$chrome_extension_directory"
-      /usr/bin/install -m 0644 -o root -g wheel ${firefoxExtensionPolicies} "$firefox_policy_target"
+      /usr/bin/install -d -m 0755 -o root -g wheel "$chrome_extension_directory"
       /usr/bin/install -m 0644 -o root -g wheel ${chromeHisterExternalExtension} "$chrome_extension_target"
 
       credentials='${config.age.secrets."mini-warp-service-token".path}'
