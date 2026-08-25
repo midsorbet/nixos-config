@@ -74,6 +74,8 @@
     "UserKnownHostsFile=${baymaxKnownHosts}"
     "-L"
     "127.0.0.1:${toString ompBrokerLocalPort}:127.0.0.1:${toString ompBrokerRemotePort}"
+    "-L"
+    "127.0.0.1:22000:127.0.0.1:22000"
     "-R"
     "127.0.0.1:11434:127.0.0.1:11434"
     "${user}@${baymaxLanAddress}"

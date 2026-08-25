@@ -71,7 +71,8 @@
       "''${cli[@]}" config options relays-enabled set false
       "''${cli[@]}" config options natenabled set false
       "''${cli[@]}" config options start-browser set false
-      "''${cli[@]}" config options uraccepted set -1
+      "''${cli[@]}" config options uraccepted set -- -1
+      "''${cli[@]}" config options raw-listen-addresses 0 set tcp://127.0.0.1:0
     '';
   };
 in {
@@ -107,7 +108,7 @@ in {
 
     peerAddress = lib.mkOption {
       type = lib.types.str;
-      default = "tcp://192.168.4.200:22000";
+      default = "tcp://127.0.0.1:22000";
       description = "Static LAN address for Baymax Syncthing.";
     };
 

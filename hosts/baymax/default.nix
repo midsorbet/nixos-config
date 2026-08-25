@@ -158,7 +158,7 @@ in {
     firewall = {
       enable = true;
       interfaces.CloudflareWARP.allowedTCPPorts = [22];
-      interfaces.enp1s0.allowedTCPPorts = [22 53 22000];
+      interfaces.enp1s0.allowedTCPPorts = [22 53];
       interfaces.enp1s0.allowedUDPPorts = [53];
     };
   };
@@ -386,7 +386,7 @@ in {
           natEnabled = false;
           urAccepted = -1;
           startBrowser = false;
-          listenAddresses = ["tcp://0.0.0.0:22000"];
+          listenAddresses = ["tcp://127.0.0.1:22000"];
         };
         devices.mini = {
           id = "UXL4RFM-DLXOA5H-RLEUHF4-EGZ54XR-Q4W4IOT-MTYVYOB-AOOCKJ5-RBLSIA5";
