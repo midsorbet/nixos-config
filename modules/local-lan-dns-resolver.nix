@@ -7,7 +7,10 @@
   cfg = config.local.lanDnsResolver;
 
   baymaxLanAddress = "192.168.4.200";
-  homeLanNetwork = "192.168.4.0/24";
+  homeLanNetworks = [
+    "192.168.4.0/24"
+    "fdef:bd26:b58e:1::/64"
+  ];
   gatewayDotHostname = "z9mpdffx5x.cloudflare-gateway.com";
   gatewayDotAddresses = [
     "162.159.36.5"
@@ -29,15 +32,16 @@
 
   sharedUnboundSettings = {
     server = {
-      interface = [cfg.listenAddress];
+      interface = cfg.listenAddresses;
       port = 53;
-      access-control = [
-        "${homeLanNetwork} allow"
-        "0.0.0.0/0 refuse"
-        "::0/0 refuse"
-      ];
+      access-control =
+        (map (network: "${network} allow") homeLanNetworks)
+        ++ [
+          "0.0.0.0/0 refuse"
+          "::0/0 refuse"
+        ];
       do-ip4 = true;
-      do-ip6 = false;
+      do-ip6 = true;
       do-tcp = true;
       do-udp = true;
       edns-buffer-size = 1232;
@@ -109,22 +113,34 @@
       unbound-checkconf ${darwinUnboundConfigUnchecked}
       cp ${darwinUnboundConfigUnchecked} "$out"
     '';
+  darwinAddressWaitCommands =
+    lib.concatMapStringsSep "\n" (
+      address: let
+        addressFamily =
+          if lib.hasInfix ":" address
+          then "inet6"
+          else "inet";
+      in ''
+        while ! /sbin/ifconfig | /usr/bin/grep -q "${addressFamily} ${address} "; do
+          /bin/sleep 1
+        done
+      ''
+    )
+    cfg.listenAddresses;
   darwinResolverCommand = ''
     while [ ! -x "${pkgs.unbound}/bin/unbound" ] || [ ! -r "${darwinUnboundConfig}" ]; do
       /bin/sleep 1
     done
-    while ! /sbin/ifconfig | /usr/bin/grep -q "inet ${cfg.listenAddress} "; do
-      /bin/sleep 1
-    done
+    ${darwinAddressWaitCommands}
     exec "${pkgs.unbound}/bin/unbound" -d -c "${darwinUnboundConfig}"
   '';
 in {
   options.local.lanDnsResolver = {
     enable = lib.mkEnableOption "LAN-only Unbound resolver with Cloudflare Gateway forwarding";
 
-    listenAddress = lib.mkOption {
-      type = lib.types.str;
-      description = "Static LAN IPv4 address where Unbound accepts DNS queries.";
+    listenAddresses = lib.mkOption {
+      type = lib.types.nonEmptyListOf lib.types.str;
+      description = "Static LAN IPv4 and IPv6 addresses where Unbound accepts DNS queries.";
     };
   };
 

@@ -40,7 +40,10 @@ in {
   };
   local.lanDnsResolver = {
     enable = true;
-    listenAddress = "192.168.4.200";
+    listenAddresses = [
+      "192.168.4.200"
+      "fdef:bd26:b58e:1:7a55:36ff:fe05:8d4f"
+    ];
   };
   local.zsh = {
     enable = true;

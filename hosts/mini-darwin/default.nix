@@ -10,6 +10,7 @@
   homeDir = config.hjem.users.${user}.directory;
   baymaxLanAddress = "192.168.4.200";
   miniEthernetLanAddress = "192.168.4.194";
+  miniEthernetLanIpv6Address = "fdef:bd26:b58e:1:1412:ff96:d77a:51e6";
   dactylKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkcCO74k1FF3rHzIfX07QdaJXpOqyl3tUdLguL0kJzc dactyl";
   ompBrokerLocalPort = 18765;
   ompBrokerRemotePort = 8765;
@@ -138,7 +139,7 @@ in {
   };
   local.lanDnsResolver = {
     enable = true;
-    listenAddress = miniEthernetLanAddress;
+    listenAddresses = [miniEthernetLanAddress miniEthernetLanIpv6Address];
   };
   local.mole = {
     enable = true;
