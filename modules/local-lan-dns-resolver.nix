@@ -26,6 +26,10 @@
       hostname = "readeck.midsorbet.me";
       address = baymaxLanAddress;
     }
+    {
+      hostname = "budget.midsorbet.me";
+      address = baymaxLanAddress;
+    }
   ];
 
   gatewayForwardAddresses =
