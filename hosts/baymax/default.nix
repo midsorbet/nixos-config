@@ -525,6 +525,12 @@ in {
 
   # Notification and monitoring systemd units
   systemd = {
+    tmpfiles.rules = [
+      "d /persist/save/syncthing 0700 me users - -"
+      "d /persist/save/syncthing/config 0700 me users - -"
+      "d /persist/save/syncthing/database 0700 me users - -"
+    ];
+
     services = {
       # systemd 260 tmpfiles --clean exits 73/CANTCREAT when statx(2) hits
       # Baymax's ZFS-backed /tmp, /var/tmp, /nix, and /var/lib/systemd paths.

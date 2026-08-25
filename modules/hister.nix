@@ -168,11 +168,14 @@ in {
       after = ["hister.service" "network-online.target"];
       wants = ["network-online.target"];
       requires = ["hister.service"];
+      environment.HISTER_CONFIG = histerConfig;
       serviceConfig = {
         Type = "oneshot";
         User = "hister";
         Group = "hister";
         EnvironmentFile = [cfg.environmentFile cfg.readeckEnvironmentFile];
+        WorkingDirectory = cfg.dataDir;
+        ReadWritePaths = [cfg.dataDir];
         ExecStart = lib.concatStringsSep " " [
           (lib.getExe cfg.package)
           "--server-url"
