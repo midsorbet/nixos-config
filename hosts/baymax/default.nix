@@ -151,8 +151,8 @@ in {
     useNetworkd = true;
     firewall = {
       enable = true;
-      interfaces.CloudflareWARP.allowedTCPPorts = [22 2283];
-      interfaces.enp1s0.allowedTCPPorts = [22 53 2283];
+      interfaces.CloudflareWARP.allowedTCPPorts = [22];
+      interfaces.enp1s0.allowedTCPPorts = [22 53];
       interfaces.enp1s0.allowedUDPPorts = [53];
     };
   };
@@ -313,7 +313,7 @@ in {
 
     immich = {
       enable = true;
-      host = "0.0.0.0";
+      host = "127.0.0.1";
       port = 2283;
       mediaLocation = "/archive/immich";
       environment = {
