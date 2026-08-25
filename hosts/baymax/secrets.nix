@@ -18,6 +18,8 @@ in {
   age.secrets."readeck-env".file = "${secrets}/readeck.age";
   age.secrets."miniflux-admin".file = "${secrets}/miniflux.age";
   age.secrets."paperless".file = "${secrets}/paperless.age";
+  age.secrets."ntfy-auth".file = "${secrets}/ntfy-auth.age";
+  age.secrets."ntfy-publisher-token".file = "${secrets}/ntfy-publisher-token.age";
   age.secrets."hetzner-borg-key".file = "${secrets}/hetzner-borg-key.age";
   age.secrets."hetzner-borg-pass".file = "${secrets}/hetzner-borg-pass.age";
   age.secrets."baymax-borg-pass".file = "${secrets}/baymax-borg-pass.age";

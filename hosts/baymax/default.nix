@@ -328,11 +328,16 @@ in {
 
     ntfy-sh = {
       enable = true;
+      environmentFile = config.age.secrets."ntfy-auth".path;
       settings = {
         base-url = "https://ntfy.${domain}";
         listen-http = "127.0.0.1:8080";
         auth-default-access = "deny-all";
-        auth-access = ["*:system:read-write"];
+        auth-access = [
+          "baymax-alert-publisher:system:write-only"
+          "system-alert-subscriber:system:read-only"
+        ];
+        behind-proxy = true;
       };
     };
 
@@ -519,6 +524,8 @@ in {
         ProcSubset = "pid";
         PrivateUsers = true;
         RestrictAddressFamilies = ["AF_UNIX" "AF_INET" "AF_INET6"];
+        CapabilityBoundingSet = lib.mkForce [""];
+        AmbientCapabilities = lib.mkForce [""];
         UMask = "0077";
         RemoveIPC = true;
       };
@@ -596,6 +603,7 @@ in {
           Type = "oneshot";
           Restart = "on-failure";
           RestartSec = "30s";
+          EnvironmentFile = config.age.secrets."ntfy-publisher-token".path;
         };
         scriptArgs = "%i";
         script = ''
@@ -637,7 +645,10 @@ in {
       # Disk space monitoring
       "disk-space-check" = {
         description = "Check ZFS pool capacity";
-        serviceConfig.Type = "oneshot";
+        serviceConfig = {
+          Type = "oneshot";
+          EnvironmentFile = config.age.secrets."ntfy-publisher-token".path;
+        };
         script = ''
           set -eu
 
