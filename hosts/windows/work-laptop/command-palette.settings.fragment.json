@@ -1,0 +1,12 @@
+{
+  "Hotkey": {
+    "win": true,
+    "ctrl": false,
+    "alt": true,
+    "shift": false,
+    "code": 32,
+    "key": ""
+  },
+  "CompactMode": true,
+  "CompactCenterHeightPercentage": 75
+}

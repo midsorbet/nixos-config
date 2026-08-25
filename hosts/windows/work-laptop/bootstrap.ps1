@@ -2,6 +2,7 @@
 param(
     [switch]$ApplyPackages,
     [switch]$ApplyPowerToys,
+    [switch]$InstallCommandPaletteFragment,
     [switch]$InstallTerminalFragment,
     [switch]$ExportPowerToysSchemas,
     [switch]$InstallWinGetDscModule,
@@ -14,6 +15,7 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSCommandPath
 $PackageConfig = Join-Path $Root "configuration.dsc.yaml"
 $PowerToysConfig = Join-Path $Root "powertoys.dsc.yaml"
+$CommandPaletteFragment = Join-Path $Root "command-palette.settings.fragment.json"
 $TerminalFragment = Join-Path $Root "terminal-settings.fragment.json"
 
 function Test-CommandExists {
@@ -79,6 +81,32 @@ function Set-JsonProperty {
     } else {
         Add-Member -InputObject $InputObject -NotePropertyName $Name -NotePropertyValue $Value
     }
+}
+
+function Merge-CommandPaletteSettingsFragment {
+    if (-not $env:LOCALAPPDATA) {
+        throw "LOCALAPPDATA is not set; cannot locate Command Palette settings."
+    }
+
+    $settingsPath = Join-Path $env:LOCALAPPDATA "Packages\Microsoft.CommandPalette_8wekyb3d8bbwe\LocalState\settings.json"
+    if (-not (Test-Path -LiteralPath $settingsPath)) {
+        throw "Command Palette settings were not found at $settingsPath. Start Command Palette once, close it, then retry."
+    }
+
+    $settings = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json
+    $fragment = Get-Content -LiteralPath $CommandPaletteFragment -Raw | ConvertFrom-Json
+
+    $backupPath = "$settingsPath.$(Get-Date -Format yyyyMMddHHmmss).bak"
+    Copy-Item -LiteralPath $settingsPath -Destination $backupPath
+
+    foreach ($property in $fragment.PSObject.Properties) {
+        Set-JsonProperty -InputObject $settings -Name $property.Name -Value $property.Value
+    }
+
+    $settings | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $settingsPath -Encoding UTF8
+
+    Write-Host "Updated Command Palette settings. Restart Command Palette to load them."
+    Write-Host "Backup written to $backupPath"
 }
 
 function Merge-TerminalSettingsFragment {
@@ -149,15 +177,15 @@ function Export-PowerToysSchemas {
 
     $modules = @(
         "App",
-        "FancyZones",
-        "PowerLauncher",
+        "AlwaysOnTop",
         "ColorPicker",
-        "PowerRename",
-        "KeyboardManager",
-        "TextExtractor",
-        "Workspaces",
         "EnvironmentVariables",
-        "ShortcutGuide"
+        "FancyZones",
+        "KeyboardManager",
+        "PowerOCR",
+        "PowerRename",
+        "ShortcutGuide",
+        "Workspaces"
     )
 
     foreach ($module in $modules) {
@@ -171,7 +199,7 @@ function Export-PowerToysSchemas {
     }
 }
 
-if (-not ($ApplyPackages -or $ApplyPowerToys -or $InstallTerminalFragment -or $ExportPowerToysSchemas -or $InstallWinGetDscModule)) {
+if (-not ($ApplyPackages -or $ApplyPowerToys -or $InstallCommandPaletteFragment -or $InstallTerminalFragment -or $ExportPowerToysSchemas -or $InstallWinGetDscModule)) {
     Write-Host "Work laptop Windows profile checks"
     Write-Host "winget available: $(Test-CommandExists "winget")"
     Write-Host "PowerToys.DSC.exe: $(Get-PowerToysDscPath)"
@@ -179,6 +207,7 @@ if (-not ($ApplyPackages -or $ApplyPowerToys -or $InstallTerminalFragment -or $E
     Write-Host "Apply reviewed pieces explicitly:"
     Write-Host "  .\bootstrap.ps1 -ApplyPackages"
     Write-Host "  .\bootstrap.ps1 -ApplyPowerToys"
+    Write-Host "  .\bootstrap.ps1 -InstallCommandPaletteFragment"
     Write-Host "  .\bootstrap.ps1 -InstallTerminalFragment"
     Write-Host "  .\bootstrap.ps1 -ExportPowerToysSchemas"
     exit 0
@@ -198,6 +227,10 @@ if ($ApplyPackages) {
 
 if ($ApplyPowerToys) {
     Invoke-WinGetConfigure -ConfigPath $PowerToysConfig
+}
+
+if ($InstallCommandPaletteFragment) {
+    Merge-CommandPaletteSettingsFragment
 }
 
 if ($InstallTerminalFragment) {
