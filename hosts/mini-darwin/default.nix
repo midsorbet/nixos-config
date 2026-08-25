@@ -543,7 +543,8 @@ in {
       client_id="$(${pkgs.jq}/bin/jq -er '.client_id | select(test("^[0-9a-f]{32}\\.access$"))' "$credentials")"
       client_secret="$(${pkgs.jq}/bin/jq -er '.client_secret | select(test("^[0-9a-f]{64}$"))' "$credentials")"
 
-      tmp_xml="$(/usr/bin/mktemp "$directory/.mdm.XXXXXX.xml")"
+      /bin/rm -f "$directory/.mdm.XXXXXX.xml"
+      tmp_xml="$(/usr/bin/mktemp "$directory/.mdm.xml.XXXXXX")"
       trap '/bin/rm -f "$tmp_xml"' EXIT
 
       /bin/cat >"$tmp_xml" <<EOF
