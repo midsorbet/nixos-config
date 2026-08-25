@@ -13,6 +13,10 @@ in {
       credentialFiles.CF_DNS_API_TOKEN_FILE = config.age.secrets."cloudflare-acme-dns-token".path;
     };
   };
+  environment.persistence."/persist".directories = [
+    "/var/lib/acme"
+    "/var/lib/caddy"
+  ];
 
   services.caddy = {
     enable = true;
