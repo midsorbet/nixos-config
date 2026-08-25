@@ -62,6 +62,7 @@
       if ! "''${cli[@]}" config devices list | grep -Fxq ${lib.escapeShellArg cfg.peerDeviceId}; then
         "''${cli[@]}" config devices add-json "$(cat ${lib.escapeShellArg peerDeviceConfig})"
       fi
+      "''${cli[@]}" config devices ${lib.escapeShellArg cfg.peerDeviceId} addresses 0 set ${lib.escapeShellArg cfg.peerAddress}
       if ! "''${cli[@]}" config folders list | grep -Fxq vault; then
         "''${cli[@]}" config folders add-json "$(cat ${lib.escapeShellArg vaultFolderConfig})"
       fi
