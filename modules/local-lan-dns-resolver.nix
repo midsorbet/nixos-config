@@ -186,6 +186,24 @@ in {
           ThrottleInterval = 10;
         };
 
+        system.activationScripts.postActivation.text = lib.mkAfter ''
+          resolverDirectory=/etc/resolver
+          resolverTarget="$resolverDirectory/midsorbet.me"
+          /usr/bin/install -d -m 0755 -o root -g wheel "$resolverDirectory"
+          resolverTmp="$(/usr/bin/mktemp "$resolverDirectory/.midsorbet.me.XXXXXX")"
+          trap '/bin/rm -f "$resolverTmp"' EXIT
+          /bin/cat >"$resolverTmp" <<EOF
+          nameserver ${lib.head cfg.listenAddresses}
+          port 53
+          EOF
+          /usr/sbin/chown root:wheel "$resolverTmp"
+          /bin/chmod 0644 "$resolverTmp"
+          /bin/mv -f "$resolverTmp" "$resolverTarget"
+          trap - EXIT
+          /usr/bin/dscacheutil -flushcache
+          /usr/bin/killall -HUP mDNSResponder 2>/dev/null || true
+        '';
+
         system.activationScripts.preActivation.text = lib.mkBefore ''
           currentUnbound="${pkgs.unbound}/bin/unbound"
           while IFS= read -r registeredUnbound; do
