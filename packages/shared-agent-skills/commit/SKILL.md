@@ -15,11 +15,16 @@ Use this format for normal commits:
 
 `<scope>: <summary>`
 
+When a stable hierarchy improves log scanning, add colon-delimited area
+prefixes:
+
+`<scope>: <subscope>: <summary>`
+
 Examples:
 
 `auth: prevent expired sessions from refreshing`
 
-`terminal/osc: handle malformed color requests`
+`terminal: osc: handle malformed color requests`
 
 `projects: nixos-config: update pointer`
 
@@ -35,8 +40,8 @@ their established format.
   accurately describes the change.
 - When history does not provide a scope, infer a short, lowercase scope from
   the changed paths and the domain they implement.
-- Use nested scopes such as `terminal/osc` when the narrower area is useful
-  and unambiguous.
+- Use colon-delimited area prefixes when a stable hierarchy is useful and
+  unambiguous. Write `terminal: osc: ...`, not `terminal/osc: ...`.
 - Do not substitute change-kind labels such as `feat`, `fix`, `chore`, or
   `refactor` for the affected area. A label such as `build`, `docs`, or
   `tests` is valid only when it is the actual project area.
