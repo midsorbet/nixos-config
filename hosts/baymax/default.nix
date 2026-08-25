@@ -374,6 +374,7 @@ in {
       config = {
         LISTEN_ADDR = "127.0.0.1:8081";
         BASE_URL = "https://rss.${domain}";
+        HTTPS = "1";
       };
     };
 
