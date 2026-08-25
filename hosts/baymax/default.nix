@@ -394,10 +394,10 @@ in {
       configureTika = true;
       settings = {
         PAPERLESS_URL = "https://paperless.${domain}";
-        PAPERLESS_ALLOWED_HOSTS = ["paperless.${domain}"];
-        PAPERLESS_CSRF_TRUSTED_ORIGINS = ["https://paperless.${domain}"];
-        PAPERLESS_CORS_ALLOWED_HOSTS = ["https://paperless.${domain}"];
-        PAPERLESS_TRUSTED_PROXIES = ["127.0.0.1"];
+        PAPERLESS_ALLOWED_HOSTS = "paperless.${domain}";
+        PAPERLESS_CSRF_TRUSTED_ORIGINS = "https://paperless.${domain}";
+        PAPERLESS_CORS_ALLOWED_HOSTS = "https://paperless.${domain}";
+        PAPERLESS_TRUSTED_PROXIES = "127.0.0.1";
         PAPERLESS_ALLAUTH_TRUSTED_PROXY_COUNT = 1;
         PAPERLESS_PROXY_SSL_HEADER = ["HTTP_X_FORWARDED_PROTO" "https"];
         PAPERLESS_USE_X_FORWARD_HOST = false;
