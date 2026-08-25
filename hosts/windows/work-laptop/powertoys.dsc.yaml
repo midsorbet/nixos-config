@@ -126,7 +126,8 @@ resources:
     properties:
       settings:
         properties:
-          changecursor: true
+          changecursor:
+            value: true
           copiedcolorrepresentation: HEX
         name: ColorPicker
         version: 1.0
