@@ -27,6 +27,13 @@
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
   cxporterPackage = pkgs.callPackage ../../packages/cxporter.nix {};
   skyComputerUsePackage = mkSkyComputerUsePackage {};
+  histerExtension = pkgs.replaceVars ./extensions/hister.ts {
+    HISTER_BASE_URL = cfg.hister.baseUrl;
+    HISTER_ENV_FILE = toString cfg.hister.environmentFile;
+  };
+  histerSkill = pkgs.writeTextDir "share/agents/skills/hister/SKILL.md" (
+    builtins.readFile ./skills/hister/SKILL.md
+  );
   codexConnectorsSkill = pkgs.writeTextDir "share/agents/skills/codex-connectors/SKILL.md" (
     builtins.readFile ./skills/codex-connectors/SKILL.md
   );
@@ -579,6 +586,22 @@ in {
       description = "Auth broker URL to add to the managed OMP config; non-loopback endpoints must use HTTPS.";
     };
 
+    hister = {
+      enable = lib.mkEnableOption "one-turn lazy Hister retrieval tools";
+
+      baseUrl = lib.mkOption {
+        type = lib.types.str;
+        default = "https://hister.midsorbet.me";
+        description = "Split-DNS HTTPS Hister URL used by the lazy tools.";
+      };
+
+      environmentFile = lib.mkOption {
+        type = with lib.types; nullOr path;
+        default = null;
+        description = "Agenix-decrypted environment file containing the Hister access token.";
+      };
+    };
+
     collab = {
       enable = lib.mkEnableOption "on-demand hardened OMP collab relay";
 
@@ -735,6 +758,10 @@ in {
           assertion = authBrokerUrlIsSecure;
           message = "local.omp.authBrokerUrl must use HTTPS unless it targets loopback over HTTP.";
         }
+        {
+          assertion = !cfg.hister.enable || cfg.hister.environmentFile != null;
+          message = "local.omp.hister.environmentFile must be set when lazy Hister tools are enabled.";
+        }
       ]
       ++ lib.optionals cfg.collab.enable [
         {
@@ -823,6 +850,16 @@ in {
         ".omp/agent/extensions/sky-computer-use.ts" = {
           type = "symlink";
           source = "${skyComputerUsePackage}/extension/index.ts";
+          clobber = true;
+        };
+        ".omp/agent/extensions/hister.ts" = lib.mkIf cfg.hister.enable {
+          type = "symlink";
+          source = histerExtension;
+          clobber = true;
+        };
+        ".omp/agent/skills/hister/SKILL.md" = lib.mkIf cfg.hister.enable {
+          type = "symlink";
+          source = "${histerSkill}/share/agents/skills/hister/SKILL.md";
           clobber = true;
         };
         ".omp/agent/extensions/remote-collab.ts" = lib.mkIf cfg.collab.enable {

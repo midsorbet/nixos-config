@@ -17,6 +17,22 @@
   baymaxKnownHosts = pkgs.writeText "baymax-known-hosts" ''
     ${baymaxLanAddress} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAx1gSRAypT/nq3PKlK54lGTJDPNM2QeK25QoBt0UNPD
   '';
+  firefoxExtensionPolicies = pkgs.writeText "firefox-policies.json" (builtins.toJSON {
+    policies.ExtensionSettings = {
+      "*".installation_mode = "allowed";
+      "{f0bda7ce-0cda-42dc-9ea8-126b20fed280}" = {
+        installation_mode = "force_installed";
+        install_url = "https://addons.mozilla.org/firefox/downloads/latest/hister/latest.xpi";
+      };
+      "{74145f27-f039-47ce-a470-a662b129930a}" = {
+        installation_mode = "force_installed";
+        install_url = "https://addons.mozilla.org/firefox/downloads/latest/clearurls/latest.xpi";
+      };
+    };
+  });
+  chromeHisterExternalExtension = pkgs.writeText "hister-chrome-extension.json" (builtins.toJSON {
+    external_update_url = "https://clients2.google.com/service/update2/crx";
+  });
   # Mini's existing age/SSH identity is already authorized on Baymax.
   # Use Apple's stable signed client directly: background Nix-store binaries
   # have no Local Network privacy grant and fail LAN connections with EHOSTUNREACH.
@@ -58,6 +74,8 @@
     "UserKnownHostsFile=${baymaxKnownHosts}"
     "-L"
     "127.0.0.1:${toString ompBrokerLocalPort}:127.0.0.1:${toString ompBrokerRemotePort}"
+    "-R"
+    "127.0.0.1:11434:127.0.0.1:11434"
     "${user}@${baymaxLanAddress}"
   ];
 in {
@@ -66,6 +84,8 @@ in {
     ../../modules/darwin/anki.nix
     ../../modules/darwin/grayjay.nix
     ../../modules/darwin/mole.nix
+    ../../modules/darwin/ollama.nix
+    ../../modules/darwin/syncthing.nix
     ../../modules/github-cli.nix
     ../../modules/ghostty.nix
     ../../modules/herdr.nix
@@ -94,6 +114,13 @@ in {
   };
 
   local.anki.enable = true;
+  local.ollama.enable = true;
+  local.syncthing = {
+    enable = true;
+    certFile = config.age.secrets."syncthing-mini-cert".path;
+    keyFile = config.age.secrets."syncthing-mini-key".path;
+    peerDeviceId = "O53AQ2K-UWUX2VE-VD5BPYR-TK66WA4-SDDHEMU-YRKJVA5-4U3ZSH6-L27BFQF";
+  };
   local.git = {
     enable = true;
     inherit user;
@@ -113,6 +140,34 @@ in {
     files."Projects" = {
       type = "symlink";
       source = "${homeDir}/vault/projects";
+      clobber = true;
+    };
+
+    files.".finicky.js" = {
+      text = ''
+        export default {
+          defaultBrowser: "Firefox",
+          options: {
+            checkForUpdates: false,
+            logRequests: false,
+          },
+          handlers: [
+            {
+              match: finicky.matchHostnames([
+                "x.com",
+                "*.x.com",
+                "twitter.com",
+                "*.twitter.com",
+                "reddit.com",
+                "*.reddit.com",
+                "redd.it",
+                "*.redd.it",
+              ]),
+              browser: "Google Chrome",
+            },
+          ],
+        };
+      '';
       clobber = true;
     };
 
@@ -156,6 +211,10 @@ in {
   local.omp = {
     enable = true;
     authBrokerUrl = "http://127.0.0.1:${toString ompBrokerLocalPort}";
+    hister = {
+      enable = true;
+      environmentFile = config.age.secrets."hister-env".path;
+    };
     collab = {
       enable = true;
       displayName = "mini-me";
@@ -185,6 +244,7 @@ in {
         greedy = true;
       }
       "codex"
+      "finicky"
       "firefox"
       "ghostty"
       "karabiner-elements"
@@ -270,6 +330,7 @@ in {
   environment.systemPackages =
     [
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
+      pkgs.hister
       pkgs.mdfried
       pkgs.nh
     ]
@@ -457,6 +518,14 @@ in {
 
     activationScripts.postActivation.text = lib.mkAfter ''
       set -eu
+
+      firefox_policy_directory='/Library/Application Support/Mozilla'
+      firefox_policy_target="$firefox_policy_directory/policies.json"
+      chrome_extension_directory='/Library/Google/Chrome/External Extensions'
+      chrome_extension_target="$chrome_extension_directory/cciilamhchpmbdnniabclekddabkifhb.json"
+      /usr/bin/install -d -m 0755 -o root -g wheel "$firefox_policy_directory" "$chrome_extension_directory"
+      /usr/bin/install -m 0644 -o root -g wheel ${firefoxExtensionPolicies} "$firefox_policy_target"
+      /usr/bin/install -m 0644 -o root -g wheel ${chromeHisterExternalExtension} "$chrome_extension_target"
 
       credentials='${config.age.secrets."mini-warp-service-token".path}'
       directory='/Library/Application Support/Cloudflare'

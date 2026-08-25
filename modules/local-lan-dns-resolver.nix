@@ -30,6 +30,10 @@
       hostname = "budget.midsorbet.me";
       address = baymaxLanAddress;
     }
+    {
+      hostname = "hister.midsorbet.me";
+      address = baymaxLanAddress;
+    }
   ];
 
   gatewayForwardAddresses =

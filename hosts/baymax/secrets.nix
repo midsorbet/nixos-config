@@ -16,6 +16,20 @@ in {
   };
 
   age.secrets."readeck-env".file = "${secrets}/readeck.age";
+  age.secrets."hister-env" = {
+    file = "${secrets}/hister-env.age";
+    mode = "400";
+    owner = "hister";
+    group = "hister";
+  };
+  age.secrets."hister-readeck-token" = {
+    file = "${secrets}/hister-readeck-token.age";
+    mode = "400";
+    owner = "hister";
+    group = "hister";
+  };
+  age.secrets."syncthing-baymax-cert".file = "${secrets}/syncthing-baymax-cert.age";
+  age.secrets."syncthing-baymax-key".file = "${secrets}/syncthing-baymax-key.age";
   age.secrets."miniflux-admin".file = "${secrets}/miniflux.age";
   age.secrets."paperless".file = "${secrets}/paperless.age";
   age.secrets."ntfy-auth".file = "${secrets}/ntfy-auth.age";

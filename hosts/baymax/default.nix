@@ -31,6 +31,7 @@ in {
     ./cloudflared-module.nix
     ./local-https.nix
     (import ../../modules/local-lan-dns-resolver.nix {platform = "nixos";})
+    ../../modules/hister.nix
     ../../modules/shared
     agenix.nixosModules.default
   ];
@@ -38,6 +39,11 @@ in {
   local.git = {
     enable = true;
     inherit user;
+  };
+  local.hister = {
+    enable = true;
+    environmentFile = config.age.secrets."hister-env".path;
+    readeckEnvironmentFile = config.age.secrets."hister-readeck-token".path;
   };
   local.lanDnsResolver = {
     enable = true;
@@ -152,7 +158,7 @@ in {
     firewall = {
       enable = true;
       interfaces.CloudflareWARP.allowedTCPPorts = [22];
-      interfaces.enp1s0.allowedTCPPorts = [22 53];
+      interfaces.enp1s0.allowedTCPPorts = [22 53 22000];
       interfaces.enp1s0.allowedUDPPorts = [53];
     };
   };
@@ -356,6 +362,66 @@ in {
         KbdInteractiveAuthentication = false;
         PermitRootLogin = "no";
         AllowUsers = [user];
+      };
+    };
+
+    syncthing = {
+      enable = true;
+      user = user;
+      group = "users";
+      dataDir = "/persist/save/syncthing";
+      configDir = "/persist/save/syncthing/config";
+      databaseDir = "/persist/save/syncthing/database";
+      cert = config.age.secrets."syncthing-baymax-cert".path;
+      key = config.age.secrets."syncthing-baymax-key".path;
+      guiAddress = "127.0.0.1:8384";
+      overrideDevices = true;
+      overrideFolders = true;
+      openDefaultPorts = false;
+      settings = {
+        options = {
+          globalAnnounceEnabled = false;
+          localAnnounceEnabled = false;
+          relaysEnabled = false;
+          natEnabled = false;
+          urAccepted = -1;
+          startBrowser = false;
+          listenAddresses = ["tcp://0.0.0.0:22000"];
+        };
+        devices.mini = {
+          id = "UXL4RFM-DLXOA5H-RLEUHF4-EGZ54XR-Q4W4IOT-MTYVYOB-AOOCKJ5-RBLSIA5";
+          addresses = ["dynamic"];
+          compression = "metadata";
+        };
+        folders.vault = {
+          id = "vault";
+          label = "Vault";
+          path = "/persist/save/vault-mirror";
+          type = "receiveonly";
+          devices = ["mini"];
+          rescanIntervalS = 3600;
+          fsWatcherEnabled = true;
+          fsWatcherDelayS = 10;
+          ignorePerms = true;
+          ignorePatterns = [
+            "(?d).git"
+            "(?d).git/**"
+            "(?d)**/.git"
+            "(?d)**/.git/**"
+            "(?d)/private"
+            "(?d)**/.DS_Store"
+            "(?d)**/.direnv"
+            "(?d)**/.devenv"
+            "(?d)**/node_modules"
+            "(?d)**/.venv"
+            "(?d)**/__pycache__"
+            "(?d)**/.cache"
+            "(?d)**/result"
+            "(?d)**/target"
+            "(?d)**/.next"
+            "(?d)**/.svelte-kit"
+          ];
+        };
       };
     };
 

@@ -6,6 +6,24 @@ in {
   ];
 
   age.secrets."user-email".file = "${secrets}/user-email.age";
+  age.secrets."hister-env" = {
+    file = "${secrets}/hister-env.age";
+    mode = "400";
+    owner = user;
+    group = "staff";
+  };
+  age.secrets."syncthing-mini-cert" = {
+    file = "${secrets}/syncthing-mini-cert.age";
+    mode = "400";
+    owner = user;
+    group = "staff";
+  };
+  age.secrets."syncthing-mini-key" = {
+    file = "${secrets}/syncthing-mini-key.age";
+    mode = "400";
+    owner = user;
+    group = "staff";
+  };
 
   age.secrets."mini-warp-service-token" = {
     file = "${secrets}/mini-warp-service-token.age";

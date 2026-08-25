@@ -17,6 +17,10 @@
       };
     };
 
+    hister = final: prev: {
+      hister = final.callPackage ./hister.nix {};
+    };
+
     omp = final: prev: {
       omp = import ./omp.nix {pkgs = prev;};
     };
@@ -36,6 +40,7 @@
     overlays.apyanki
     overlays.github-copilot-cli
     overlays.mdfried
+    overlays.hister
     overlays.omp
     overlays.plannotator
     overlays.trzsz-go

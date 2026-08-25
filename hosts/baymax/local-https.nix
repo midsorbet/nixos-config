@@ -7,6 +7,7 @@
   photosHostname = "photos.midsorbet.me";
   readeckHostname = "readeck.midsorbet.me";
   actualHostname = "budget.midsorbet.me";
+  histerHostname = "hister.midsorbet.me";
   managedNetworkCaddyfile = pkgs.writeText "home-managed-network.Caddyfile" ''
     {
       admin off
@@ -39,6 +40,11 @@ in {
       credentialFiles.CF_DNS_API_TOKEN_FILE = config.age.secrets."cloudflare-acme-dns-token".path;
     };
     certs.${actualHostname} = {
+      dnsProvider = "cloudflare";
+      keyType = "ec256";
+      credentialFiles.CF_DNS_API_TOKEN_FILE = config.age.secrets."cloudflare-acme-dns-token".path;
+    };
+    certs.${histerHostname} = {
       dnsProvider = "cloudflare";
       keyType = "ec256";
       credentialFiles.CF_DNS_API_TOKEN_FILE = config.age.secrets."cloudflare-acme-dns-token".path;
@@ -94,6 +100,21 @@ in {
       logFormat = null;
       extraConfig = ''
         reverse_proxy 127.0.0.1:5006 {
+          header_up -Cf-Access-Jwt-Assertion
+          header_up -Cf-Access-Authenticated-User-Email
+          header_up -Cf-Connecting-IP
+          header_up -Cf-Ipcountry
+          header_up -Cf-Ray
+          header_up -Cf-Visitor
+        }
+      '';
+    };
+    virtualHosts.${histerHostname} = {
+      useACMEHost = histerHostname;
+      listenAddresses = ["192.168.4.200"];
+      logFormat = null;
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:4433 {
           header_up -Cf-Access-Jwt-Assertion
           header_up -Cf-Access-Authenticated-User-Email
           header_up -Cf-Connecting-IP
