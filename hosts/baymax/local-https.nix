@@ -5,6 +5,7 @@
   ...
 }: let
   photosHostname = "photos.midsorbet.me";
+  readeckHostname = "readeck.midsorbet.me";
   managedNetworkCaddyfile = pkgs.writeText "home-managed-network.Caddyfile" ''
     {
       admin off
@@ -31,6 +32,11 @@ in {
       keyType = "ec256";
       credentialFiles.CF_DNS_API_TOKEN_FILE = config.age.secrets."cloudflare-acme-dns-token".path;
     };
+    certs.${readeckHostname} = {
+      dnsProvider = "cloudflare";
+      keyType = "ec256";
+      credentialFiles.CF_DNS_API_TOKEN_FILE = config.age.secrets."cloudflare-acme-dns-token".path;
+    };
   };
   environment.persistence."/persist".directories = [
     "/var/lib/acme"
@@ -52,6 +58,21 @@ in {
       logFormat = null;
       extraConfig = ''
         reverse_proxy 127.0.0.1:2283 {
+          header_up -Cf-Access-Jwt-Assertion
+          header_up -Cf-Access-Authenticated-User-Email
+          header_up -Cf-Connecting-IP
+          header_up -Cf-Ipcountry
+          header_up -Cf-Ray
+          header_up -Cf-Visitor
+        }
+      '';
+    };
+    virtualHosts.${readeckHostname} = {
+      useACMEHost = readeckHostname;
+      listenAddresses = ["192.168.4.200"];
+      logFormat = null;
+      extraConfig = ''
+        reverse_proxy 127.0.0.1:8000 {
           header_up -Cf-Access-Jwt-Assertion
           header_up -Cf-Access-Authenticated-User-Email
           header_up -Cf-Connecting-IP

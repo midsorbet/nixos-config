@@ -360,6 +360,7 @@ in {
         main.log_level = "info";
         server.base_url = "https://readeck.${domain}";
         server.allowed_hosts = ["readeck.${domain}"];
+        server.trusted_proxies = ["127.0.0.1/32" "::1/128"];
         server.host = "127.0.0.1";
         server.port = 8000;
       };
