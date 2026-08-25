@@ -5,9 +5,9 @@ description: "Create Git commits using Scoped Commits format"
 
 # Create Scoped Commits
 
-Create Git commits only when the user explicitly requests a commit. Use
-scope-first subjects so the log shows where each change belongs before it
-describes what changed.
+Create Git commits when the user explicitly requests one or repository
+instructions grant standing commit authority. Use scope-first subjects so the
+log shows where each change belongs before it describes what changed.
 
 ## Format
 
@@ -21,7 +21,7 @@ Examples:
 
 `terminal/osc: handle malformed color requests`
 
-`projects: update nixos-config pointer`
+`projects: nixos-config: update pointer`
 
 Merge commits, revert commits, and other Git-generated special commits MAY keep
 their established format.
@@ -93,7 +93,8 @@ pointer commit or promise that the project commit cannot push.
 
 ## Workflow
 
-1. Infer any requested files, globs, and commit guidance from the prompt.
+1. Confirm commit authority from the user request or repository instructions,
+   then infer any authorized files, globs, and commit guidance.
 2. Review `git status`, `git diff`, and `git diff --cached` to understand
    both staged and unstaged changes. Stop if there is nothing to commit.
 3. Choose the logical commit boundary and scope from repository instructions,
