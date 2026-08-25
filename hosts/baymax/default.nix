@@ -29,6 +29,7 @@ in {
     ./secrets.nix
     ./disk-config.nix
     ./cloudflared-module.nix
+    ./local-https.nix
     (import ../../modules/local-lan-dns-resolver.nix {platform = "nixos";})
     ../../modules/shared
     agenix.nixosModules.default

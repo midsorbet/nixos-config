@@ -23,4 +23,5 @@ in {
   age.secrets."baymax-borg-pass".file = "${secrets}/baymax-borg-pass.age";
   age.secrets."hetzner-borg-hosts".file = "${secrets}/hetzner-borg-hosts.age";
   age.secrets."baymax-tunnel".file = "${secrets}/baymax-tunnel.age";
+  age.secrets."cloudflare-acme-dns-token".file = "${secrets}/cloudflare-acme-dns-token.age";
 }
