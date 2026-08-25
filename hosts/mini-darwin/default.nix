@@ -17,9 +17,6 @@
   baymaxKnownHosts = pkgs.writeText "baymax-known-hosts" ''
     ${baymaxLanAddress} ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAx1gSRAypT/nq3PKlK54lGTJDPNM2QeK25QoBt0UNPD
   '';
-  chromeHisterExternalExtension = pkgs.writeText "hister-chrome-extension.json" (builtins.toJSON {
-    external_update_url = "https://clients2.google.com/service/update2/crx";
-  });
   # Mini's existing age/SSH identity is already authorized on Baymax.
   # Use Apple's stable signed client directly: background Nix-store binaries
   # have no Local Network privacy grant and fail LAN connections with EHOSTUNREACH.
@@ -142,15 +139,13 @@ in {
           },
           handlers: [
             {
+              // matchHostnames treats strings as exact hostnames. These anchored
+              // expressions cover each apex hostname and all of its subdomains.
               match: finicky.matchHostnames([
-                "x.com",
-                "*.x.com",
-                "twitter.com",
-                "*.twitter.com",
-                "reddit.com",
-                "*.reddit.com",
-                "redd.it",
-                "*.redd.it",
+                /(^|\.)x\.com$/,
+                /(^|\.)twitter\.com$/,
+                /(^|\.)reddit\.com$/,
+                /(^|\.)redd\.it$/,
               ]),
               browser: "Google Chrome",
             },
@@ -517,10 +512,6 @@ in {
       /bin/chmod 0644 "$firefox_preferences.plist"
       /bin/rm -f '/Library/Application Support/Mozilla/policies.json'
 
-      chrome_extension_directory='/Library/Google/Chrome/External Extensions'
-      chrome_extension_target="$chrome_extension_directory/cciilamhchpmbdnniabclekddabkifhb.json"
-      /usr/bin/install -d -m 0755 -o root -g wheel "$chrome_extension_directory"
-      /usr/bin/install -m 0644 -o root -g wheel ${chromeHisterExternalExtension} "$chrome_extension_target"
 
       credentials='${config.age.secrets."mini-warp-service-token".path}'
       directory='/Library/Application Support/Cloudflare'
