@@ -306,6 +306,8 @@ in {
         hostname = "127.0.0.1";
         port = 5006;
         dataDir = "/persist/save/actual";
+        trustedProxies = ["127.0.0.1/32" "::1/128"];
+        trustedAuthProxies = [];
         loginMethod = "password";
         allowedLoginMethods = ["password"];
       };
@@ -616,6 +618,7 @@ in {
       };
 
       # Attach failure notifications to critical services
+      "actual".serviceConfig.NoNewPrivileges = true;
       "actual".unitConfig.OnFailure = "ntfy-failure@%n";
       "actual-backup".unitConfig.OnFailure = "ntfy-failure@%n";
       "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
