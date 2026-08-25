@@ -43,7 +43,7 @@ in {
       '';
     };
     virtualHosts."home-managed-network" = {
-      hostName = "https://192.168.4.200:9443";
+      hostName = "https://:9443";
       listenAddresses = ["192.168.4.200"];
       logFormat = null;
       extraConfig = ''
