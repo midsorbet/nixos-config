@@ -305,7 +305,11 @@ in {
       }
     ];
 
-    linux-builder.enable = true;
+    linux-builder = {
+      enable = true;
+      # macOS 27 HVF rejects nixpkgs' default GICv2 machine; this later QEMU option overrides it.
+      config.virtualisation.qemu.options = ["-machine gic-version=3"];
+    };
   };
 
   # Turn off NIX_PATH warnings now that we're using flakes
