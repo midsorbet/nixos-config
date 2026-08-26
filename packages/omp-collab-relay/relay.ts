@@ -9,6 +9,33 @@ import { ENVELOPE_HEADER_LENGTH } from "@oh-my-pi/pi-wire";
 
 export const ROOM_PATH_RE = /^\/r\/([A-Za-z0-9_-]{10,64})$/;
 const ROOM_LINK_PATH_RE = /^\/r\/([A-Za-z0-9_-]{10,64})\.([A-Za-z0-9_-]+)$/;
+const RENDERED_COLLAB_LINK_START_RE =
+	/(?:https?:\/\/)?(?:[A-Za-z0-9.-]+|\[[A-Fa-f0-9:]+\])(?::\d+)?\/#(?:wss?|ws):\/\//;
+const RENDERED_COLLAB_LINK_RE =
+	/(?:https?:\/\/)?(?:[A-Za-z0-9.-]+|\[[A-Fa-f0-9:]+\])(?::\d+)?\/#(?:wss?|ws):\/\/\S+/g;
+const MAX_RENDERED_COLLAB_LINK_LINES = 8;
+
+/** Reassembles browser links hard-wrapped across rows by narrow TUI panes. */
+function renderedCollabLinkCandidates(text: string): string[] {
+	const lines = text.split("\n");
+	const candidates: string[] = [];
+	for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+		const line = lines[lineIndex]!;
+		const start = line.search(RENDERED_COLLAB_LINK_START_RE);
+		if (start < 0) continue;
+		const wrapWidth = line.length;
+		let joined = line.slice(start).trimEnd();
+		for (let offset = 0; offset < MAX_RENDERED_COLLAB_LINK_LINES; offset++) {
+			candidates.push(...(joined.match(RENDERED_COLLAB_LINK_RE) ?? []));
+			const sourceLine = lines[lineIndex + offset];
+			const continuation = lines[lineIndex + offset + 1];
+			if (!sourceLine || !continuation || sourceLine.length !== wrapWidth)
+				break;
+			joined += continuation.trimStart();
+		}
+	}
+	return candidates;
+}
 const PROTOCOL_MAX_FRAME_BYTES = 16 * 1024 * 1024;
 const LOADING_HTML = `<!doctype html><meta charset="utf-8"><title>Opening OMP agent</title><p>Opening agent…</p><script>fetch(location.pathname.replace(/^\\/open\\//,'/api/agents/')+'/activate',{method:'POST',headers:{'X-Requested-With':'omp-dashboard'}}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}).then(x=>location.replace(x.link)).catch(e=>{document.body.innerHTML='<p>Unable to open agent: '+String(e.message||e)+'</p><button onclick="location.reload()">Retry</button>'})</script>`;
 
@@ -981,10 +1008,7 @@ export function startRelay(
 			let canonical: string | null = null;
 			for (;;) {
 				const output = await dashboard.readPane(paneId);
-				const candidates =
-					output.text.match(
-						/(?:https?:\/\/)?(?:[A-Za-z0-9.-]+|\[[A-Fa-f0-9:]+\])(?::\d+)?\/#(?:wss?|ws):\/\/\S+/g,
-					) ?? [];
+				const candidates = renderedCollabLinkCandidates(output.text);
 				for (const candidate of candidates.reverse()) {
 					const link = /^[a-z]+:\/\//i.test(candidate)
 						? candidate

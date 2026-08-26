@@ -117,6 +117,14 @@ function handoffLink(relay: CollabRelay, room: string): string {
 	return `https://omp.midsorbet.me/#${relay.url}/r/${room}.${secret}`;
 }
 
+function hardWrapTuiText(text: string, width = 38): string {
+	const contentWidth = width - 1;
+	const lines: string[] = [];
+	for (let offset = 0; offset < text.length; offset += contentWidth)
+		lines.push(` ${text.slice(offset, offset + contentWidth)}`);
+	return lines.join("\n");
+}
+
 let relay: CollabRelay | undefined;
 
 afterEach(() => {
@@ -180,7 +188,7 @@ describe("Herdr socket dashboard", () => {
 });
 
 describe("Herdr-driven collab activation", () => {
-	it("captures a newly rendered live link and deduplicates concurrent prompts", async () => {
+	it("captures a hard-wrapped live link and deduplicates concurrent prompts", async () => {
 		let prompts = 0;
 		let renderedLink = "";
 		const prompted = Promise.withResolvers<void>();
@@ -217,7 +225,11 @@ describe("Herdr-driven collab activation", () => {
 			{ method: "POST", headers },
 		);
 		await prompted.promise;
-		renderedLink = handoffLink(relay, room);
+		renderedLink = [
+			" Collab session started!",
+			hardWrapTuiText(handoffLink(relay, room).replace(/^https:\/\//, "")),
+			" Anyone with this link can watch the session.",
+		].join("\n");
 		expect(await (await first).json()).toEqual({
 			link: `https://omp.midsorbet.me/#wss://omp.midsorbet.me/r/${room}.${Buffer.alloc(48, 7).toString("base64url")}`,
 		});
