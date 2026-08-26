@@ -67,6 +67,8 @@ in {
         keys = {
           prefix = "ctrl+b";
           detach = "prefix+q";
+          previous_workspace = "prefix+[";
+          next_workspace = "prefix+]";
           switch_tab = "prefix+1..9";
           switch_workspace = "prefix+shift+1..9";
           focus_agent = "prefix+alt+1..9";
