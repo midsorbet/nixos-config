@@ -184,10 +184,6 @@ in {
   local.mole = {
     enable = true;
     inherit user;
-    runPurge = true;
-    runOptimize = true;
-    cleanCacheCheckouts = true;
-    purgePaths = ["~/vault/projects"];
   };
   local.neovim = {
     enable = true;

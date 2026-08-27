@@ -7,63 +7,71 @@
   cfg = config.local.mole;
   homeDirectory = "/Users/${cfg.user}";
 
-  weeklyCleanup = pkgs.writeShellApplication {
-    name = "mole-weekly-cleanup";
+  librarianCheckoutCleanup = pkgs.writeShellApplication {
+    name = "mole-librarian-checkout-cleanup";
+
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.findutils
+      pkgs.git
+    ];
 
     text = ''
       set -euo pipefail
 
       export HOME="${homeDirectory}"
       export USER="${cfg.user}"
-      export XDG_CONFIG_HOME="$HOME/.config"
 
       log_dir="$HOME/Library/Logs/mole"
-      mkdir -p "$log_dir" "$XDG_CONFIG_HOME/mole"
-      exec >> "$log_dir/weekly-cleanup.log" 2>&1
+      mkdir -p "$log_dir"
+      exec >> "$log_dir/librarian-checkout-cleanup.log" 2>&1
 
-      echo "== $(date '+%Y-%m-%d %H:%M:%S') mole weekly cleanup =="
+      cache_root="''${LIBRARIAN_CACHE_ROOT:-$HOME/.cache/checkouts}"
+      now_epoch="$(date +%s)"
+      max_age_seconds=$((${toString cfg.librarianCheckoutMaxAgeDays} * 24 * 60 * 60))
+      cutoff_epoch=$((now_epoch - max_age_seconds))
 
-      no_privilege_dir="$(mktemp -d "''${TMPDIR:-/tmp}/mole-no-privilege.XXXXXX")"
-      cleanup() {
-        rm -rf "$no_privilege_dir"
-      }
-      trap cleanup EXIT INT TERM
+      echo "== $(date '+%Y-%m-%d %H:%M:%S') librarian checkout cleanup =="
 
-      printf '#!/bin/sh\nexit 1\n' > "$no_privilege_dir/sudo"
-      chmod 755 "$no_privilege_dir/sudo"
-
-      export PATH="$no_privilege_dir:${lib.makeBinPath [pkgs.bc]}:/opt/homebrew/bin:/usr/local/bin:/run/current-system/sw/bin:/etc/profiles/per-user/${cfg.user}/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-      export HOMEBREW_NO_AUTO_UPDATE=1
-      export HOMEBREW_NO_ENV_HINTS=1
-      export NONINTERACTIVE=1
-      export MO_NO_OPLOG=1
-
-      if ! command -v mo >/dev/null 2>&1; then
-        echo "mo not found; install should be handled by nix-darwin homebrew.brews"
+      if [[ ! -d "$cache_root" ]]; then
+        echo "Librarian checkout cache is absent: $cache_root"
         exit 0
       fi
 
-      mo --version || true
+      while IFS= read -r -d "" marker; do
+        checkout="''${marker%/.git/librarian-last-fetch}"
+        marker_value="$(cat "$marker" 2>/dev/null || true)"
 
-      echo "-- mo clean --"
-      mo clean
+        if [[ ! "$marker_value" =~ ^[0-9]{1,11}$ ]]; then
+          echo "Preserving checkout with invalid librarian marker: $checkout"
+          continue
+        fi
 
-      ${lib.optionalString cfg.cleanCacheCheckouts ''
-        echo "-- cache checkouts --"
-        rm -rf "$HOME/.cache/checkouts"
-      ''}
+        last_fetch_epoch=$((10#$marker_value))
+        if ((last_fetch_epoch > cutoff_epoch)); then
+          continue
+        fi
 
-      ${lib.optionalString cfg.runPurge ''
-        echo "-- mo purge --"
-        mo purge
-      ''}
+        if ! checkout_status="$(git -C "$checkout" status --porcelain=v1 --untracked-files=normal 2>&1)"; then
+          echo "Preserving checkout that Git could not inspect: $checkout"
+          continue
+        fi
 
-      ${lib.optionalString cfg.runOptimize ''
-        echo "-- mo optimize --"
-        mo optimize
-      ''}
+        if [[ -n "$checkout_status" ]]; then
+          echo "Preserving dirty checkout: $checkout"
+          continue
+        fi
 
-      echo "== mole weekly cleanup complete =="
+        if [[ "$(cat "$marker" 2>/dev/null || true)" != "$marker_value" ]]; then
+          echo "Preserving checkout used during cleanup: $checkout"
+          continue
+        fi
+
+        rm -rf -- "$checkout"
+        echo "Removed checkout last fetched at epoch $last_fetch_epoch: $checkout"
+      done < <(find "$cache_root" -type f -path '*/.git/librarian-last-fetch' -print0)
+
+      echo "== librarian checkout cleanup complete =="
     '';
   };
 in {
@@ -73,41 +81,23 @@ in {
     user = lib.mkOption {
       type = lib.types.str;
       default = "me";
-      description = "User that should receive Mole configuration and run the weekly cleanup job.";
+      description = "User that receives Mole and runs the monthly Librarian checkout cleanup job.";
     };
 
-    runPurge = lib.mkOption {
-      type = lib.types.bool;
-      default = true;
-      description = "Whether the weekly cleanup job should also run `mo purge` for old project build artifacts.";
+    librarianCheckoutMaxAgeDays = lib.mkOption {
+      type = lib.types.ints.between 1 3650;
+      default = 21;
+      description = "Minimum last-fetch age in days of a clean Librarian checkout before the monthly job removes it.";
     };
 
-    runOptimize = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Whether the weekly cleanup job should also run `mo optimize` after cleanup.";
-    };
-
-    cleanCacheCheckouts = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Whether the weekly cleanup job should remove ~/.cache/checkouts after `mo clean`.";
-    };
-
-    purgePaths = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = ["~/vault/projects"];
-      description = "Project roots scanned by `mo purge`; written to ~/.config/mole/purge_paths.";
-    };
-
-    interval = lib.mkOption {
+    monthlyInterval = lib.mkOption {
       type = lib.types.attrsOf lib.types.int;
       default = {
-        Weekday = 0;
+        Day = 1;
         Hour = 3;
         Minute = 0;
       };
-      description = "Weekly launchd calendar interval for the Mole cleanup job; 0 is Sunday.";
+      description = "Monthly launchd calendar interval for the Librarian checkout cleanup job.";
     };
   };
 
@@ -121,20 +111,11 @@ in {
 
     homebrew.brews = ["mole"];
 
-    hjem.users.${cfg.user}.xdg.config.files."mole/purge_paths" = {
-      text = ''
-        # Mole Purge Paths - managed by nix-darwin
-        # Weekly non-interactive `mo purge` deletes non-recent artifacts under these roots.
-        ${lib.concatMapStringsSep "\n" (path: path) cfg.purgePaths}
-      '';
-      clobber = true;
-    };
-
-    launchd.user.agents.mole-weekly-cleanup = {
-      command = "${weeklyCleanup}/bin/mole-weekly-cleanup";
+    launchd.user.agents.mole-librarian-checkout-cleanup = {
+      command = "${librarianCheckoutCleanup}/bin/mole-librarian-checkout-cleanup";
       serviceConfig = {
         RunAtLoad = false;
-        StartCalendarInterval = cfg.interval;
+        StartCalendarInterval = cfg.monthlyInterval;
       };
     };
   };
