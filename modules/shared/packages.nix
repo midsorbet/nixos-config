@@ -44,6 +44,4 @@ with pkgs; [
   wget
 
   zip
-  zmx
-  zmx-select
 ]

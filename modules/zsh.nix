@@ -12,24 +12,10 @@
     )
   );
 
-  zmxBlock = {
-    type = "prompt";
-    alignment = "left";
-    segments = [
-      {
-        type = "text";
-        style = "plain";
-        foreground = "p:mauve";
-        template = "{{ if .Env.ZMX_SESSION }} {{ .Env.ZMX_SESSION }} {{ end }}";
-      }
-    ];
-  };
-
   mkOhMyPoshConfig = palette:
     baseOhMyPoshConfig
     // {
       inherit palette;
-      blocks = [zmxBlock] ++ baseOhMyPoshConfig.blocks;
     };
 
   catppuccinFrappeConfig = pkgs.writeText "oh-my-posh-catppuccin-frappe.json" (
@@ -88,10 +74,6 @@
     [[ -d /run/current-system/sw/bin ]] && path=(/run/current-system/sw/bin $path)
     [[ -d /run/wrappers/bin ]] && path=(/run/wrappers/bin $path)
     cdpath=(${lib.concatStringsSep " " cfg.projectDirectories})
-
-    if command -v zmx >/dev/null 2>&1; then
-      eval "$(zmx completions zsh)"
-    fi
 
     ${ohMyPoshInit}
   '';

@@ -32,8 +32,6 @@
     trzsz-go = final: prev: {
       trzsz-go = final.callPackage ./trzsz-go.nix {};
     };
-
-    zmx = final: prev: import ./zmx {} final prev;
   };
 
   overlayList = [
@@ -44,7 +42,6 @@
     overlays.omp
     overlays.plannotator
     overlays.trzsz-go
-    overlays.zmx
   ];
 
   aggregateOverlay = final: prev:

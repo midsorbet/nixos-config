@@ -410,11 +410,11 @@
         "omp18": "omp18"
       },
       "locked": {
-        "lastModified": 1787445296,
-        "narHash": "sha256-D/ShMpuDJzM4UKez1L+/sjlu6J+4/UWJ9kQZqzwUbWg=",
+        "lastModified": 1787857848,
+        "narHash": "sha256-dP8REuXLTBfMCFgopaTDLEcz+qJBCSNNKQD7YSTd1Hg=",
         "ref": "refs/heads/main",
-        "rev": "58b9a9f26d2cb096899def28ee68268fbfbc29bb",
-        "revCount": 17,
+        "rev": "4b309195cbf5c284d21d09a9c68e542824c0eec9",
+        "revCount": 18,
         "type": "git",
         "url": "ssh://git@github.com/midsorbet/herdr-omp-plugins.git"
       },
@@ -899,16 +899,16 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1787395201,
-        "narHash": "sha256-Wag6/NqyEJnkbtF8bnXJ+tN8ZQ28uqSG5Ta3z9zkUA8=",
+        "lastModified": 1787851257,
+        "narHash": "sha256-dhD2CjsXP/kdk20Y8heC6ICRcJ00pdDVBtDOsEAt21U=",
         "owner": "can1357",
         "repo": "oh-my-pi",
-        "rev": "96f42809764f0907f7d6b115eab5710de28941de",
+        "rev": "caefa610239e9611e7a8920e91b38b30a58efa73",
         "type": "github"
       },
       "original": {
         "owner": "can1357",
-        "ref": "v18.0.0",
+        "ref": "v18.0.8",
         "repo": "oh-my-pi",
         "type": "github"
       }

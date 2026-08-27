@@ -4,7 +4,6 @@ with pkgs; let
 in
   shared-packages
   ++ [
-    (import ../../packages/codex.nix {inherit pkgs;})
     ghostty
     inetutils
     inotify-tools
