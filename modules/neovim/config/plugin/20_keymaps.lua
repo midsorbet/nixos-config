@@ -182,10 +182,35 @@ xmap_leader('gs', '<Cmd>lua MiniGit.show_at_cursor()<CR>', 'Show at selection')
 -- - `<Leader>ld` - show more diagnostic details in a floating window
 -- - `<Leader>lr` - perform rename via LSP
 -- - `<Leader>ls` - navigate to source definition of symbol under cursor
+-- - `<Leader>lx` - run every Scalafix rule configured for the project
+-- - `<Leader>lX` - select and run specific Scalafix rules
 --
 -- NOTE: most LSP mappings represent a more structured way of replacing built-in
 -- LSP mappings (like `:h gra` and others). This is needed because `gr` is mapped
 -- by an "replace" operator in 'mini.operators' (which is more commonly used).
+local run_metals_scalafix_command = function(command)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local metals_client = vim.lsp.get_clients({ bufnr = bufnr, name = 'metals' })[1]
+  if metals_client == nil then
+    vim.notify('Metals Scalafix unavailable: no Metals client is attached to the current buffer', vim.log.levels.WARN)
+    return
+  end
+
+  local position_params = vim.lsp.util.make_position_params(0, metals_client.offset_encoding)
+  local arguments = { position_params }
+  if command == 'metals.scalafix-run-only' then
+    arguments = { { textDocumentPositionParams = position_params } }
+  end
+
+  metals_client:request('workspace/executeCommand', {
+    command = command,
+    arguments = arguments,
+  }, nil, bufnr)
+end
+
+nmap_leader('lx', function() run_metals_scalafix_command('metals.scalafix-run') end,      'Scalafix all rules')
+nmap_leader('lX', function() run_metals_scalafix_command('metals.scalafix-run-only') end, 'Scalafix select rules')
+
 nmap_leader('la', '<Cmd>lua vim.lsp.buf.code_action()<CR>',     'Actions')
 nmap_leader('ld', '<Cmd>lua vim.diagnostic.open_float()<CR>',   'Diagnostic popup')
 nmap_leader('lf', '<Cmd>lua require("conform").format()<CR>',   'Format')

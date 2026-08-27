@@ -51,6 +51,11 @@ Config.now(function()
   vim.lsp.config('metals', {
     cmd = { 'metals' },
     filetypes = { 'scala', 'sbt' },
+    settings = {
+      metals = {
+        scalafixLintEnabled = true,
+      },
+    },
     root_markers = {
       'build.sbt',
       'build.sc',
