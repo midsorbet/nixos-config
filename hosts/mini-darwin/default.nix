@@ -354,6 +354,20 @@ in {
     "Wi-Fi"
   ];
 
+  # OMP's browser relay attaches to the existing Chrome process. Start Chrome
+  # with this switch at login so its debugger extension does not show an infobar.
+  launchd.user.agents.google-chrome-silent-debugger-extension-api = {
+    serviceConfig = {
+      ProgramArguments = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        "--silent-debugger-extension-api"
+        "--no-startup-window"
+      ];
+      RunAtLoad = true;
+      ProcessType = "Interactive";
+    };
+  };
+
   launchd.user.agents.omp-auth-broker-tunnel = {
     serviceConfig = {
       ProgramArguments = ompAuthBrokerTunnelArguments;
