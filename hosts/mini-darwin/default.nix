@@ -135,6 +135,7 @@ in {
           defaultBrowser: "Firefox",
           options: {
             checkForUpdates: false,
+            hideIcon: true,
             logRequests: false,
           },
           handlers: [
