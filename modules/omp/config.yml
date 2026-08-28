@@ -59,7 +59,6 @@ modelProviderOrder:
   - anthropic
   - zai
   - openai-codex
-  - google-antigravity
   - opencode-zen
 advisor:
   enabled: true
