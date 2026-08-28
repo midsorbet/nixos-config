@@ -8,6 +8,7 @@
 }: let
   user = "me";
   homeDir = config.hjem.users.${user}.directory;
+  googleChromeHeliumRedirect = pkgs.callPackage ../../packages/google-chrome-helium-redirect.nix {};
   baymaxLanAddress = "192.168.4.200";
   miniEthernetLanAddress = "192.168.4.194";
   miniEthernetLanIpv6Address = "fdef:bd26:b58e:1:1412:ff96:d77a:51e6";
@@ -221,7 +222,7 @@ in {
                 /(^|\.)reddit\.com$/,
                 /(^|\.)redd\.it$/,
               ]),
-              browser: "Google Chrome",
+              browser: "Helium",
             },
           ],
         };
@@ -301,6 +302,7 @@ in {
       "finicky"
       "firefox"
       "ghostty"
+      "helium-browser"
       "karabiner-elements"
       "visual-studio-code"
     ];
@@ -428,20 +430,19 @@ in {
     "Wi-Fi"
   ];
 
-  # OMP's browser relay attaches to the existing Chrome process. Start Chrome
-  # with this switch at login so its debugger extension does not show an infobar.
-  launchd.user.agents.google-chrome-silent-debugger-extension-api = {
+  # Start Helium with OMP's browser relay extension. Keep a normal startup
+  # window so Paneru observes and tiles Helium when it launches at login.
+  launchd.user.agents.helium-omp-browser-relay = {
     serviceConfig = {
       ProgramArguments = [
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        "/Applications/Helium.app/Contents/MacOS/Helium"
         "--silent-debugger-extension-api"
-        "--no-startup-window"
+        "--load-extension=${homeDir}/.omp/browser-relay/extension"
       ];
       RunAtLoad = true;
       ProcessType = "Interactive";
     };
   };
-
   launchd.user.agents.omp-auth-broker-tunnel = {
     serviceConfig = {
       ProgramArguments = ompAuthBrokerTunnelArguments;
@@ -591,6 +592,30 @@ in {
 
     activationScripts.postActivation.text = lib.mkAfter ''
       set -eu
+      google_chrome_app='/Applications/Google Chrome.app'
+      google_chrome_helium_redirect='${googleChromeHeliumRedirect}/Applications/Google Chrome.app'
+
+      if [ -L "$google_chrome_app" ]; then
+        current_redirect="$(/usr/bin/readlink "$google_chrome_app")"
+        case "$current_redirect" in
+          /nix/store/*-google-chrome-helium-redirect-*/Applications/Google\ Chrome.app)
+            if [ "$current_redirect" != "$google_chrome_helium_redirect" ]; then
+              /bin/ln -sfn "$google_chrome_helium_redirect" "$google_chrome_app"
+            fi
+            /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+              -f "$google_chrome_app"
+            ;;
+          *)
+            echo "Keeping unmanaged Google Chrome symlink during staged Helium migration: $google_chrome_app" >&2
+            ;;
+        esac
+      elif [ -e "$google_chrome_app" ]; then
+        echo "Keeping Google Chrome during staged Helium migration. Remove it and reactivate to enable the Helium redirect." >&2
+      else
+        /bin/ln -s "$google_chrome_helium_redirect" "$google_chrome_app"
+        /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+          -f "$google_chrome_app"
+      fi
 
       firefox_preferences=/Library/Preferences/org.mozilla.firefox
       /usr/bin/defaults write "$firefox_preferences" EnterprisePoliciesEnabled -bool true
