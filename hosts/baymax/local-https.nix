@@ -9,6 +9,8 @@
   actualHostname = "budget.midsorbet.me";
   histerHostname = "hister.midsorbet.me";
   atuinHostname = "atuin.midsorbet.me";
+  # Home DNS returns the LAN address. Gateway DNS returns this WARP peer address.
+  atuinWarpAddress = "100.96.0.3";
   managedNetworkCaddyfile = pkgs.writeText "home-managed-network.Caddyfile" ''
     {
       admin off
@@ -132,7 +134,7 @@ in {
     };
     virtualHosts.${atuinHostname} = {
       useACMEHost = atuinHostname;
-      listenAddresses = ["192.168.4.200"];
+      listenAddresses = ["192.168.4.200" atuinWarpAddress];
       logFormat = null;
       extraConfig = ''
         reverse_proxy 127.0.0.1:8888 {
@@ -147,6 +149,10 @@ in {
     };
   };
 
+  systemd.services.caddy = {
+    wants = ["cloudflare-warp.service"];
+    after = ["cloudflare-warp.service"];
+  };
   systemd.services.home-managed-network-beacon = {
     description = "LAN-only Cloudflare Managed Network TLS beacon";
     wantedBy = ["multi-user.target"];
@@ -181,4 +187,5 @@ in {
   };
 
   networking.firewall.interfaces.enp1s0.allowedTCPPorts = [443 9443];
+  networking.firewall.interfaces.CloudflareWARP.allowedTCPPorts = [443];
 }
