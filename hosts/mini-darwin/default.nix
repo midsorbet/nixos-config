@@ -11,6 +11,75 @@
   baymaxLanAddress = "192.168.4.200";
   miniEthernetLanAddress = "192.168.4.194";
   miniEthernetLanIpv6Address = "fdef:bd26:b58e:1:1412:ff96:d77a:51e6";
+  miniWarpDnsDriftCheck = pkgs.writeShellApplication {
+    name = "mini-warp-dns-drift-check";
+    runtimeInputs = [pkgs.bind pkgs.gawk];
+    text = ''
+      set -euo pipefail
+
+      compare_mini_warp_dns_addresses() {
+        live_warp_ipv4="$1"
+        mini_warp_dns_ipv4="$2"
+
+        if [ "$live_warp_ipv4" != "$mini_warp_dns_ipv4" ]; then
+          echo "Mini WARP DNS drift: active interface IP $live_warp_ipv4 does not match mini.warp.midsorbet.me A record $mini_warp_dns_ipv4. Update Gateway DNS rule 15db1de9-c0f1-4e7d-94e2-741938ee194b before using WARP SSH." >&2
+          return 1
+        fi
+
+        echo "Mini WARP DNS drift check passed: mini.warp.midsorbet.me resolves to $live_warp_ipv4"
+      }
+
+      if [ "''${1:-}" = "--compare" ]; then
+        if [ "$#" -ne 3 ]; then
+          echo "Mini WARP DNS drift check usage: mini-warp-dns-drift-check --compare LIVE_WARP_IPV4 DNS_IPV4" >&2
+          exit 2
+        fi
+        compare_mini_warp_dns_addresses "$2" "$3"
+        exit
+      fi
+
+      if [ "$#" -ne 0 ]; then
+        echo "Mini WARP DNS drift check usage: mini-warp-dns-drift-check [--compare LIVE_WARP_IPV4 DNS_IPV4]" >&2
+        exit 2
+      fi
+
+      attempt=0
+      live_warp_ipv4=""
+      mini_warp_dns_ipv4=""
+      while [ "$attempt" -lt 30 ]; do
+        live_warp_ipv4="$(
+          /sbin/ifconfig | awk '
+            $1 == "inet" {
+              split($2, octets, ".")
+              if (octets[1] == 100 && octets[2] >= 96 && octets[2] <= 111) {
+                print $2
+                exit
+              }
+            }
+          '
+        )"
+        mini_warp_dns_ipv4="$(
+          dig @127.0.2.2 mini.warp.midsorbet.me A +short +time=2 +tries=1 \
+            | awk '/^[0-9]+(\.[0-9]+){3}$/ { print; exit }'
+        )"
+
+        if [ -n "$live_warp_ipv4" ] && [ -n "$mini_warp_dns_ipv4" ]; then
+          compare_mini_warp_dns_addresses "$live_warp_ipv4" "$mini_warp_dns_ipv4"
+          exit
+        fi
+
+        attempt=$((attempt + 1))
+        /bin/sleep 1
+      done
+
+      if [ -z "$live_warp_ipv4" ]; then
+        echo "Mini WARP DNS drift check unavailable: no active 100.96.0.0/12 interface address appeared within 30 seconds" >&2
+      else
+        echo "Mini WARP DNS drift check unavailable: mini.warp.midsorbet.me returned no IPv4 answer through the WARP resolver within 30 seconds" >&2
+      fi
+      exit 1
+    '';
+  };
   dactylKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkcCO74k1FF3rHzIfX07QdaJXpOqyl3tUdLguL0kJzc dactyl";
   ompBrokerLocalPort = 18765;
   ompBrokerRemotePort = 8765;
@@ -315,6 +384,7 @@ in {
   environment.systemPackages =
     [
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
+      miniWarpDnsDriftCheck
       pkgs.hister
       pkgs.mdfried
       pkgs.nh
@@ -603,6 +673,13 @@ in {
 
       /usr/bin/sudo -H -u "$warp_user" -- "$warp_cli" mdm refresh
       /usr/bin/sudo -H -u "$warp_user" -- "$warp_cli" mdm set-config 'Mini service enrollment'
+
+      # Homebrew cask upgrades have twice replaced Mini's WARP registration. Check both
+      # immediately and after the observed delayed re-registration window. Report drift
+      # without aborting activation: the cask update that causes drift must still deploy.
+      ${lib.getExe miniWarpDnsDriftCheck} || true
+      /bin/sleep 15
+      ${lib.getExe miniWarpDnsDriftCheck} || true
     '';
 
     defaults = {
