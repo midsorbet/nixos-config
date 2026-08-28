@@ -34,6 +34,10 @@
       hostname = "hister.midsorbet.me";
       address = baymaxLanAddress;
     }
+    {
+      hostname = "atuin.midsorbet.me";
+      address = baymaxLanAddress;
+    }
   ];
 
   gatewayForwardAddresses =

@@ -176,6 +176,10 @@ in {
     keyFile = config.age.secrets."syncthing-mini-key".path;
     peerDeviceId = "O53AQ2K-UWUX2VE-VD5BPYR-TK66WA4-SDDHEMU-YRKJVA5-4U3ZSH6-L27BFQF";
   };
+  local.atuin = {
+    enable = true;
+    inherit user;
+  };
   local.git = {
     enable = true;
     inherit user;

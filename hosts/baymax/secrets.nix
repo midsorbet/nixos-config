@@ -15,6 +15,19 @@ in {
     group = "wheel";
   };
 
+  age.secrets."atuin-account-password" = {
+    file = "${secrets}/atuin-account-password.age";
+    mode = "400";
+    owner = user;
+    group = "users";
+  };
+  age.secrets."atuin-encryption-key" = {
+    file = "${secrets}/atuin-encryption-key.age";
+    mode = "400";
+    owner = user;
+    group = "users";
+  };
+
   age.secrets."readeck-env".file = "${secrets}/readeck.age";
   age.secrets."hister-env" = {
     file = "${secrets}/hister-env.age";

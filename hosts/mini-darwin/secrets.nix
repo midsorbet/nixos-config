@@ -6,6 +6,18 @@ in {
   ];
 
   age.secrets."user-email".file = "${secrets}/user-email.age";
+  age.secrets."atuin-account-password" = {
+    file = "${secrets}/atuin-account-password.age";
+    mode = "400";
+    owner = user;
+    group = "staff";
+  };
+  age.secrets."atuin-encryption-key" = {
+    file = "${secrets}/atuin-encryption-key.age";
+    mode = "400";
+    owner = user;
+    group = "staff";
+  };
   age.secrets."hister-env" = {
     file = "${secrets}/hister-env.age";
     mode = "400";

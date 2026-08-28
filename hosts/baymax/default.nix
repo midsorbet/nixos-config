@@ -36,6 +36,10 @@ in {
     agenix.nixosModules.default
   ];
 
+  local.atuin = {
+    enable = true;
+    inherit user;
+  };
   local.git = {
     enable = true;
     inherit user;
@@ -440,6 +444,14 @@ in {
     };
 
     postgresql.dataDir = "/persist/save/postgresql/${config.services.postgresql.package.psqlSchema}";
+
+    atuin = {
+      enable = true;
+      openRegistration = false;
+      host = "127.0.0.1";
+      port = 8888;
+      openFirewall = false;
+    };
 
     miniflux = {
       enable = true;
