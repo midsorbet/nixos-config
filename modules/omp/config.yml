@@ -59,7 +59,6 @@ modelProviderOrder:
   - anthropic
   - zai
   - openai-codex
-  - cloudflare-ai-gateway
   - google-antigravity
   - opencode-zen
 advisor:
