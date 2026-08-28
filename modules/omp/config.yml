@@ -27,6 +27,8 @@ error:
 display:
   showTokenUsage: true
   cacheMissMarker: true
+composer:
+  shape: band
 generate_image:
   enabled: true
 github:
