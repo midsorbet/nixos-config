@@ -22,11 +22,16 @@
     ${lib.getExe cfg.package} integration status
   '';
 
-  linkOmpDashboardPlugin = pkgs.writeShellApplication {
-    name = "herdr-link-omp-dashboard-plugin";
+  linkManagedPlugins = pkgs.writeShellApplication {
+    name = "herdr-link-managed-plugins";
     text = ''
       export HERDR_SOCKET_PATH=/var/empty/herdr-plugin-link.sock
-      ${lib.getExe cfg.package} plugin link ${ompDashboardPlugin}
+      ${lib.optionalString cfg.installOmpDashboardPlugin ''
+        ${lib.getExe cfg.package} plugin link ${ompDashboardPlugin}
+      ''}
+      ${lib.optionalString cfg.installAnnotatePlugin ''
+        ${lib.getExe cfg.package} plugin link ${cfg.annotatePackage}/share/herdr/plugins/annotate
+      ''}
     '';
   };
 in {
@@ -72,6 +77,38 @@ in {
           switch_tab = "prefix+1..9";
           switch_workspace = "prefix+shift+1..9";
           focus_agent = "prefix+alt+1..9";
+          command = [
+            {
+              key = "prefix+a";
+              type = "plugin_action";
+              command = "annotate.capture";
+              description = "annotate text";
+            }
+            {
+              key = "prefix+shift+a";
+              type = "plugin_action";
+              command = "annotate.copy-context";
+              description = "copy annotations as context";
+            }
+            {
+              key = "prefix+m";
+              type = "plugin_action";
+              command = "annotate.manage";
+              description = "manage annotations";
+            }
+            {
+              key = "prefix+o";
+              type = "plugin_action";
+              command = "annotate.open";
+              description = "review documents in this folder";
+            }
+            {
+              key = "prefix+shift+o";
+              type = "plugin_action";
+              command = "annotate.last";
+              description = "review the agent's last reply";
+            }
+          ];
         };
 
         theme = {
@@ -137,11 +174,31 @@ in {
       default = true;
       description = "Link the Nix-managed OMP dashboard plugin into Herdr.";
     };
+
+    annotatePackage = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.herdr-annotate;
+      description = "Nix-managed Herdr Annotate plugin and plannotator-tui package.";
+    };
+
+    installAnnotatePlugin = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Link the Nix-managed Herdr Annotate plugin into Herdr.";
+    };
+
+    installAnnotateOmpSkill = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Install the plannotator-tui review skill into the user's OMP agent directory.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     hjem.users.${cfg.user} = {
-      packages = [cfg.package integrationHelper];
+      packages =
+        [cfg.package integrationHelper]
+        ++ lib.optional (cfg.installAnnotatePlugin || cfg.installAnnotateOmpSkill) cfg.annotatePackage;
 
       xdg.config.files."herdr/config.toml" = lib.mkIf (cfg.settings != {}) {
         source = tomlFormat.generate "herdr-config.toml" cfg.settings;
@@ -162,11 +219,19 @@ in {
             clobber = true;
           };
         })
+
+        (lib.mkIf cfg.installAnnotateOmpSkill {
+          ".omp/agent/skills/plannotator-tui/SKILL.md" = {
+            type = "symlink";
+            source = "${cfg.annotatePackage}/share/agents/skills/plannotator-tui/SKILL.md";
+            clobber = true;
+          };
+        })
       ];
     };
 
-    system.activationScripts.postActivation.text = lib.mkIf cfg.installOmpDashboardPlugin (lib.mkAfter ''
-      /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe linkOmpDashboardPlugin}
+    system.activationScripts.postActivation.text = lib.mkIf (cfg.installOmpDashboardPlugin || cfg.installAnnotatePlugin) (lib.mkAfter ''
+      /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe linkManagedPlugins}
     '');
   };
 }

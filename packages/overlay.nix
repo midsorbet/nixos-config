@@ -20,6 +20,9 @@
     hister = final: prev: {
       hister = final.callPackage ./hister.nix {};
     };
+    herdr-annotate = final: prev: {
+      herdr-annotate = final.callPackage ./herdr-annotate.nix {};
+    };
 
     omp = final: prev: {
       omp = import ./omp.nix {pkgs = prev;};
@@ -39,6 +42,7 @@
     overlays.github-copilot-cli
     overlays.mdfried
     overlays.hister
+    overlays.herdr-annotate
     overlays.omp
     overlays.plannotator
     overlays.trzsz-go

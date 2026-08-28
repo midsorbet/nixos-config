@@ -79,6 +79,24 @@ local xmap_leader = function(suffix, rhs, desc)
   vim.keymap.set('x', '<Leader>' .. suffix, rhs, { desc = desc })
 end
 
+local annotate_herdr_selection = function()
+  if vim.env.HERDR_ENV ~= '1' then
+    vim.notify('Herdr Annotate requires Neovim to run inside Herdr.', vim.log.levels.ERROR)
+    return
+  end
+
+  vim.cmd('normal! "+y')
+  vim.system({ 'herdr', 'plugin', 'action', 'invoke', 'annotate.capture' }, { text = true }, function(result)
+    if result.code == 0 then return end
+    vim.schedule(function()
+      local message = vim.trim(result.stderr or '')
+      vim.notify(message ~= '' and message or 'Herdr Annotate failed.', vim.log.levels.ERROR)
+    end)
+  end)
+end
+
+xmap_leader('a', annotate_herdr_selection, 'Annotate in Herdr')
+
 -- b is for 'Buffer'. Common usage:
 -- - `<Leader>bs` - create scratch (temporary) buffer
 -- - `<Leader>ba` - navigate to the alternative buffer
