@@ -100,7 +100,6 @@ startup:
   setupWizard: false
 statusLine:
   preset: custom
-  transparent: true
   compactThinkingLevel: true
   leftSegments:
     - pi
