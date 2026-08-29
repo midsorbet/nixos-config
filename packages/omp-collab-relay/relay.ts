@@ -1157,10 +1157,12 @@ export function startRelay(
 			}
 			if (localServiceControl && url.pathname === "/api/service/stop") {
 				stoppingRequested = true;
-				if (rooms.size === 0) callbacks.onSoftShutdown?.();
-				return Response.json(serviceMetadata(), {
+				const response = Response.json(serviceMetadata(), {
 					headers: { "Cache-Control": "no-store" },
 				});
+				if (rooms.size === 0)
+					setTimeout(() => callbacks.onSoftShutdown?.(), 0);
+				return response;
 			}
 			if (req.method === "GET" && url.pathname === "/api/agents") {
 				try {

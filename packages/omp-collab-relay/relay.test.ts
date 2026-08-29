@@ -131,6 +131,29 @@ afterEach(() => {
 	relay?.stop();
 	relay = undefined;
 });
+describe("local service control", () => {
+	it("acknowledges stop before soft shutdown", async () => {
+		const stopped = Promise.withResolvers<void>();
+		relay = startRelay(
+			{ port: 0, quiet: true },
+			{
+				onSoftShutdown: () => {
+					relay?.stop();
+					stopped.resolve();
+				},
+			},
+		);
+
+		const response = await fetch(
+			`${relay.url.replace(/^ws:/, "http:")}/api/service/stop`,
+			{ method: "POST" },
+		);
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({ status: "stopping" });
+		await stopped.promise;
+		relay = undefined;
+	});
+});
 
 describe("Herdr socket dashboard", () => {
 	it("bootstraps from session.snapshot and applies native lifecycle events", async () => {
