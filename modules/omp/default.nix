@@ -576,7 +576,7 @@ in {
     settingsFile = lib.mkOption {
       type = lib.types.path;
       default = ./config.yml;
-      description = "YAML config file linked to ~/.omp/agent/config.yml.";
+      description = "YAML config file installed at ~/.omp/agent/config.yml.";
     };
 
     authBrokerUrl = lib.mkOption {
@@ -829,7 +829,9 @@ in {
           clobber = true;
         };
         ".omp/agent/config.yml" = {
+          type = "copy";
           source = managedSettingsFile;
+          permissions = "0600";
           clobber = true;
         };
         ".omp/agent/extensions/spinoff" = {
