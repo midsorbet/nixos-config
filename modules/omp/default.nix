@@ -879,6 +879,11 @@ in {
           source = ./skills/meal-prep-runbook/SKILL.md;
           clobber = true;
         };
+        ".omp/agent/skills/walmart-sparky/SKILL.md" = {
+          type = "symlink";
+          source = ./skills/walmart-sparky/SKILL.md;
+          clobber = true;
+        };
         ".omp/agent/extensions/remote-collab.ts" = lib.mkIf cfg.collab.enable {
           source = "${collabExtension}/remote-collab.ts";
           clobber = true;
