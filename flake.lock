@@ -410,11 +410,11 @@
         "omp18": "omp18"
       },
       "locked": {
-        "lastModified": 1787947410,
-        "narHash": "sha256-fcC+m1WtXih4R5TaQx+mwk/rVXeQMvRsLwVhsplC33I=",
+        "lastModified": 1787966743,
+        "narHash": "sha256-MOp31YxC5yWNBlqmBeEXmDHXLtseR4yIMZRv5Z2ZKSQ=",
         "ref": "refs/heads/main",
-        "rev": "28df1930fffcd8d035d07f9ea2fbaaf634e4d85a",
-        "revCount": 20,
+        "rev": "0f2bc1dd37fb8bc7c54b8a959f38aa94b95bb207",
+        "revCount": 21,
         "type": "git",
         "url": "ssh://git@github.com/midsorbet/herdr-omp-plugins.git"
       },
