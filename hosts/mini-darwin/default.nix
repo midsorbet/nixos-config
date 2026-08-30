@@ -592,6 +592,16 @@ in {
 
     activationScripts.postActivation.text = lib.mkAfter ''
       set -eu
+
+      for ssh_firewall_app in \
+        /usr/libexec/sshd-keygen-wrapper \
+        /usr/sbin/sshd \
+        /usr/libexec/sshd-auth \
+        /usr/libexec/sshd-session; do
+        /usr/libexec/ApplicationFirewall/socketfilterfw --remove "$ssh_firewall_app" >/dev/null 2>&1 || true
+        /usr/libexec/ApplicationFirewall/socketfilterfw --add "$ssh_firewall_app"
+        /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$ssh_firewall_app"
+      done
       google_chrome_app='/Applications/Google Chrome.app'
       google_chrome_helium_redirect='${googleChromeHeliumRedirect}/Applications/Google Chrome.app'
 

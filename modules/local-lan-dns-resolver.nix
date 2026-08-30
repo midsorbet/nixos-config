@@ -6,11 +6,15 @@
 }: let
   cfg = config.local.lanDnsResolver;
 
+  darwinLocalResolverAddress = "127.0.0.1";
   baymaxLanAddress = "192.168.4.200";
   homeLanNetworks = [
     "192.168.4.0/24"
     "fdef:bd26:b58e:1::/64"
   ];
+  trustedDnsNetworks =
+    lib.optionals (platform == "darwin") ["127.0.0.0/8"]
+    ++ homeLanNetworks;
   gatewayDotHostname = "z9mpdffx5x.cloudflare-gateway.com";
   gatewayDotAddresses = [
     "162.159.36.5"
@@ -48,10 +52,12 @@
 
   sharedUnboundSettings = {
     server = {
-      interface = cfg.listenAddresses;
+      interface =
+        lib.optionals (platform == "darwin") [darwinLocalResolverAddress]
+        ++ cfg.listenAddresses;
       port = 53;
       access-control =
-        (map (network: "${network} allow") homeLanNetworks)
+        (map (network: "${network} allow") trustedDnsNetworks)
         ++ [
           "0.0.0.0/0 refuse"
           "::0/0 refuse"
@@ -197,7 +203,7 @@ in {
           resolverTmp="$(/usr/bin/mktemp "$resolverDirectory/.midsorbet.me.XXXXXX")"
           trap '/bin/rm -f "$resolverTmp"' EXIT
           /bin/cat >"$resolverTmp" <<EOF
-          nameserver ${lib.head cfg.listenAddresses}
+          nameserver ${darwinLocalResolverAddress}
           port 53
           EOF
           /usr/sbin/chown root:wheel "$resolverTmp"
