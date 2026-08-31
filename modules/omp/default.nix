@@ -26,10 +26,14 @@
   runtimePath =
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
   cxporterPackage = pkgs.callPackage ../../packages/cxporter.nix {};
+  rootshellNotifyPackage = pkgs.callPackage ../../packages/rootshell-notify.nix {};
   skyComputerUsePackage = mkSkyComputerUsePackage {};
   histerExtension = pkgs.replaceVars ./extensions/hister.ts {
     HISTER_BASE_URL = cfg.hister.baseUrl;
     HISTER_ENV_FILE = toString cfg.hister.environmentFile;
+  };
+  rootshellPushExtension = pkgs.replaceVars ./extensions/rootshell-push.ts {
+    ROOTSHELL_NOTIFY_EXECUTABLE = lib.getExe rootshellNotifyPackage;
   };
   histerSkill = pkgs.writeTextDir "share/agents/skills/hister/SKILL.md" (
     builtins.readFile ./skills/hister/SKILL.md
@@ -813,6 +817,7 @@ in {
     environment.systemPackages = [
       wrappedPackage
       cxporterPackage
+      rootshellNotifyPackage
     ];
 
     hjem.users.${cfg.user} = {
@@ -857,6 +862,11 @@ in {
         ".omp/agent/extensions/hister.ts" = lib.mkIf cfg.hister.enable {
           type = "symlink";
           source = histerExtension;
+          clobber = true;
+        };
+        ".omp/agent/extensions/rootshell-push.ts" = {
+          type = "symlink";
+          source = rootshellPushExtension;
           clobber = true;
         };
         ".omp/agent/skills/hister/SKILL.md" = lib.mkIf cfg.hister.enable {
