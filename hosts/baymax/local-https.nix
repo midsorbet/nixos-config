@@ -152,6 +152,13 @@ in {
   systemd.services.caddy = {
     wants = ["cloudflare-warp.service"];
     after = ["cloudflare-warp.service"];
+    serviceConfig.ExecStartPre = pkgs.writeShellScript "require-cloudflare-warp-address" ''
+      if ! ${lib.getExe' pkgs.iproute2 "ip"} -brief address show dev CloudflareWARP \
+        | ${lib.getExe pkgs.gnugrep} --quiet --fixed-strings "${atuinWarpAddress}/32"; then
+        echo "Cloudflare WARP address ${atuinWarpAddress} is not ready" >&2
+        exit 75
+      fi
+    '';
   };
   systemd.services.home-managed-network-beacon = {
     description = "LAN-only Cloudflare Managed Network TLS beacon";
