@@ -884,26 +884,7 @@ in {
           source = "${histerSkill}/share/agents/skills/hister/SKILL.md";
           clobber = true;
         };
-        ".omp/agent/skills/android-app-automation/SKILL.md" = {
-          type = "symlink";
-          source = ./skills/android-app-automation/SKILL.md;
-          clobber = true;
-        };
-        ".omp/agent/skills/macrofactor-cookwell/SKILL.md" = {
-          type = "symlink";
-          source = ./skills/macrofactor-cookwell/SKILL.md;
-          clobber = true;
-        };
-        ".omp/agent/skills/meal-prep-runbook/SKILL.md" = {
-          type = "symlink";
-          source = ./skills/meal-prep-runbook/SKILL.md;
-          clobber = true;
-        };
-        ".omp/agent/skills/walmart-sparky/SKILL.md" = {
-          type = "symlink";
-          source = ./skills/walmart-sparky/SKILL.md;
-          clobber = true;
-        };
+
         ".omp/agent/extensions/remote-collab.ts" = lib.mkIf cfg.collab.enable {
           source = "${collabExtension}/remote-collab.ts";
           clobber = true;
