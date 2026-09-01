@@ -39,8 +39,9 @@ These commands create isolated UTC-stamped run directories with parser-clean JSO
 1. Set `ANDROID_DEVICE_SERIAL` explicitly from the current transport.
 2. Run `nix shell nixpkgs#android-tools -c adb -s "$ANDROID_DEVICE_SERIAL" get-state`.
 3. Continue only when that exact transport reports `device`.
-4. If Android requires secure unlock, RSA authorization, or Wireless Debugging pairing, stop for the user.
-5. Run Appium only on `127.0.0.1:4723`.
+4. The dedicated Galaxy S20 has a nonsecure swipe-only lock. Let Kitchen Flow's Appium session wake the phone and dismiss that lock.
+5. If Android instead requires a secure credential, RSA authorization, or Wireless Debugging pairing, stop for the user.
+6. Run Appium only on `127.0.0.1:4723`.
 
 ## Routing rule
 
@@ -117,7 +118,7 @@ For a write workflow, prepare the full payload first. Perform the mutation once.
 Ask the user only when Android requires a human-only gate, such as:
 
 - RSA authorization;
-- device unlock or secure lock-screen input;
+- secure lock-screen input, or a nonsecure swipe-only lock that Appium cannot dismiss;
 - Cook Well email verification;
 - MacroFactor password or account recovery;
 - a permission or Health Connect consent screen that needs user review;
