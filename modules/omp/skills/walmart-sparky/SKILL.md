@@ -9,10 +9,11 @@ Use this skill for Walmart shopping workflows that are best handled through the 
 
 ## App route
 
-- Device serial: `RFCN80KARNX`.
+- Device transport: the exact current value of `ANDROID_DEVICE_SERIAL`; native Wireless Debugging ports can change after reboot.
 - Package: `com.walmart.android`.
 - Launch activity: `com.walmart.glass.integration.splash.SplashActivity`.
 - Foreground activity after launch: `com.walmart.glass.integration.root.RootActivity`.
+- Use Kitchen Flow's `android:readiness:walmart` command and versioned manifests for stable navigation and assertions. Use raw ADB only for selector discovery, recovery, or an unmodeled screen, then migrate repeated behavior into a manifest.
 - Main bottom navigation exposes `Shop`, `Sparky`, `Services`, and `Account`.
 - Open Sparky through the bottom navigation node with content description `Sparky` and resource ID `com.walmart.android:id/navigation_tab_3`.
 - Confirm the `Ask Sparky` toolbar before reading or acting.

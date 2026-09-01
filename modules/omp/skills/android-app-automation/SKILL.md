@@ -1,52 +1,67 @@
 ---
 name: android-app-automation
-description: "Control the dedicated connected Galaxy S20 through ADB for stable, verified Cook Well, MacroFactor, and other visible Android app workflows."
+description: "Run deterministic Kitchen Flow Appium workflows on the dedicated Galaxy S20, with raw ADB reserved for exploration and recovery."
 ---
 
 # Android App Automation
 
 Use this skill for visible app workflows on the dedicated Galaxy S20 automation phone.
 
-## Device and host command
+## Canonical deterministic runner
 
-- Target serial: `RFCN80KARNX`.
+- Project: `/Users/me/vault/projects/kitchen-flow`.
 - Device: Samsung Galaxy S20 `SM-G981U1`, Android 13.
-- Always select the serial explicitly. Never act on the first device in an unscoped list.
-- The host does not have a permanent `adb` command. Use:
+- The active transport comes from `ANDROID_DEVICE_SERIAL`. Always scope Appium and ADB to that exact value.
+- Native Wireless Debugging uses an IP and dynamic port. The port can change after every reboot. Read the current `IP address & Port` from the main Wireless debugging screen instead of reusing an old endpoint.
+- USB fallback serial: `RFCN80KARNX`. Do not assume it is connected.
+
+Start the localhost-only Appium server in one terminal:
 
 ```sh
-nix shell nixpkgs#android-tools -c adb -s RFCN80KARNX <command>
+cd /Users/me/vault/projects/kitchen-flow
+nix develop -c npm run android:server
 ```
+
+Set the current device endpoint and run a named readiness workflow in another terminal:
+
+```sh
+cd /Users/me/vault/projects/kitchen-flow
+export ANDROID_DEVICE_SERIAL="<current adb serial or wireless IP:port>"
+nix develop -c npm run android:readiness:cookwell
+nix develop -c npm run android:readiness:macrofactor
+nix develop -c npm run android:readiness:walmart
+```
+
+These commands create isolated UTC-stamped run directories with parser-clean JSONL evidence and failure artifacts. For a write workflow, use a reviewed versioned manifest and the SHA-256 approval procedure in `docs/android-automation-operator.md`. Never bypass the mutation digest gate.
 
 ## Preconditions
 
-1. Run `nix shell nixpkgs#android-tools -c adb devices -l`.
-2. Continue only when `RFCN80KARNX` has state `device`.
-3. If the state is `unauthorized`, ask the user to unlock the phone and approve the RSA prompt. Retry after approval.
-4. Keep the phone connected by USB for unattended work. The configured stay-awake setting applies while it is plugged in.
+1. Set `ANDROID_DEVICE_SERIAL` explicitly from the current transport.
+2. Run `nix shell nixpkgs#android-tools -c adb -s "$ANDROID_DEVICE_SERIAL" get-state`.
+3. Continue only when that exact transport reports `device`.
+4. If Android requires secure unlock, RSA authorization, or Wireless Debugging pairing, stop for the user.
+5. Run Appium only on `127.0.0.1:4723`.
 
-## Control loop
+## Routing rule
+
+Use an existing Kitchen Flow manifest whenever it covers the task. Add a reviewed manifest for stable repeated navigation, assertions, extraction, recipe creation, logging, or cart staging. Use raw ADB only to explore an unmodeled screen, recover transport, or collect selectors for a new manifest. After exploration, encode repeated behavior in Kitchen Flow instead of preserving an ad-hoc coordinate script.
+
+## Raw ADB exploratory fallback
+
+The host does not have a permanent `adb` command. Scope every fallback command explicitly:
+
+```sh
+nix shell nixpkgs#android-tools -c adb -s "$ANDROID_DEVICE_SERIAL" <command>
+```
 
 1. Launch the exact activity with `am start -W -n PACKAGE/ACTIVITY`.
 2. Check `mCurrentFocus` and `mFocusedApp` before reading or acting.
 3. Dump the current hierarchy with `uiautomator dump /sdcard/omp-window.xml`.
-4. Pull or inspect that hierarchy. Prefer selectors in this order:
-   - exact `content-desc`;
-   - exact visible `text`;
-   - stable `resource-id`;
-   - class plus a verified parent label;
-   - fresh bounds from the current hierarchy.
-5. Capture a screenshot when the hierarchy is ambiguous or a control is unlabeled.
-6. Tap the center of the fresh bounds. Use `input swipe` for scrolling and `input keyevent BACK` for safe exits.
-7. Dump the hierarchy again and verify the expected state before the next action.
+4. Prefer exact `content-desc`, exact text, stable resource ID, verified parent context, then fresh bounds.
+5. Capture a screenshot only when the hierarchy is ambiguous or a control is unlabeled.
+6. Tap only fresh verified bounds. Re-dump and verify the expected state before the next action.
 
-Never run two `uiautomator dump` processes concurrently. Concurrent dumps can kill one another or return incomplete output. Sequential dumps were stable in the initial device probe.
-
-Do not reuse coordinates after a screen transition, density change, rotation change, keyboard transition, or app relaunch. Re-read the hierarchy first.
-
-For text input, focus the verified `EditText`, use `input text`, and read the field back. Encode a space as `%s`. Treat visible text as uncommitted until the app recalculates or shows the expected result.
-
-Use `am start`, not `monkey`, for normal launches. `monkey` can generate an unintended event after launch.
+Never run two `uiautomator dump` processes concurrently. Do not reuse coordinates after a screen transition, density change, rotation change, keyboard transition, or app relaunch. For text input, read the field back and verify the app recalculates. Use `am start`, not `monkey`, for normal launches.
 
 ## Intentional device baseline
 

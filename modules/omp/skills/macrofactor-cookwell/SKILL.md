@@ -27,11 +27,11 @@ When improving this skill rather than executing a time-sensitive weekly plan, it
 
 ## Android App Route
 
-Use the Android route as the primary live app surface when serial `RFCN80KARNX` is connected and authorized.
+Use the Android route as the primary live app surface when `ANDROID_DEVICE_SERIAL` names the current authorized Galaxy transport. Follow `skill://android-app-automation`: prefer Kitchen Flow Appium manifests for stable readiness, recipe creation, verification, and logging; use raw ADB only to explore an unmodeled screen or recover transport.
 
 - Cook Well: launch `com.cookwell.app/.MainActivity`. Open `Explore`, select the horizontal `Meal Plans` tab, and open the current meal-plan card. On Android, the current mutation controls are labeled `Add Groceries` and `Add to Planner` rather than `Add Plan to Week`.
 - MacroFactor: launch `com.sbs.diet/.MainActivityAlias`. The bottom navigation and central `Shortcuts` flow match the state machine below. The recipe Library exposes recipe names, calories, macros, serving units, and serving weights through Android semantics.
-- Prefer fresh `content-desc` or text selectors from a serialized `uiautomator` dump. Do not reuse coordinates across screen transitions.
+- Prefer Kitchen Flow's versioned manifests and stable accessibility/resource-ID selectors. When exploration is necessary, use a serialized `uiautomator` dump to discover selectors, then migrate repeated behavior into a reviewed manifest. Never reuse coordinates across screen transitions.
 - Cook Well recipe and plan pages expose enough semantic text to capture rationale, daily rows, ingredients, quantities, instructions, FAQ content, and tags.
 - MacroFactor read-only rows have strong semantics. MacroFactor recipe-form fields are less stable because the `EditText` nodes can be unlabeled. Verify each field by its fresh parent context, order, bounds, visible value, and recalculated totals.
 - Treat `Add Groceries`, `Add to Planner`, row plus buttons, `Log Foods`, recipe save/edit, and integration changes as explicit mutation gates.
