@@ -40,8 +40,10 @@ These commands create isolated UTC-stamped run directories with parser-clean JSO
 2. Run `nix shell nixpkgs#android-tools -c adb -s "$ANDROID_DEVICE_SERIAL" get-state`.
 3. Continue only when that exact transport reports `device`.
 4. The dedicated Galaxy S20 has a nonsecure swipe-only lock. Let Kitchen Flow's Appium session wake the phone and dismiss that lock.
-5. If Android instead requires a secure credential, RSA authorization, or Wireless Debugging pairing, stop for the user.
-6. Run Appium only on `127.0.0.1:4723`.
+5. Continue only after the JSONL evidence contains a `device-unlock` event with `status: "succeeded"`.
+6. A `device-unlock` failure or `DeviceUnlockError` means that the lock remains active or its state cannot be confirmed. Stop for the user; never continue to workflow steps.
+7. If Android instead requires a secure credential, RSA authorization, or Wireless Debugging pairing, stop for the user.
+8. Run Appium only on `127.0.0.1:4723`.
 
 ## Routing rule
 
