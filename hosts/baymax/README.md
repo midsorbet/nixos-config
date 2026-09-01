@@ -226,6 +226,8 @@ curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://paperless.mids
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://ntfy.midsorbet.me/
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://photos.midsorbet.me/
 curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://budget.midsorbet.me/
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://hister.midsorbet.me/
+curl -sS -o /dev/null -w '%{http_code} %{redirect_url}\n' https://atuin.midsorbet.me/
 ```
 
 If macOS still reports stale DNS after the Cloudflare routes were restored:
