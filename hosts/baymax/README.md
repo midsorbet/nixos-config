@@ -142,6 +142,8 @@ Useful symptoms:
 - `302` to `midsorbet.cloudflareaccess.com` means the hostname is still matched by Access.
 - `403` from Cloudflare on a gated hostname usually means the request did not satisfy the Access policy.
 - `NXDOMAIN` means the published route or DNS record is missing, not that Baymax itself is down.
+- `ERR_CONNECTION_REFUSED` for `readeck`, `photos`, `budget`, `hister`, or `atuin` on the home LAN means split-horizon DNS reached `192.168.4.200`, but Caddy is not listening. Check `systemctl status caddy` and the port 443 listeners on Baymax before investigating Cloudflare.
+- A Caddy boot failure that mentions `100.96.0.3:443` means the WARP address was not ready. The managed Caddy pre-start gate must wait for that address before Caddy binds its listeners.
 
 ## Actual Budget
 
@@ -209,7 +211,7 @@ Check Baymax-side service health:
 
 ```zsh
 ssh me@192.168.4.200 'systemctl --failed --no-pager'
-ssh me@192.168.4.200 'systemctl is-active cloudflared-tunnel-baymax-apps cloudflare-warp avahi-daemon'
+ssh me@192.168.4.200 'systemctl is-active caddy cloudflared-tunnel-baymax-apps cloudflare-warp avahi-daemon'
 ssh me@192.168.4.200 'getent hosts mini-me.local'
 ssh me@192.168.4.200 'systemctl is-active actual immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
 ```

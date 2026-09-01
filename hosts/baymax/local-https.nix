@@ -153,11 +153,16 @@ in {
     wants = ["cloudflare-warp.service"];
     after = ["cloudflare-warp.service"];
     serviceConfig.ExecStartPre = pkgs.writeShellScript "require-cloudflare-warp-address" ''
-      if ! ${lib.getExe' pkgs.iproute2 "ip"} -brief address show dev CloudflareWARP \
-        | ${lib.getExe pkgs.gnugrep} --quiet --fixed-strings "${atuinWarpAddress}/32"; then
-        echo "Cloudflare WARP address ${atuinWarpAddress} is not ready" >&2
-        exit 75
-      fi
+      attempts=0
+      until ${lib.getExe' pkgs.iproute2 "ip"} -brief address show dev CloudflareWARP 2>/dev/null \
+        | ${lib.getExe pkgs.gnugrep} --quiet --fixed-strings "${atuinWarpAddress}/32"; do
+        attempts=$((attempts + 1))
+        if ((attempts >= 60)); then
+          echo "Cloudflare WARP address ${atuinWarpAddress} was not ready within 60 seconds" >&2
+          exit 75
+        fi
+        ${lib.getExe' pkgs.coreutils "sleep"} 1
+      done
     '';
   };
   systemd.services.home-managed-network-beacon = {
