@@ -351,6 +351,16 @@
     name = "omp-collab-schedule-start";
     text = ''
       set -euo pipefail
+      weekday="$(/bin/date +%u)"
+      weekdays=" ${scheduleWeekdays} "
+      now="$(/bin/date +%H:%M)"
+      case "$weekdays" in
+        *" $weekday "*) ;;
+        *) exit 0 ;;
+      esac
+      if [[ "$now" < ${lib.escapeShellArg cfg.collab.schedule.start} ]] || [[ ! "$now" < ${lib.escapeShellArg cfg.collab.schedule.stop} ]]; then
+        exit 0
+      fi
       exec ${lib.getExe collabStart}
     '';
   };
@@ -925,7 +935,7 @@ in {
     launchd.user.agents.omp-collab-schedule-start = lib.mkIf cfg.collab.enable {
       command = lib.getExe collabScheduleStart;
       serviceConfig = {
-        RunAtLoad = false;
+        RunAtLoad = true;
         StartCalendarInterval = scheduleStartIntervals;
         ProcessType = "Background";
       };
