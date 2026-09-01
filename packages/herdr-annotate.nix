@@ -8,14 +8,14 @@
   stdenv,
 }: let
   version = "0.3.0";
-  revision = "ed8593f639778644c64251979b3ecc165c0f8127";
-  plannotatorTuiVersion = "0.3.0";
+  revision = "bccf884b874f5f39ccbef1bb6ac67625c5fb5d54";
+  plannotatorTuiVersion = "0.6.0";
   plannotatorTuiBinary =
     if stdenv.hostPlatform.system == "aarch64-darwin"
     then
       fetchurl {
         url = "https://github.com/plannotator/plannotator-tui/releases/download/v${plannotatorTuiVersion}/plannotator-tui-aarch64-apple-darwin";
-        hash = "sha256-4NdTnLv9I1RERCwj53FqHgmkq1lkxUe5uS6qoVTukPg=";
+        hash = "sha256-CW0MWr2oYsFzrHN5xgb4kJdo9DRYMzrHBr1u3gQkyLc=";
       }
     else throw "herdr-annotate is not packaged for ${stdenv.hostPlatform.system}";
 in
@@ -27,7 +27,7 @@ in
       owner = "plannotator";
       repo = "herdr-annotate";
       rev = revision;
-      hash = "sha256-LKbaH7bCrA1N2qoh+Duc+wyl4m33VA7ekahU+Cq5kR8=";
+      hash = "sha256-h3ibUCd2uLtQENU0IRNJzefZH2pnK13mzCoHmGc1EeU=";
     };
 
     nativeBuildInputs = [makeWrapper];
@@ -45,7 +45,8 @@ in
 
       ' "" \
             --replace-fail 'command = ["bun",' 'command = ["${lib.getExe bun}",' \
-            --replace-fail 'command = ["bash",' 'command = ["${lib.getExe bash}",'
+            --replace-fail 'command = ["sh",' 'command = ["${lib.getExe bash}",' \
+            --replace-fail 'exec bash \"' 'exec ${lib.getExe bash} \"'
     '';
 
     installPhase = ''
@@ -63,7 +64,8 @@ in
         --run 'if [ "''${PLANNOTATOR_TUI_HOST:-}" = omp ]; then export PLANNOTATOR_TUI_HOST=pi; export PI_CODING_AGENT_DIR="$HOME/.omp/agent"; fi'
 
       rm -f "$pluginRoot/bin/.gitkeep"
-      ln -s "$out/bin/plannotator-tui" "$pluginRoot/bin/plannotator-tui"
+      ln -s "$out/bin/plannotator-tui" "$pluginRoot/bin/plannotator-tui.exe"
+      printf '%s' "${plannotatorTuiVersion}" > "$pluginRoot/bin/plannotator-tui.version"
       mkdir -p "$out/share/agents/skills"
       ln -s "$pluginRoot/skills/plannotator-tui" \
         "$out/share/agents/skills/plannotator-tui"

@@ -1,14 +1,14 @@
 {pkgs}: let
-  version = "1.0.81";
+  version = "1.0.82";
   releaseBaseUrl = "https://github.com/github/copilot-cli/releases/download/v${version}";
   tarballs = {
     "aarch64-linux" = {
       name = "copilot-linux-arm64";
-      hash = "sha256-8OYh5nk7FOBMD2Uc1G2Bilvwv1TXTJVmyUJHRLQaJ5w=";
+      hash = "sha256-hsTHepGx/13XMTy+qfhhaZos3OtGlvOGTz8FhOloTg8=";
     };
     "x86_64-linux" = {
       name = "copilot-linux-x64";
-      hash = "sha256-MILEonqmg971Lkg5fAJgbcf4Jn3O8ck5SfP1jeSlzeM=";
+      hash = "sha256-N/pnaGqeTtjUbc1qnICrUk3qhA7KoKP37fjQn5Ybl6k=";
     };
   };
   tarball =
