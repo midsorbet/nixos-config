@@ -6,6 +6,9 @@ import {
 	type HerdrSubscription,
 	type HerdrTransport,
 	createHerdrDashboard,
+	forwardFrame,
+	pumpOutbox,
+	SOCKET_SEND_HIGH_WATER_BYTES,
 	startRelay,
 } from "./relay";
 
@@ -261,5 +264,71 @@ describe("Herdr-driven collab activation", () => {
 		});
 		expect(prompts).toBe(1);
 		host.close();
+	});
+});
+
+function fakeGuestSocket() {
+	const sent: Buffer[] = [];
+	const state = { buffered: 0 };
+	const fake = {
+		data: { outbox: [] as Buffer[] },
+		getBufferedAmount: () => state.buffered,
+		send(message: Buffer): number {
+			state.buffered += message.byteLength;
+			sent.push(Buffer.from(message));
+			return message.byteLength;
+		},
+	};
+	const socket = fake as unknown as Parameters<typeof forwardFrame>[0];
+	return {
+		socket,
+		outbox: fake.data.outbox,
+		sent,
+		drain(bytes: number): void {
+			state.buffered = Math.max(0, state.buffered - bytes);
+			pumpOutbox(socket);
+		},
+	};
+}
+
+describe("backpressure-aware forwarding", () => {
+	const FRAME = 1024 * 1024;
+
+	it("queues frames past the high-water mark instead of dropping them", () => {
+		const guest = fakeGuestSocket();
+		const frames = Array.from({ length: 20 }, (_, i) =>
+			Buffer.alloc(FRAME, i % 251),
+		);
+		for (const frame of frames) forwardFrame(guest.socket, frame);
+		// Backpressure must engage well before the whole burst is accepted, and
+		// every frame is still accounted for — none silently dropped.
+		expect(guest.outbox.length).toBeGreaterThan(0);
+		expect(guest.sent.length + guest.outbox.length).toBe(frames.length);
+		// Draining the socket flushes the remainder from drain()/pumpOutbox.
+		let guard = 0;
+		while (guest.outbox.length > 0 && guard++ < frames.length + 5)
+			guest.drain(SOCKET_SEND_HIGH_WATER_BYTES);
+		expect(guest.outbox.length).toBe(0);
+		expect(guest.sent.length).toBe(frames.length);
+		for (let i = 0; i < frames.length; i++)
+			expect(guest.sent[i]!.equals(frames[i]!)).toBe(true);
+	});
+
+	it("copies queued frames so handler-buffer reuse cannot corrupt them", () => {
+		const guest = fakeGuestSocket();
+		for (let i = 0; i < 9; i++)
+			forwardFrame(guest.socket, Buffer.alloc(FRAME, 1));
+		expect(guest.outbox.length).toBeGreaterThan(0);
+		// Bun reuses the message handler's backing buffer for the next frame; the
+		// relay must copy anything it defers, so mutating the source after the
+		// call must not change what eventually gets delivered.
+		const reused = Buffer.alloc(FRAME, 7);
+		forwardFrame(guest.socket, reused);
+		reused.fill(0);
+		let guard = 0;
+		while (guest.outbox.length > 0 && guard++ < 20)
+			guest.drain(SOCKET_SEND_HIGH_WATER_BYTES);
+		const delivered = guest.sent[guest.sent.length - 1]!;
+		expect(delivered.every((byte) => byte === 7)).toBe(true);
 	});
 });

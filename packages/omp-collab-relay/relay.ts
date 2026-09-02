@@ -37,6 +37,17 @@ function renderedCollabLinkCandidates(text: string): string[] {
 	return candidates;
 }
 const PROTOCOL_MAX_FRAME_BYTES = 16 * 1024 * 1024;
+/**
+ * Bun stops buffering and silently drops WebSocket sends once a socket's
+ * buffered amount exceeds its backpressure limit (closeOnBackpressureLimit is
+ * false by default). A large session snapshot forwarded to a slow guest socket
+ * would otherwise lose its tail — including the final frame the guest blocks
+ * on — so the relay gates its own sends against this high-water mark and
+ * resumes from the drain() handler. See forwardFrame()/pumpOutbox()/drain().
+ */
+export const SOCKET_SEND_HIGH_WATER_BYTES = 8 * 1024 * 1024;
+const SOCKET_BACKPRESSURE_LIMIT_BYTES =
+	SOCKET_SEND_HIGH_WATER_BYTES + PROTOCOL_MAX_FRAME_BYTES;
 const LOADING_HTML = `<!doctype html><meta charset="utf-8"><title>Opening OMP agent</title><p>Opening agent…</p><script>fetch(location.pathname.replace(/^\\/open\\//,'/api/agents/')+'/activate',{method:'POST',headers:{'X-Requested-With':'omp-dashboard'}}).then(async r=>{if(!r.ok)throw new Error(await r.text());return r.json()}).then(x=>location.replace(x.link)).catch(e=>{document.body.innerHTML='<p>Unable to open agent: '+String(e.message||e)+'</p><button onclick="location.reload()">Retry</button>'})</script>`;
 
 export type AgentStatus = "working" | "idle" | "blocked";
@@ -686,6 +697,7 @@ interface SocketData {
 	peerId: number;
 	connectionLifetimeSecs: number;
 	expiryTimer?: Timer;
+	outbox: Buffer[];
 }
 
 type RelaySocket = Bun.ServerWebSocket<SocketData>;
@@ -696,6 +708,37 @@ interface Room {
 	nextPeerId: number;
 	openedAtMs: number;
 	lastActivityMs: number;
+}
+
+/**
+ * Sends queued frames until the socket reaches its high-water mark, leaving the
+ * rest for the next drain() callback. Outbox frames are private copies, so they
+ * stay valid across ticks even though Bun reuses the message handler buffer.
+ */
+export function pumpOutbox(ws: RelaySocket): void {
+	const outbox = ws.data.outbox;
+	while (outbox.length > 0) {
+		if (ws.getBufferedAmount() >= SOCKET_SEND_HIGH_WATER_BYTES) return;
+		if (ws.send(outbox[0]!) === 0) return;
+		outbox.shift();
+	}
+}
+
+/**
+ * Forwards one binary frame with backpressure awareness. It sends immediately
+ * when the socket is drained and nothing is queued; otherwise it copies the
+ * transient handler buffer into the outbox for pumpOutbox()/drain() to flush,
+ * so a burst larger than the socket buffer is never silently truncated.
+ */
+export function forwardFrame(ws: RelaySocket, message: Buffer): void {
+	if (
+		ws.data.outbox.length === 0 &&
+		ws.getBufferedAmount() < SOCKET_SEND_HIGH_WATER_BYTES &&
+		ws.send(message) !== 0
+	)
+		return;
+	ws.data.outbox.push(Buffer.from(message));
+	pumpOutbox(ws);
 }
 
 export interface CollabRelay {
@@ -1236,12 +1279,15 @@ export function startRelay(
 				role,
 				peerId: 0,
 				connectionLifetimeSecs,
+				outbox: [],
 			};
 			if (srv.upgrade(req, { data })) return undefined;
 			return new Response("websocket upgrade required", { status: 426 });
 		},
 		websocket: {
 			maxPayloadLength: PROTOCOL_MAX_FRAME_BYTES,
+			backpressureLimit: SOCKET_BACKPRESSURE_LIMIT_BYTES,
+			closeOnBackpressureLimit: false,
 			open(ws: RelaySocket): void {
 				openSockets++;
 				const { roomId, role } = ws.data;
@@ -1325,19 +1371,22 @@ export function startRelay(
 					noteActivity(room);
 					const peerId = message.readUInt32BE(0);
 					if (peerId === 0) {
-						for (const guest of room.guests.values()) guest.send(message);
+						for (const guest of room.guests.values())
+							forwardFrame(guest, message);
 					} else {
-						room.guests.get(peerId)?.send(message);
+						const guest = room.guests.get(peerId);
+						if (guest) forwardFrame(guest, message);
 					}
 					return;
 				}
 				if (room.guests.get(ws.data.peerId) !== ws) return;
 				noteActivity(room);
 				message.writeUInt32BE(ws.data.peerId, 0);
-				room.host.send(message);
+				forwardFrame(room.host, message);
 			},
 			close(ws: RelaySocket): void {
 				clearTimeout(ws.data.expiryTimer);
+				ws.data.outbox.length = 0;
 				openSockets = Math.max(0, openSockets - 1);
 				const { roomId, role, peerId } = ws.data;
 				const room = rooms.get(roomId);
@@ -1373,6 +1422,9 @@ export function startRelay(
 						`guest ${peerId} left room ${roomTag(roomId)} (guests=${room.guests.size}, sockets=${openSockets})`,
 					);
 				}
+			},
+			drain(ws: RelaySocket): void {
+				pumpOutbox(ws);
 			},
 		},
 	});
