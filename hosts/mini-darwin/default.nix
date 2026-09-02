@@ -8,7 +8,6 @@
 }: let
   user = "me";
   homeDir = config.hjem.users.${user}.directory;
-  googleChromeHeliumRedirect = pkgs.callPackage ../../packages/google-chrome-helium-redirect.nix {};
   baymaxLanAddress = "192.168.4.200";
   miniEthernetLanAddress = "192.168.4.194";
   miniEthernetLanIpv6Address = "fdef:bd26:b58e:1:1412:ff96:d77a:51e6";
@@ -436,7 +435,6 @@ in {
     serviceConfig = {
       ProgramArguments = [
         "/Applications/Helium.app/Contents/MacOS/Helium"
-        "--silent-debugger-extension-api"
         "--load-extension=${homeDir}/.omp/browser-relay/extension"
       ];
       RunAtLoad = true;
@@ -602,31 +600,6 @@ in {
         /usr/libexec/ApplicationFirewall/socketfilterfw --add "$ssh_firewall_app"
         /usr/libexec/ApplicationFirewall/socketfilterfw --unblockapp "$ssh_firewall_app"
       done
-      google_chrome_app='/Applications/Google Chrome.app'
-      google_chrome_helium_redirect='${googleChromeHeliumRedirect}/Applications/Google Chrome.app'
-
-      if [ -L "$google_chrome_app" ]; then
-        current_redirect="$(/usr/bin/readlink "$google_chrome_app")"
-        case "$current_redirect" in
-          /nix/store/*-google-chrome-helium-redirect-*/Applications/Google\ Chrome.app)
-            if [ "$current_redirect" != "$google_chrome_helium_redirect" ]; then
-              /bin/ln -sfn "$google_chrome_helium_redirect" "$google_chrome_app"
-            fi
-            /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-              -f "$google_chrome_app"
-            ;;
-          *)
-            echo "Keeping unmanaged Google Chrome symlink during staged Helium migration: $google_chrome_app" >&2
-            ;;
-        esac
-      elif [ -e "$google_chrome_app" ]; then
-        echo "Keeping Google Chrome during staged Helium migration. Remove it and reactivate to enable the Helium redirect." >&2
-      else
-        /bin/ln -s "$google_chrome_helium_redirect" "$google_chrome_app"
-        /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-          -f "$google_chrome_app"
-      fi
-
       firefox_preferences=/Library/Preferences/org.mozilla.firefox
       /usr/bin/defaults write "$firefox_preferences" EnterprisePoliciesEnabled -bool true
       /usr/bin/defaults write "$firefox_preferences" Extensions__Install -array \
