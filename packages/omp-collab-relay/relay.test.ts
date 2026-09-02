@@ -331,4 +331,30 @@ describe("backpressure-aware forwarding", () => {
 		const delivered = guest.sent[guest.sent.length - 1]!;
 		expect(delivered.every((byte) => byte === 7)).toBe(true);
 	});
+
+	it("retains a frame the socket refuses (send() === 0) until it drains", () => {
+		let accept = false;
+		const sent: Buffer[] = [];
+		const fake = {
+			data: { outbox: [] as (string | Buffer)[] },
+			getBufferedAmount: () => 0,
+			send(message: Buffer): number {
+				if (!accept) return 0;
+				sent.push(Buffer.from(message));
+				return message.byteLength;
+			},
+		};
+		const socket = fake as unknown as Parameters<typeof forwardFrame>[0];
+		const frame = Buffer.alloc(1024, 9);
+		forwardFrame(socket, frame);
+		// The socket refused the frame (returned 0); it must be kept, not dropped.
+		expect(fake.data.outbox.length).toBe(1);
+		expect(sent.length).toBe(0);
+		// Once the socket accepts again, drain redelivers it byte-for-byte.
+		accept = true;
+		pumpOutbox(socket);
+		expect(fake.data.outbox.length).toBe(0);
+		expect(sent).toHaveLength(1);
+		expect(sent[0]!.equals(frame)).toBe(true);
+	});
 });

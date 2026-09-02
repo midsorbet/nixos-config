@@ -697,7 +697,7 @@ interface SocketData {
 	peerId: number;
 	connectionLifetimeSecs: number;
 	expiryTimer?: Timer;
-	outbox: Buffer[];
+	outbox: (string | Buffer)[];
 }
 
 type RelaySocket = Bun.ServerWebSocket<SocketData>;
@@ -730,14 +730,14 @@ export function pumpOutbox(ws: RelaySocket): void {
  * transient handler buffer into the outbox for pumpOutbox()/drain() to flush,
  * so a burst larger than the socket buffer is never silently truncated.
  */
-export function forwardFrame(ws: RelaySocket, message: Buffer): void {
+export function forwardFrame(ws: RelaySocket, message: string | Buffer): void {
 	if (
 		ws.data.outbox.length === 0 &&
 		ws.getBufferedAmount() < SOCKET_SEND_HIGH_WATER_BYTES &&
 		ws.send(message) !== 0
 	)
 		return;
-	ws.data.outbox.push(Buffer.from(message));
+	ws.data.outbox.push(typeof message === "string" ? message : Buffer.from(message));
 	pumpOutbox(ws);
 }
 
@@ -948,6 +948,9 @@ export function startRelay(
 		const closure = JSON.stringify({
 			t: "room-closed",
 		} satisfies RelayControlToGuest);
+		// room-closed is best-effort: the guest socket is closed immediately
+		// after, so it need not queue through the outbox and any drop under
+		// backpressure is masked by the close frame that follows.
 		for (const guest of room.guests.values()) {
 			guest.send(closure);
 			guest.close(4001, "room closed");
@@ -1334,7 +1337,8 @@ export function startRelay(
 				room.guests.set(peerId, ws);
 				scheduleExpiry(ws);
 				noteActivity(room);
-				room.host.send(
+				forwardFrame(
+					room.host,
 					JSON.stringify({
 						t: "peer-joined",
 						peer: peerId,
@@ -1400,6 +1404,8 @@ export function startRelay(
 					const closure = JSON.stringify({
 						t: "room-closed",
 					} satisfies RelayControlToGuest);
+					// Best-effort: the guest socket is closed right after, so this
+					// need not queue through the outbox.
 					for (const guest of room.guests.values()) {
 						guest.send(closure);
 						guest.close(4001, "room closed");
@@ -1412,7 +1418,8 @@ export function startRelay(
 				}
 				if (room.guests.delete(peerId)) {
 					noteActivity(room);
-					room.host.send(
+					forwardFrame(
+						room.host,
 						JSON.stringify({
 							t: "peer-left",
 							peer: peerId,
