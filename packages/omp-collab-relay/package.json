@@ -6,8 +6,8 @@
   "description": "Hardened loopback relay for on-demand OMP collab sessions",
   "webClient": {
     "repository": "https://github.com/can1357/oh-my-pi",
-    "version": "18.1.7",
-    "commit": "c4da0d08e8275659f3e09cf381c7df7018a19025"
+    "version": "18.1.8",
+    "commit": "596f2da7101178214aa27a753529d15e6b7ad91d"
   },
   "scripts": {
     "test": "bun test"
