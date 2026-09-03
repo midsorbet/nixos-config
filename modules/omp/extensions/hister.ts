@@ -1,9 +1,22 @@
 import { readFileSync } from 'node:fs';
-import type { ExtensionAPI } from '@oh-my-pi/pi-coding-agent';
+import type { ExtensionAPI, ExtensionContext } from '@oh-my-pi/pi-coding-agent';
 
 const HISTER_BASE_URL = '@HISTER_BASE_URL@';
 const HISTER_ENV_FILE = '@HISTER_ENV_FILE@';
 const HISTER_TOOL_NAMES = ['hister_search', 'hister_preview', 'hister_history'] as const;
+const HISTER_STATUS_KEY = 'hister-lease';
+const HISTER_STATUS_TEXT = 'hister: armed';
+
+function publishHisterLeaseStatus(
+  ui: ExtensionContext['ui'] | undefined,
+  text: string | undefined,
+): void {
+  try {
+    ui?.setStatus?.(HISTER_STATUS_KEY, text);
+  } catch {
+    // Lease authorization must not depend on rendering optional status telemetry.
+  }
+}
 const MAX_RESPONSE_CHARACTERS = 100_000;
 
 function readHisterAccessToken(): string {
@@ -28,12 +41,15 @@ async function requestHister(path: string, signal?: AbortSignal): Promise<string
 
 export default function registerLazyHister(pi: ExtensionAPI): void {
   let leaseActive = false;
+  let leaseStatusUi: ExtensionContext['ui'] | undefined;
 
   const revokeLease = async (): Promise<boolean> => {
     if (!leaseActive) return false;
     const activeToolNames = pi.getActiveTools();
     await pi.setActiveTools(activeToolNames.filter((name) => !HISTER_TOOL_NAMES.some((toolName) => toolName === name)));
     leaseActive = false;
+    publishHisterLeaseStatus(leaseStatusUi, undefined);
+    leaseStatusUi = undefined;
     return true;
   };
 
@@ -139,11 +155,13 @@ export default function registerLazyHister(pi: ExtensionAPI): void {
     approval: 'read',
     loadMode: 'essential',
     strict: true,
-    async execute() {
+    async execute(_toolCallId, _params, _signal, _onUpdate, ctx) {
       const activeToolNames = pi.getActiveTools();
       const missingToolNames = HISTER_TOOL_NAMES.filter((name) => !activeToolNames.includes(name));
       if (missingToolNames.length > 0) await pi.setActiveTools([...activeToolNames, ...missingToolNames]);
       leaseActive = true;
+      leaseStatusUi = ctx.ui;
+      publishHisterLeaseStatus(leaseStatusUi, HISTER_STATUS_TEXT);
       return {
         content: [
           {

@@ -52,7 +52,6 @@ modelRoles:
   slow: openai-codex/gpt-5.6-terra:max
   vision: openai-codex/gpt-5.6-sol:high
   plan: openai-codex/gpt-5.6-sol:high
-  designer: openai-codex/gpt-5.6-sol:high
   commit: openai-codex/gpt-5.6-luna:medium
   tiny: openai-codex/gpt-5.6-luna:low
   task: openai-codex/gpt-5.6-sol:medium
@@ -101,11 +100,13 @@ startup:
 statusLine:
   preset: custom
   compactThinkingLevel: true
+  showHookStatus: false
   leftSegments:
     - pi
     - model
     - mode
     - collab
+    - status
     - path
     - git
     - pr
