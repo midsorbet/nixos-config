@@ -10,7 +10,7 @@
   piWireVersion = packageJson.dependencies."@oh-my-pi/pi-wire";
   piWireTarball = fetchurl {
     url = "https://registry.npmjs.org/@oh-my-pi/pi-wire/-/pi-wire-${piWireVersion}.tgz";
-    hash = "sha256-EWV+FGljo6+FbsFkhPxHx1e+HBkIElhP+yRBdJxIpmg=";
+    hash = "sha256-NSXV1rwdl3C9aM9W7ruelcDUm+KLntvfwYCesLoX0gQ=";
   };
 in
   stdenv.mkDerivation {
