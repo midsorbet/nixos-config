@@ -1,5 +1,7 @@
 defaultThinkingLevel: xhigh
 textVerbosity: medium
+enabledProviders:
+  - codex
 power:
   sleepPrevention: system
 steeringMode: all

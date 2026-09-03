@@ -1,5 +1,5 @@
 if (window.location.hash.slice(1)) {
-	await import("./4y8ddrbh.js");
+	await import("./rgtgw79r.js");
 } else {
 	await import("./rooms.js");
 }
