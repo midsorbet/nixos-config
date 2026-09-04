@@ -352,14 +352,6 @@
     text = ''
       set -euo pipefail
 
-      # Keep the RunAtLoad scheduler generation-coupled to the runner so a
-      # system switch reloads both launch agents before schedule evaluation.
-      runner=${lib.escapeShellArg (lib.getExe collabRunner)}
-      if [[ ! -x "$runner" ]]; then
-        echo "OMP collab runner is unavailable: $runner" >&2
-        exit 1
-      fi
-
       weekday="$(/bin/date +%u)"
       weekdays=" ${scheduleWeekdays} "
       now="$(/bin/date +%H:%M)"
@@ -912,6 +904,15 @@ in {
     system.activationScripts.postActivation.text = lib.mkAfter ''
       echo >&2 "Reconciling OMP Computer Use routing..."
       /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe computerUseMcpReconcile}
+      ${lib.optionalString cfg.collab.enable ''
+        echo >&2 "Reconciling OMP collaboration schedule..."
+        user_id="$(/usr/bin/id -u ${lib.escapeShellArg cfg.user})"
+        domain="gui/$user_id"
+        if /bin/launchctl print "$domain/org.nixos.omp-collab-schedule-start" >/dev/null 2>&1; then
+          /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H \
+            /bin/launchctl kickstart -k "$domain/org.nixos.omp-collab-schedule-start"
+        fi
+      ''}
     '';
 
     launchd.user.agents.omp-collab = lib.mkIf cfg.collab.enable {
