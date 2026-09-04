@@ -351,6 +351,15 @@
     name = "omp-collab-schedule-start";
     text = ''
       set -euo pipefail
+
+      # Keep the RunAtLoad scheduler generation-coupled to the runner so a
+      # system switch reloads both launch agents before schedule evaluation.
+      runner=${lib.escapeShellArg (lib.getExe collabRunner)}
+      if [[ ! -x "$runner" ]]; then
+        echo "OMP collab runner is unavailable: $runner" >&2
+        exit 1
+      fi
+
       weekday="$(/bin/date +%u)"
       weekdays=" ${scheduleWeekdays} "
       now="$(/bin/date +%H:%M)"
