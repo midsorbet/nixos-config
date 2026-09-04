@@ -910,7 +910,7 @@ in {
         domain="gui/$user_id"
         if /bin/launchctl print "$domain/org.nixos.omp-collab-schedule-start" >/dev/null 2>&1; then
           /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H \
-            /bin/launchctl kickstart -k "$domain/org.nixos.omp-collab-schedule-start"
+            /bin/launchctl kickstart "$domain/org.nixos.omp-collab-schedule-start"
         fi
       ''}
     '';
