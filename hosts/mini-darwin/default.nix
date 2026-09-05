@@ -378,8 +378,20 @@ in {
 
     linux-builder = {
       enable = true;
-      # macOS 27 HVF rejects nixpkgs' default GICv2 machine; this later QEMU option overrides it.
-      config.virtualisation.qemu.options = ["-machine gic-version=3"];
+      # vz + Rosetta; speedFactor below Baymax (2) so it takes x86_64-linux overflow only.
+      package = pkgs.darwin.linux-builder-vz;
+      systems = ["aarch64-linux" "x86_64-linux"];
+      maxJobs = 8;
+      speedFactor = 1;
+      config = {
+        virtualisation.cores = 8;
+        virtualisation.darwin-builder.memorySize = 12 * 1024;
+        virtualisation.darwin-builder.diskSize = 60 * 1024;
+        # The vmnet gateway (192.168.64.1) refuses DNS while WARP owns the host
+        # resolver, so fixed-output fetches in the guest need upstream resolvers.
+        networking.nameservers = ["1.1.1.1" "1.0.0.1"];
+        networking.dhcpcd.extraConfig = "nohook resolv.conf";
+      };
     };
   };
 
