@@ -44,7 +44,12 @@ autolearn:
   autoContinue: false
   minToolCalls: 12
 mnemopi:
+  # Reviewed context only; older automatic banks remain recovery history.
+  dbPath: "@OMP_USER_HOME@/.omp/agent/memories/mnemopi-reviewed-20260905/mnemopi.db"
+  bank: reviewed-20260905
   scoping: per-project-tagged
+  autoRecall: true
+  autoRetain: false
 providers:
   openai-codex:
     codeMode: auto

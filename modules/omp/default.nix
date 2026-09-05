@@ -413,14 +413,12 @@
       + lib.optionalString (cfg.collab.displayName != null)
       "  displayName: ${builtins.toJSON cfg.collab.displayName}\n"
     );
-  managedSettingsFile =
-    if managedSettingsSuffix == ""
-    then cfg.settingsFile
-    else
-      pkgs.writeText "omp-config.yml" (
-        builtins.readFile cfg.settingsFile
-        + managedSettingsSuffix
-      );
+  # Mnemopi treats a literal ~ as cwd-relative; install an absolute user path.
+  managedSettingsFile = pkgs.writeText "omp-config.yml" (
+    lib.replaceStrings ["@OMP_USER_HOME@"] [config.users.users.${cfg.user}.home]
+    (builtins.readFile cfg.settingsFile)
+    + managedSettingsSuffix
+  );
 
   mkTheme = {
     name,
@@ -591,7 +589,7 @@ in {
     settingsFile = lib.mkOption {
       type = lib.types.path;
       default = ./config.yml;
-      description = "YAML config file installed at ~/.omp/agent/config.yml.";
+      description = "YAML template installed at ~/.omp/agent/config.yml; @OMP_USER_HOME@ expands to the configured user home.";
     };
 
     authBrokerUrl = lib.mkOption {
