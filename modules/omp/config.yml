@@ -1,4 +1,4 @@
-defaultThinkingLevel: medium
+defaultThinkingLevel: xhigh
 textVerbosity: medium
 enabledProviders:
   - codex
