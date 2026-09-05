@@ -191,6 +191,9 @@ requires the `Gateway` device-posture rule, and uses a `720h` session duration.
 A client without the required posture receives a Cloudflare Access `403`; this
 does not indicate an Actual origin failure.
 
+Treat the imported YNAB data as historical reference, not authoritative current
+account state or budget targets. The manually verified Actual budget is the live
+baseline.
 Before each Borg run, `actual-backup.service` stops Actual briefly, snapshots the
 `data/persistSave` ZFS dataset, restarts Actual, writes the validated archive to
 `/persist/save/actual-backups/actual-server.tar.zst`, and destroys the temporary
@@ -206,6 +209,17 @@ Actual's end-to-end encryption password is retained only in the password manager
 Never copy it into this repository, the vault, Reminders, Nix configuration, or
 backup archives. This deliberately leaves one custodian: losing password-manager
 access makes encrypted Actual data and encrypted backup history unrecoverable.
+
+## Atuin Security and Recovery
+
+- Keep Atuin bound to loopback behind its reviewed split-horizon HTTPS route.
+  Home DNS resolves to Baymax; away clients use the private WARP route.
+- Keep the account password and encryption key only in agenix and the user's
+  password manager. Do not copy their values into this repository or vault.
+- Do not use Atuin's importer directly on legacy shell histories: the importer
+  bypasses runtime history and secret filters. Sanitize any future import first
+  and retain the original history only as protected rollback evidence.
+
 ## Recovery
 
 If the tunnel token rotates or the Cloudflare tunnel object gets deleted and recreated:
