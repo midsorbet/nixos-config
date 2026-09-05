@@ -145,6 +145,39 @@ Useful symptoms:
 - `ERR_CONNECTION_REFUSED` for `readeck`, `photos`, `budget`, `hister`, or `atuin` on the home LAN means split-horizon DNS reached `192.168.4.200`, but Caddy is not listening. Check `systemctl status caddy` and the port 443 listeners on Baymax before investigating Cloudflare.
 - A Caddy boot failure that mentions `100.96.0.3:443` means the WARP address was not ready. The managed Caddy pre-start gate must wait for that address before Caddy binds its listeners.
 
+## Local HTTPS Security Boundaries
+
+- Use exact split-DNS records, Caddy virtual hosts, and certificates. Never use a
+  wildcard local rewrite, wildcard certificate, or catch-all proxy route.
+- Keep each Unbound local zone authoritative for its exact application name so
+  public `AAAA`, `HTTPS`, `SVCB`, or `CNAME` answers cannot race the local `A`
+  answer. ACME propagation checks must use an explicit public resolver.
+- Bind Unbound only to the intended LAN addresses, allow TCP and UDP 53 only
+  from the main LAN, deny recursion from WARP, guest, container, and unintended
+  interfaces, and leave query logging off outside a bounded diagnosis.
+- Bind application Caddy listeners only to the reviewed LAN and WARP addresses;
+  never use `0.0.0.0` or an unreviewed IPv6/container interface. Keep Caddy's
+  admin endpoint disabled or loopback-only.
+- Strip client-supplied Cloudflare identity and forwarding headers before a LAN
+  request reaches an application. A local route must not inherit edge identity.
+- Keep the DNS-01 token in agenix, readable only by the ACME unit and limited to
+  the permissions and zone that lego requires. Keep certificate private keys
+  readable only by ACME and Caddy. Review current Cloudflare issuers before
+  changing CAA and monitor Certificate Transparency for unexpected issuance.
+- Treat main-LAN membership as authorization to reach local login surfaces;
+  untrusted and IoT devices stay on the eero guest network.
+- For Cloudflare control-plane work, use the configured Cloudflare MCP connector
+  first and inspect its current schema. If discovery, authentication, schema
+  retrieval, or a correctly formed call fails, stop rather than falling back to
+  the web UI, browser automation, direct REST credentials, or another OAuth
+  flow. Mutations require explicit authorization and have zero automatic retries.
+- Keep local application fallbacks out of the default/away WARP profile. Apply
+  them only through the higher-priority home Managed Network profile, preserve
+  Gateway filtering for non-local names, and test DNS selection separately from
+  reachability on every supported client.
+- Readeck is intentionally public and relies on its own login. Treat a future
+  exploitable upstream advisory as urgent: upgrade or backport promptly, or
+  disable public ingress until fixed.
 ## Actual Budget
 
 Actual listens only on Baymax loopback port `5006`. Its server and user files live
@@ -168,6 +201,10 @@ ssh me@192.168.4.200 'systemctl show actual-backup.service --property=Result,Exe
 ssh -t me@192.168.4.200 'sudo tar --list --zstd --file /persist/save/actual-backups/actual-server.tar.zst >/dev/null'
 ```
 
+Actual's end-to-end encryption password is retained only in the password manager.
+Never copy it into this repository, the vault, Reminders, Nix configuration, or
+backup archives. This deliberately leaves one custodian: losing password-manager
+access makes encrypted Actual data and encrypted backup history unrecoverable.
 ## Recovery
 
 If the tunnel token rotates or the Cloudflare tunnel object gets deleted and recreated:
