@@ -178,6 +178,7 @@ Useful symptoms:
 - Readeck is intentionally public and relies on its own login. Treat a future
   exploitable upstream advisory as urgent: upgrade or backport promptly, or
   disable public ingress until fixed.
+
 ## Actual Budget
 
 Actual listens only on Baymax loopback port `5006`. Its server and user files live

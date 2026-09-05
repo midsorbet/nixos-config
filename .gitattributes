@@ -1,1 +1,4 @@
 secrets.local.nix filter=git-crypt diff=git-crypt
+.seeds/issues.jsonl merge=union
+.seeds/templates.jsonl merge=union
+.seeds/plans.jsonl merge=union
