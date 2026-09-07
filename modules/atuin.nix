@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  nix-wrapper-modules,
   pkgs,
   ...
 }: let
@@ -41,20 +42,28 @@
   };
 
   settings = lib.recursiveUpdate defaultSettings cfg.settings;
+
+  atuinWrapperModule = {wlib, ...}: {
+    imports = [wlib.wrapperModules.atuin];
+
+    config = {
+      package = cfg.package;
+      inherit settings;
+    };
+  };
+
+  configuredAtuin = nix-wrapper-modules.lib.evalPackage [
+    atuinWrapperModule
+    {inherit pkgs;}
+  ];
 in {
   options.local.atuin = {
-    enable = lib.mkEnableOption "Hjem-managed Atuin shell history";
-
-    user = lib.mkOption {
-      type = lib.types.str;
-      default = "me";
-      description = "User that should receive the Hjem-managed Atuin config.";
-    };
+    enable = lib.mkEnableOption "configured Atuin shell history";
 
     package = lib.mkOption {
       type = lib.types.package;
       default = pkgs.atuin;
-      description = "Atuin package used by the client and shell integration.";
+      description = "Raw Atuin package wrapped with this module's client settings.";
     };
 
     syncAddress = lib.mkOption {
@@ -66,20 +75,15 @@ in {
     settings = lib.mkOption {
       type = tomlFormat.type;
       default = {};
-      description = "Additional Atuin settings merged into the managed client config.";
+      description = "Additional Atuin settings merged into the read-only client config.";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = [cfg.package];
+    environment.systemPackages = [configuredAtuin];
 
     programs.zsh.interactiveShellInit = lib.mkAfter ''
-      eval "$(${lib.getExe cfg.package} init zsh --disable-ai)"
+      eval "$(${lib.getExe configuredAtuin} init zsh --disable-ai)"
     '';
-
-    hjem.users.${cfg.user}.xdg.config.files."atuin/config.toml" = {
-      source = tomlFormat.generate "atuin-config.toml" settings;
-      clobber = true;
-    };
   };
 }

@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  nix-wrapper-modules,
   pkgs,
   ...
 }: let
@@ -11,12 +12,16 @@
     then "/Users/${cfg.user}"
     else "/home/${cfg.user}";
 
+  globalIgnore = pkgs.writeText "git-global-ignore" ''
+    **/.claude/settings.local.json
+  '';
+
   defaultSettings = {
     init.defaultBranch = "main";
     core = {
       editor = "vim";
       autocrlf = "input";
-      excludesFile = "${homeDirectory}/.config/git/ignore";
+      excludesFile = globalIgnore;
     };
     user = {
       name = "midsorbet";
@@ -31,26 +36,44 @@
   };
 
   settings = lib.recursiveUpdate (lib.recursiveUpdate defaultSettings cfg.settings) signingSettings;
+
+  gitWrapperModule = {
+    pkgs,
+    wlib,
+    ...
+  }: {
+    imports = [wlib.modules.default];
+
+    config = {
+      package = pkgs.git;
+      env.GIT_CONFIG_SYSTEM = gitConfigFormat.generate "git-system-config" settings;
+    };
+  };
+
+  wrappedGit = nix-wrapper-modules.lib.evalPackage [
+    gitWrapperModule
+    {inherit pkgs;}
+  ];
 in {
   options.local.git = {
-    enable = lib.mkEnableOption "Hjem-managed Git defaults";
+    enable = lib.mkEnableOption "Git configuration built with nix-wrapper-modules";
 
     user = lib.mkOption {
       type = lib.types.str;
       default = "me";
-      description = "User that should own the Hjem-managed Git config.";
+      description = "User whose home paths are referenced by the wrapped Git configuration.";
     };
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.git;
-      description = "Git package to install.";
+      default = wrappedGit;
+      description = "Wrapped Git package to install.";
     };
 
     settings = lib.mkOption {
       type = gitConfigFormat.type;
       default = {};
-      description = "Additional Git configuration merged into the managed ~/.gitconfig.";
+      description = "Additional system-level defaults merged into the wrapped Git configuration.";
     };
 
     commitSigning = {
@@ -66,19 +89,5 @@ in {
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [cfg.package];
-
-    hjem.users.${cfg.user} = {
-      files.".gitconfig" = {
-        source = gitConfigFormat.generate "gitconfig" settings;
-        clobber = true;
-      };
-
-      xdg.config.files."git/ignore" = {
-        text = ''
-          **/.claude/settings.local.json
-        '';
-        clobber = true;
-      };
-    };
   };
 }

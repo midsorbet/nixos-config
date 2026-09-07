@@ -178,7 +178,6 @@ in {
   };
   local.atuin = {
     enable = true;
-    inherit user;
   };
   local.git = {
     enable = true;
