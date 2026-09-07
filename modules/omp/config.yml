@@ -69,7 +69,7 @@ modelProviderOrder:
   - openai-codex
   - opencode-zen
 advisor:
-  enabled: true
+  enabled: false
   syncBacklog: off
   immuneTurns: 5
 prewalk:
@@ -87,7 +87,7 @@ task:
   softRequestBudgetNotice: true
   showResolvedModelBadge: true
   agentAdvisor:
-    task: on
+    task: off
 secrets:
   enabled: true
 skills:
