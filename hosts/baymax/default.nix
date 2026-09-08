@@ -32,10 +32,12 @@ in {
     ./local-https.nix
     (import ../../modules/local-lan-dns-resolver.nix {platform = "nixos";})
     ../../modules/hister.nix
+    (import ../../modules/herdr-relay.nix {platform = "nixos";})
     ../../modules/shared
     agenix.nixosModules.default
   ];
 
+  local.herdrRelay.enable = true;
   local.atuin = {
     enable = true;
     inherit user;

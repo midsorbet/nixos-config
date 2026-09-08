@@ -144,6 +144,7 @@ in {
     ../../modules/github-cli.nix
     ../../modules/ghostty.nix
     ../../modules/herdr.nix
+    (import ../../modules/herdr-relay.nix {platform = "darwin";})
     ../../modules/hunk.nix
     (import ../../modules/local-lan-dns-resolver.nix {platform = "darwin";})
     ../../modules/neovim
@@ -168,6 +169,7 @@ in {
     openssh.authorizedKeys.keys = [dactylKey];
   };
 
+  local.herdrRelay.enable = true;
   local.anki.enable = true;
   local.ollama.enable = true;
   local.syncthing = {

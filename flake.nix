@@ -207,6 +207,9 @@
         }
       );
   in {
+    packages = forAllSystems (system: {
+      herdr-relay = nixpkgs.legacyPackages.${system}.callPackage ./packages/herdr-relay {};
+    });
     devShells = forAllSystems devShell;
     formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.alejandra);
     overlays = import ./packages/overlay.nix {
@@ -252,6 +255,11 @@
     };
 
     nixosConfigurations = {
+      hooh = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = inputs;
+        modules = [inputs.agenix.nixosModules.default disko.nixosModules.disko ./hosts/hooh];
+      };
       baymax = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         pkgs = import ./packages {
