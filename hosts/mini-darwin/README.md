@@ -42,7 +42,7 @@ services.
   the minute-by-minute expiry reaper. Hooh also powers off at its lease deadline;
   only deletion ends server billing. No cloud resources are created by activation.
 - After approving costs, run `herdr-relay prepare --flake /path/to/nixos-config`. It creates the retained IPv4/firewall and a NixOS snapshot, then deletes the temporary builder. The temporary builder has a fixed four-hour lease, established only when creation begins; slow preparation cannot extend it, and failures still clean up the owned builder.
-  Configure a Cloudflare DNS-only A record for `mini.midsorbet.me` using the returned IPv4. Retired snapshots remain billable until explicitly deleted after verifying their replacement.
+  Configure a Cloudflare DNS-only A record for `herdr.midsorbet.me` using the returned IPv4. Retired snapshots remain billable until explicitly deleted after verifying their replacement.
 - Snapshots must match the expected Hooh system build as well as its trust identity.
   After changing Hooh configuration or server certificates, activate the reviewed
   Mini/Baymax configuration, then run `prepare` from the matching checkout.
@@ -54,7 +54,7 @@ services.
   Terminal hangups unwind active preparation/start operations and attempt cleanup.
   Cleanup errors preserve the original failure; inspect `status` afterward.
   Invalid expiry labels remain visible in `status` but never authorize deletion.
-- At work, use `herdr --remote ssh://me@mini.midsorbet.me:2222`, or a compatible
+- At work, use `herdr --remote ssh://me@herdr.midsorbet.me:2222`, or a compatible
   Herdr version with `machine add`. No frp or Cloudflare client is needed there.
 - Mutual TLS authenticates Mini to Hooh. SSH still authenticates the work user
   directly to Mini. Private keys and API credentials belong in `nix-secrets`;

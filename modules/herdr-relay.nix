@@ -17,7 +17,7 @@
   # Compare the Linux build identity without adding its closure to Mini.
   expectedSystem = builtins.unsafeDiscardStringContext (toString self.nixosConfigurations.hooh.config.system.build.toplevel);
   frpcConfig = (pkgs.formats.toml {}).generate "hooh-frpc.toml" {
-    serverAddr = "mini.midsorbet.me";
+    serverAddr = "herdr.midsorbet.me";
     serverPort = 7000;
     loginFailExit = false;
     transport.tls = {
@@ -40,7 +40,7 @@
   relayConfig = pkgs.writeText "herdr-relay.json" (builtins.toJSON ({
       tokenFile = config.age.secrets.herdr-relay-hcloud-token.path;
       inherit stateDirectory expectedSystem;
-      hostname = "mini.midsorbet.me";
+      hostname = "herdr.midsorbet.me";
       imageIdentity = builtins.substring 0 32 (builtins.hashString "sha256" (
         expectedSystem + builtins.readFile ../hosts/hooh/frp-ca.crt + builtins.readFile ../hosts/hooh/hooh-host-key.pub
       ));
