@@ -789,6 +789,10 @@ in {
       ];
 
       files = {
+        ".omp/agent/AGENTS.md" = {
+          source = ./AGENTS.md;
+          clobber = true;
+        };
         ".omp/agent/PERSONALITY.md" = {
           source = ./PERSONALITY.md;
           clobber = true;
