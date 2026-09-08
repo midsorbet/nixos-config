@@ -93,7 +93,8 @@ in {
         Label = "org.nixos.herdr-relay";
         ProgramArguments = ["${relayPackage}/bin/herdr-relay" "--config" "${relayConfig}" "connect"];
         KeepAlive.SuccessfulExit = false;
-        RunAtLoad = false;
+        # launchd retries only unsuccessful exits; valid startup is intentionally successful.
+        RunAtLoad = true;
         ThrottleInterval = 10;
         Umask = 63;
         StandardOutPath = "${homeDirectory}/Library/Logs/herdr-relay.log";

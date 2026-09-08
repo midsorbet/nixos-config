@@ -22,10 +22,16 @@
       .herdr_relay | select(.role == "session" or .role == "image-builder") |
       .expires_at | select(type == "number" and floor == . and . > $now and . <= ($now + 43200))
     ' /run/herdr-relay/lease.json)"
-    actual="$(${pkgs.openssh}/bin/ssh-keygen -y -f ${canonicalHostKey})"
+    actual="$(${pkgs.openssh}/bin/ssh-keygen -y -f ${canonicalHostKey} | ${pkgs.coreutils}/bin/cut -d " " -f 1,2)"
     test "$actual" = ${lib.escapeShellArg canonicalHostPublicKey}
-    ${pkgs.systemd}/bin/systemd-run --unit=hooh-expiry --on-calendar="@$expires" \
-      --timer-property=AccuracySec=1s ${pkgs.systemd}/bin/systemctl poweroff
+    # Replace any previous transient units before arming the same absolute lease expiry.
+    for unit in hooh-expiry.timer hooh-expiry.service; do
+      ${pkgs.systemd}/bin/systemctl stop "$unit" 2>/dev/null || true
+      ${pkgs.systemd}/bin/systemctl reset-failed "$unit" 2>/dev/null || true
+    done
+    ${pkgs.systemd}/bin/systemd-run --collect --unit=hooh-expiry --on-calendar="@$expires" \
+      --property=CollectMode=inactive-or-failed --timer-property=AccuracySec=1s \
+      --timer-property=CollectMode=inactive-or-failed ${pkgs.systemd}/bin/systemctl poweroff
   '';
 in {
   imports = [./disk-config.nix];

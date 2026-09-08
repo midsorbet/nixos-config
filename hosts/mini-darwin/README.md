@@ -41,11 +41,8 @@ services.
 - Activate the reviewed Mini and Baymax configurations before use. Baymax owns
   the minute-by-minute expiry reaper. Hooh also powers off at its lease deadline;
   only deletion ends server billing. No cloud resources are created by activation.
-- After approving costs, run `herdr-relay prepare --flake /path/to/nixos-config`.
-  It creates the retained IPv4/firewall and a NixOS snapshot, then deletes the
-  temporary builder. Configure a Cloudflare DNS-only A record for
-  `mini.midsorbet.me` using the returned IPv4. Retired snapshots remain billable
-  until explicitly deleted after verifying their replacement.
+- After approving costs, run `herdr-relay prepare --flake /path/to/nixos-config`. It creates the retained IPv4/firewall and a NixOS snapshot, then deletes the temporary builder. The temporary builder has a fixed four-hour lease, established only when creation begins; slow preparation cannot extend it, and failures still clean up the owned builder.
+  Configure a Cloudflare DNS-only A record for `mini.midsorbet.me` using the returned IPv4. Retired snapshots remain billable until explicitly deleted after verifying their replacement.
 - Run `herdr-relay start --ttl 8h`, `herdr-relay status`, and `herdr-relay stop`.
   Start checks the forwarded Mini SSH host key before reporting readiness.
   Leases cannot exceed 12 hours; repeated starts never extend an existing lease.
