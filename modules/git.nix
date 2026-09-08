@@ -45,12 +45,12 @@
     imports = [wlib.modules.default];
 
     config = {
-      package = pkgs.git;
+      package = cfg.package;
       env.GIT_CONFIG_SYSTEM = gitConfigFormat.generate "git-system-config" settings;
     };
   };
 
-  wrappedGit = nix-wrapper-modules.lib.evalPackage [
+  configuredGit = nix-wrapper-modules.lib.evalPackage [
     gitWrapperModule
     {inherit pkgs;}
   ];
@@ -66,8 +66,8 @@ in {
 
     package = lib.mkOption {
       type = lib.types.package;
-      default = wrappedGit;
-      description = "Wrapped Git package to install.";
+      default = pkgs.git;
+      description = "Raw Git package wrapped with this module's system-level defaults.";
     };
 
     settings = lib.mkOption {
@@ -88,6 +88,6 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    environment.systemPackages = [cfg.package];
+    environment.systemPackages = [configuredGit];
   };
 }

@@ -2,7 +2,7 @@
   description = "Starter Configuration with secrets for MacOS and NixOS";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    # Isolate Hunk's x86_64-darwin formatter and mdfried's Python 3.14 remarshal incompatibility.
+    # Isolate mdfried's Python 3.14 remarshal incompatibility.
     nixpkgs-darwin-compat.url = "github:nixos/nixpkgs/nixpkgs-26.05-darwin";
     # Shared agent skill revisions are pinned only by flake.lock.
     skill-agent-stuff = {
@@ -62,9 +62,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hunk = {
-      url = "github:modem-dev/hunk/v0.20.1";
+      url = "github:modem-dev/hunk/v0.21.1";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.bun2nix.inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
     };
     herdr = {
       url = "github:herdrdev/herdr/v0.9.0";
