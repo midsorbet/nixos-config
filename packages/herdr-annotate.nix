@@ -8,7 +8,7 @@
   stdenv,
 }: let
   version = "0.3.0";
-  revision = "bccf884b874f5f39ccbef1bb6ac67625c5fb5d54";
+  revision = "46cbf5dab1746dfeb46eb160c33990b0e0de15b0";
   plannotatorTuiVersion = "0.6.0";
   plannotatorTuiBinary =
     if stdenv.hostPlatform.system == "aarch64-darwin"
@@ -27,7 +27,7 @@ in
       owner = "plannotator";
       repo = "herdr-annotate";
       rev = revision;
-      hash = "sha256-h3ibUCd2uLtQENU0IRNJzefZH2pnK13mzCoHmGc1EeU=";
+      hash = "sha256-U5w0q5IxoqSpndnjV6zoPCbrTApBRuExGoq0qxbaizs=";
     };
 
     nativeBuildInputs = [makeWrapper];
