@@ -8,7 +8,6 @@
   inherit
     (herdr-omp-plugins.lib.buildersFor pkgs)
     mkRemoteCollabExtension
-    mkSkyComputerUsePackage
     mkSpinoffExtension
     ;
   cfg = config.local.omp;
@@ -27,7 +26,6 @@
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
   cxporterPackage = pkgs.callPackage ../../packages/cxporter.nix {};
   rootshellNotifyPackage = pkgs.callPackage ../../packages/rootshell-notify.nix {};
-  skyComputerUsePackage = mkSkyComputerUsePackage {};
   histerExtension = pkgs.replaceVars ./extensions/hister.ts {
     HISTER_BASE_URL = cfg.hister.baseUrl;
     HISTER_ENV_FILE = toString cfg.hister.environmentFile;
@@ -41,54 +39,6 @@
   codexConnectorsSkill = pkgs.writeTextDir "share/agents/skills/codex-connectors/SKILL.md" (
     builtins.readFile ./skills/codex-connectors/SKILL.md
   );
-  computerUseMcpReconcile = pkgs.writeShellApplication {
-    name = "omp-reconcile-computer-use-mcp";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.jq
-    ];
-    text = ''
-      set -euo pipefail
-
-      config_dir="$HOME/.omp/agent"
-      config_file="$config_dir/mcp.json"
-      mkdir -p "$config_dir"
-
-      input="$config_file"
-      seed=""
-      if [[ ! -f "$input" ]]; then
-        seed="$(mktemp "$config_dir/.mcp.seed.XXXXXX")"
-        printf '{}\n' >"$seed"
-        input="$seed"
-      fi
-
-      updated="$(mktemp "$config_dir/.mcp.json.XXXXXX")"
-      cleanup() {
-        rm -f "$seed" "$updated"
-      }
-      trap cleanup EXIT
-
-      jq '
-        .["$schema"] //= "https://raw.githubusercontent.com/can1357/oh-my-pi/main/packages/coding-agent/src/config/mcp-schema.json"
-        | del(.mcpServers["chatgpt-computer-use"])
-        | .disabledServers = (
-            (.disabledServers // [])
-            | if index("computer-use") == null
-              then . + ["computer-use"]
-              else .
-              end
-          )
-      ' "$input" >"$updated"
-
-      if [[ -f "$config_file" ]] && cmp -s "$config_file" "$updated"; then
-        exit 0
-      fi
-
-      mv "$updated" "$config_file"
-      trap - EXIT
-      rm -f "$seed"
-    '';
-  };
 
   collabRelayPackage = pkgs.callPackage ../../packages/omp-collab-relay {};
   yamlFormat = pkgs.formats.yaml {};
@@ -547,6 +497,7 @@
     statusLineBg = "#e5dfc5";
   };
 in {
+  imports = [./cua-computer-use.nix];
   options.local.omp = {
     enable = lib.mkEnableOption "global OMP with Nix-provided eval runtimes";
 
@@ -858,16 +809,6 @@ in {
           source = "${codexConnectorsSkill}/share/agents/skills/codex-connectors";
           clobber = true;
         };
-        ".agents/skills/chatgpt-sky-computer-use" = {
-          type = "symlink";
-          source = "${skyComputerUsePackage}/skills/chatgpt-sky-computer-use";
-          clobber = true;
-        };
-        ".omp/agent/extensions/sky-computer-use.ts" = {
-          type = "symlink";
-          source = "${skyComputerUsePackage}/extension/index.ts";
-          clobber = true;
-        };
         ".omp/agent/extensions/hister.ts" = lib.mkIf cfg.hister.enable {
           type = "symlink";
           source = histerExtension;
@@ -900,8 +841,6 @@ in {
     };
 
     system.activationScripts.postActivation.text = lib.mkAfter ''
-      echo >&2 "Reconciling OMP Computer Use routing..."
-      /usr/bin/sudo -u ${lib.escapeShellArg cfg.user} -H ${lib.getExe computerUseMcpReconcile}
       ${lib.optionalString cfg.collab.enable ''
         echo >&2 "Reconciling OMP collaboration schedule..."
         user_id="$(/usr/bin/id -u ${lib.escapeShellArg cfg.user})"

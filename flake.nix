@@ -67,7 +67,7 @@
       inputs.bun2nix.inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
     };
     herdr = {
-      url = "github:herdrdev/herdr/v0.8.2";
+      url = "github:herdrdev/herdr/v0.9.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     herdr-omp-plugins = {
