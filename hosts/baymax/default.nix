@@ -258,7 +258,26 @@ in {
       user = "root";
       group = "root";
       interval = "daily";
-      commonArgs = ["--no-sync-snap"];
+      # Send only the newest Sanoid snapshot so Syncoid 2.3.0 bookmark recovery
+      # reaches its common hold/bookmark lifecycle instead of returning early.
+      commonArgs = ["--no-stream" "--no-sync-snap" "--use-hold" "--create-bookmark"];
+      localSourceAllow = [
+        "bookmark"
+        "hold"
+        "release"
+        "send"
+      ];
+      localTargetAllow = [
+        "create"
+        "hold"
+        "mount"
+        "receive"
+        "release"
+        "rollback"
+      ];
+      # Merge into every generated syncoid-* service, including future
+      # commands, rather than maintaining a hand-written list.
+      service.unitConfig.OnFailure = "ntfy-failure@%n";
       commands."baymax-persist-save" = {
         source = "data/persistSave";
         target = "archive/replica/baymax-persistSave";
@@ -510,7 +529,24 @@ in {
         }
       ];
       notifications = {
-        mail.enable = false;
+        mail = {
+          enable = true;
+          sender = "smartd@baymax";
+          recipient = "ntfy";
+          # The upstream smartd module pipes event-specific warning text to a
+          # sendmail-compatible mailer. Reuse that hook for ntfy.
+          mailer = pkgs.writeShellScript "smartd-ntfy-mailer" ''
+            set -euo pipefail
+            while (($# > 0)); do shift; done
+            message="$(${pkgs.coreutils}/bin/cat)"
+            exec ${pkgs.coreutils}/bin/timeout --signal=TERM 15s \
+              ${pkgs.ntfy-sh}/bin/ntfy publish \
+                --title "SMART health warning on baymax" \
+                --priority high \
+                --tags warning \
+                http://127.0.0.1:8080/system "$message"
+          '';
+        };
         wall.enable = false;
       };
     };
@@ -711,6 +747,7 @@ in {
       };
 
       # Attach failure notifications to critical services
+      "sanoid".unitConfig.OnFailure = "ntfy-failure@%n";
       "actual".serviceConfig.NoNewPrivileges = true;
       "actual".unitConfig.OnFailure = "ntfy-failure@%n";
       "actual-backup".unitConfig.OnFailure = "ntfy-failure@%n";
@@ -736,7 +773,12 @@ in {
       "borgbackup-job-hetzner".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
       "immich-machine-learning".unitConfig.OnFailure = "ntfy-failure@%n";
-      "smartd".unitConfig.OnFailure = "ntfy-failure@%n";
+      # Preserve ntfy credentials for smartd health-warning notifications;
+      # OnFailure still covers daemon/process failures separately.
+      "smartd" = {
+        unitConfig.OnFailure = "ntfy-failure@%n";
+        serviceConfig.EnvironmentFile = config.age.secrets."ntfy-publisher-token".path;
+      };
 
       # Disk space monitoring
       "disk-space-check" = {
