@@ -254,11 +254,6 @@
     };
 
     nixosConfigurations = {
-      hooh = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = inputs;
-        modules = [inputs.agenix.nixosModules.default disko.nixosModules.disko ./hosts/hooh];
-      };
       baymax = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
         pkgs = import ./packages {

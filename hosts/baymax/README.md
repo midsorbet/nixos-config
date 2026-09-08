@@ -134,7 +134,14 @@ Intended Access posture:
 - `rss.midsorbet.me`, `paperless.midsorbet.me`, `photos.midsorbet.me`, `ntfy.midsorbet.me`, and `budget.midsorbet.me` are the gated hostnames.
 - `lab.midsorbet.me` should not have standing DNS records, tunnel ingress rules, or Access app entries.
 - `omp.midsorbet.me` belongs to the separate, Mini-hosted `omp-collab` Tunnel and Access app. Its DNS and Access entries are standing, but the relay and tunnel run only on demand; never add it to `baymax-apps`.
-- `herdr.midsorbet.me` is the Hooh SSH relay endpoint: DNS-only to its retained Hetzner IPv4, not a Cloudflare Tunnel or Access endpoint. Its older dedicated Tunnel is retired; never add this hostname to `baymax-apps`.
+- `herdr.midsorbet.me` is a proxied CNAME to the dedicated Mini connector for
+  Cloudflare Tunnel `bd9f42c3-efc9-41c0-92f2-dba61e205ffd`; never add it to
+  `baymax-apps`. The existing `private-herdr` Access policy allows
+  `l.khadka@outlook.com` for 30-minute sessions. Mini controls its eight-hour
+  default, twelve-hour maximum lease with `herdr-relay start --ttl 8h`,
+  `herdr-relay status`, and `herdr-relay stop`; starting it again never silently
+  extends an active lease. Clients use the Delcatty SSH key with
+  `ProxyCommand cloudflared access ssh --hostname %h`, not WARP.
 - If a wildcard Access app matches `*.midsorbet.me`, make sure `readeck.midsorbet.me` is explicitly excluded or otherwise not covered by that policy.
 
 Useful symptoms:

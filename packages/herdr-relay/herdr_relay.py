@@ -1,8 +1,6 @@
-"""Coordinate hcloud, frp and native service managers for the ephemeral Hooh relay."""
+"""Manage a leased Cloudflare Tunnel connector through native launchd tools."""
 
 import argparse
-import base64
-import binascii
 import contextlib
 import fcntl
 import json
@@ -14,31 +12,28 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
-from hcloud_relay import (
-    HcloudRelay,
-    OWNER_SELECTOR,
-    SERVER_ROLES,
-    RelayError,
-    is_relay_server,
-    one_relay_resource,
-    refuse_existing_hooh,
-    relay_cleanup_errors,
-    relay_command,
-    relay_expiry,
-    relay_network,
-    write_relay_userdata,
-)
+DEFAULT_TTL_SECONDS = 8 * 60 * 60
+MAX_TTL_SECONDS = 12 * 60 * 60
+READINESS_TIMEOUT_SECONDS = 30
+LAUNCHD_LABEL = "org.nixos.herdr-relay"
 
 
-def relay_service():
-    return f"gui/{os.getuid()}/org.nixos.herdr-relay"
+class RelayError(Exception):
+    """Report a safe, actionable relay lifecycle error to the CLI user."""
+
+
+def relay_service() -> str:
+    """Return the current user's GUI launchd service target."""
+    return f"gui/{os.getuid()}/{LAUNCHD_LABEL}"
 
 
 @contextlib.contextmanager
-def relay_lock(state):
-    """Use an OS lock, not PID files or a second process supervisor."""
+def relay_lock(state: Path):
+    """Exclude concurrent relay mutations with an operating-system file lock."""
     with (state / "operation.lock").open("a") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -47,358 +42,279 @@ def relay_lock(state):
         yield
 
 
-def stop_frp(state):
-    """Invalidate the lease before signaling launchd, so it cannot reconnect after stop."""
-    (state / "lease.json").unlink(missing_ok=True)
-    if sys.platform == "darwin":
-        registered = (
-            subprocess.run(
-                ["launchctl", "print", relay_service()], capture_output=True
-            ).returncode
-            == 0
-        )
-        if registered:
-            relay_command(["launchctl", "stop", "org.nixos.herdr-relay"])
-
-
-def connect_frp(config, state):
-    """launchd starts frpc; frp handles reconnects and GNU timeout enforces the lease."""
-    lease = state / "lease.json"
-    if not lease.exists():
-        return 0
-    expiry = json.loads(lease.read_text())["expiresAt"]
-    if type(expiry) is not int:
-        raise RelayError("Local relay lease expiry is invalid")
-    remaining = expiry - int(time.time())
-    if remaining <= 0:
-        return 0
-    result = subprocess.run(
-        [
-            "timeout",
-            "--foreground",
-            "--signal=TERM",
-            "--kill-after=5s",
-            str(remaining),
-            "frpc",
-            "-c",
-            config["frpcConfig"],
-        ]
-    ).returncode
-    return 0 if result in (124, 137) else result
-
-
-def parse_relay_ttl(value):
-    """Accept positive seconds, minutes or hours, with a twelve-hour upper bound."""
+def parse_relay_ttl(value: str) -> int:
+    """Parse a positive lease duration no longer than twelve hours."""
     match = re.fullmatch(r"([1-9][0-9]{0,4})([smh]?)", value)
     if not match:
         raise argparse.ArgumentTypeError("Use a positive duration such as 8h or 30m")
     seconds = int(match[1]) * {"": 1, "s": 1, "m": 60, "h": 3600}[match[2]]
-    if seconds > 43200:
+    if seconds > MAX_TTL_SECONDS:
         raise argparse.ArgumentTypeError("Relay leases cannot exceed 12 hours")
     return seconds
 
 
-def mini_host_key_identity(config):
-    """Validate one canonical Ed25519 public key before creating a paid server."""
-    path = Path(config["miniHostPublicKeyFile"])
-    if not path.is_file():
-        raise RelayError("Mini's SSH host public key is missing")
+def lease_path(state: Path) -> Path:
+    """Return the single authoritative local relay lease path."""
+    return state / "lease.json"
+
+
+def read_relay_expiry(state: Path) -> int | None:
+    """Read the lease expiry as Unix seconds, or None when no lease exists."""
+    path = lease_path(state)
+    if not path.exists():
+        return None
     try:
-        contents = path.read_text()
-    except (OSError, UnicodeError):
-        raise RelayError(
-            "Mini's SSH host public key is malformed; expected one ssh-ed25519 public key"
-        ) from None
-    lines = [
-        line.strip()
-        for line in contents.splitlines()
-        if line.strip() and not line.lstrip().startswith("#")
-    ]
-    if len(lines) != 1:
-        raise RelayError(
-            "Mini's SSH host public key is malformed; expected one ssh-ed25519 public key"
-        )
-    fields = lines[0].split()
-    if len(fields) < 2 or fields[0] != "ssh-ed25519":
-        raise RelayError(
-            "Mini's SSH host public key is malformed; expected one ssh-ed25519 public key"
-        )
-    encoded = fields[1]
+        lease = json.loads(path.read_text())
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        raise RelayError("Local relay lease is invalid") from None
+    expiry = lease.get("expiresAt") if isinstance(lease, dict) else None
+    if type(expiry) is not int:
+        raise RelayError("Local relay lease expiry is invalid")
+    return expiry
+
+
+def write_relay_lease(state: Path, expiry: int) -> None:
+    """Atomically publish a complete lease containing its Unix expiry time."""
+    descriptor, temporary_name = tempfile.mkstemp(prefix="lease.", dir=state)
+    temporary = Path(temporary_name)
     try:
-        blob = base64.b64decode(encoded, validate=True)
-        if base64.b64encode(blob).decode("ascii") != encoded:
-            raise ValueError
-        algorithm_size = int.from_bytes(blob[0:4], "big")
-        algorithm_end = 4 + algorithm_size
-        key_size = int.from_bytes(blob[algorithm_end : algorithm_end + 4], "big")
-        key_start = algorithm_end + 4
-        if (
-            blob[4:algorithm_end] != b"ssh-ed25519"
-            or key_size != 32
-            or key_start + key_size != len(blob)
-        ):
-            raise ValueError
-    except (ValueError, UnicodeError, binascii.Error):
-        raise RelayError(
-            "Mini's SSH host public key is malformed; expected one ssh-ed25519 public key"
-        ) from None
-    return fields[:2]
-
-
-def verify_mini_endpoint(config, address, expiry):
-    """Read the real forwarded SSH host key; a listening TCP port alone is not readiness."""
-    expected = mini_host_key_identity(config)
-    deadline = min(time.time() + 180, expiry)
-    while (remaining := deadline - time.time()) > 0:
-        try:
-            scan = subprocess.run(
-                [
-                    "ssh-keyscan",
-                    "-T",
-                    "3",
-                    "-t",
-                    "ed25519",
-                    "-p",
-                    "2222",
-                    address,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=min(10, remaining),
-            )
-        except subprocess.TimeoutExpired:
-            continue
-        keys = [
-            fields[1:3]
-            for line in scan.stdout.splitlines()
-            if line.strip()
-            and not line.lstrip().startswith("#")
-            and len(fields := line.split()) == 3
-        ]
-        if expected in keys:
-            return
-        time.sleep(min(2, max(0, deadline - time.time())))
-    raise RelayError(
-        "frp did not expose Mini's expected SSH host key before the readiness deadline"
-    )
-
-
-def start_relay(config, state, cloud, seconds):
-    """Create one session, ask launchd to start frp, and verify the end-to-end SSH endpoint."""
-    if sys.platform != "darwin":
-        raise RelayError("start runs on Mini using its launchd agent")
-    refuse_existing_hooh(cloud)
-    endpoint, firewall = relay_network(cloud)
-    if endpoint.get("assignee_id") is not None:
-        raise RelayError("The retained IPv4 is already assigned")
-    snapshots = cloud.resources(
-        "image",
-        OWNER_SELECTOR + ",role=relay-image,identity=" + config["imageIdentity"],
-        "--type",
-        "snapshot",
-        "--architecture",
-        "x86",
-    )
-    snapshots = [image for image in snapshots if image["status"] == "available"]
-    if not snapshots:
-        raise RelayError("No matching frp snapshot exists; run prepare first")
-    snapshot = max(snapshots, key=lambda image: image["created"])
-    addresses = {
-        record[4][0]
-        for record in socket.getaddrinfo(
-            config["hostname"], 2222, socket.AF_INET, socket.SOCK_STREAM
-        )
-    }
-    if addresses != {endpoint["ip"]}:
-        raise RelayError(
-            f"Set the DNS-only A record for {config['hostname']} to {endpoint['ip']} before starting"
-        )
-    relay_command(["launchctl", "print", relay_service()])
-    # Verify the local host-key prerequisite before creating anything billable.
-    mini_host_key_identity(config)
-    expiry = int(time.time()) + seconds
-    ready = False
-    try:
-        with tempfile.TemporaryDirectory(prefix="start-", dir=state) as temporary:
-            temporary = Path(temporary)
-            userdata = temporary / "user-data"
-            write_relay_userdata(userdata, expiry, "session")
-            cloud.run(
-                "server",
-                "create",
-                "--name",
-                "hooh",
-                "--type",
-                "cpx11",
-                "--location",
-                "hil",
-                "--image",
-                snapshot["id"],
-                "--primary-ipv4",
-                endpoint["id"],
-                "--without-ipv6",
-                "--firewall",
-                firewall["id"],
-                "--label",
-                OWNER_SELECTOR,
-                "--label",
-                "role=session",
-                "--label",
-                f"expires-at={expiry}",
-                "--user-data-from-file",
-                userdata,
-            )
-            server = one_relay_resource(
-                [
-                    server
-                    for server in cloud.owned_servers()
-                    if server["name"] == "hooh"
-                ],
-                "Hooh session server",
-            )
-            new_lease = temporary / "lease.json"
-            new_lease.write_text(
-                json.dumps({"serverId": server["id"], "expiresAt": expiry})
-            )
-            new_lease.replace(state / "lease.json")
-            relay_command(["launchctl", "kickstart", "-k", relay_service()])
-            verify_mini_endpoint(config, endpoint["ip"], expiry)
-            ready = True
-            return {
-                "status": "ready",
-                "serverId": server["id"],
-                "hostname": config["hostname"],
-                "port": 2222,
-                "expiresAt": expiry,
-            }
+        with os.fdopen(descriptor, "w") as output:
+            json.dump({"expiresAt": expiry}, output, separators=(",", ":"))
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, lease_path(state))
     finally:
-        if not ready:
-            with relay_cleanup_errors():
-                stop_frp(state)
-            with relay_cleanup_errors():
-                for server in cloud.owned_servers():
-                    if server["name"] == "hooh" and relay_expiry(server) == expiry:
-                        cloud.delete_server(server["id"])
+        temporary.unlink(missing_ok=True)
 
 
-def reap_relay(cloud):
-    """A Baymax systemd timer deletes only expired, exactly owned cloud servers."""
-    deleted, errors = [], []
-    for server in cloud.resources("server"):
-        if server.get("name") not in SERVER_ROLES:
-            continue
-        try:
-            if not is_relay_server(server):
-                raise RelayError(
-                    f"Server {server['id']} has inconsistent ownership labels"
-                )
-            if relay_expiry(server) <= time.time():
-                cloud.delete_server(server["id"])
-                deleted.append(server["id"])
-        except RelayError as error:
-            errors.append(str(error))
-    if errors:
-        raise RelayError("; ".join(errors))
-    return {"deleted": deleted}
+def invalidate_relay_lease(state: Path) -> None:
+    """Remove lease authority before any connector stop is requested."""
+    lease_path(state).unlink(missing_ok=True)
 
 
-def relay_server_status(server):
-    """Render identity and raw invalid lease data without hiding the server."""
-    status = {
-        "id": server["id"],
-        "name": server["name"],
-        "status": server["status"],
-    }
+def signal_relay_connector() -> None:
+    """Signal the launchd-owned timeout process and its connector child to terminate."""
+    result = subprocess.run(
+        ["launchctl", "kill", "SIGTERM", relay_service()],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    # launchctl uses ESRCH (3) when the loaded job has no running process.
+    if result.returncode not in (0, 3):
+        raise RelayError("Could not stop the relay connector through launchd")
+
+
+def stop_relay(config: dict[str, object], state: Path) -> dict[str, str]:
+    """Invalidate the current lease before stopping the GUI launchd connector job."""
+    invalidate_relay_lease(state)
+    signal_relay_connector()
+    deadline = time.monotonic() + 10
+    while metrics_endpoint_occupied(str(config["metricsAddress"])):
+        if time.monotonic() >= deadline:
+            raise RelayError("Relay connector remained reachable after stop")
+        time.sleep(0.1)
+    return {"status": "stopped"}
+
+
+def split_metrics_address(address: str) -> tuple[str, int]:
+    """Split a cloudflared metrics listen address into its socket host and port."""
+    if address.startswith("["):
+        closing = address.find("]")
+        if closing < 0 or address[closing + 1 : closing + 2] != ":":
+            raise RelayError("Relay metrics address is invalid")
+        host, port_text = address[1:closing], address[closing + 2 :]
+    else:
+        host, separator, port_text = address.rpartition(":")
+        if not separator:
+            raise RelayError("Relay metrics address is invalid")
     try:
-        status["expiresAt"] = relay_expiry(server)
-    except RelayError as error:
-        status["expiresAt"] = server.get("labels", {}).get("expires-at")
-        status["expiryError"] = str(error)
-    return status
+        port = int(port_text)
+    except ValueError:
+        raise RelayError("Relay metrics address is invalid") from None
+    if not host or not 1 <= port <= 65535:
+        raise RelayError("Relay metrics address is invalid")
+    return host, port
 
 
-def relay_status(cloud):
-    return {
-        "servers": [relay_server_status(server) for server in cloud.owned_servers()],
-        "endpoints": [
-            {"id": ip["id"], "ip": ip["ip"]} for ip in cloud.resources("primary-ip")
-        ],
-        "snapshots": [
-            {"id": image["id"], "created": image["created"]}
-            for image in cloud.resources(
-                "image", OWNER_SELECTOR + ",role=relay-image", "--type", "snapshot"
-            )
-        ],
+def metrics_endpoint_occupied(address: str) -> bool:
+    """Detect any listener that could impersonate the connector readiness endpoint."""
+    host, port = split_metrics_address(address)
+    try:
+        with socket.create_connection((host, port), timeout=0.25):
+            return True
+    except OSError:
+        return False
+
+
+def cloudflared_ready(address: str) -> bool:
+    """Return whether cloudflared's local readiness endpoint currently answers HTTP 200."""
+    host, port = split_metrics_address(address)
+    url_host = f"[{host}]" if ":" in host else host
+    try:
+        with urllib.request.urlopen(
+            f"http://{url_host}:{port}/ready", timeout=0.5
+        ) as response:
+            return response.status == 200
+    except (OSError, urllib.error.URLError):
+        return False
+
+
+def start_relay(config: dict[str, object], state: Path, seconds: int) -> dict[str, object]:
+    """Start one non-extendable lease and wait for this connector to become ready."""
+    now = int(time.time())
+    existing_expiry = read_relay_expiry(state)
+    if existing_expiry is not None and existing_expiry > now:
+        raise RelayError("An active relay lease already exists; stop it before starting")
+    if existing_expiry is not None:
+        invalidate_relay_lease(state)
+        signal_relay_connector()
+
+    metrics_address = str(config["metricsAddress"])
+    if metrics_endpoint_occupied(metrics_address):
+        raise RelayError("Relay metrics endpoint is already occupied")
+
+    expiry = now + seconds
+    write_relay_lease(state, expiry)
+    try:
+        subprocess.run(
+            ["launchctl", "kickstart", "-k", relay_service()],
+            check=True,
+        )
+        readiness_deadline = min(expiry, now + READINESS_TIMEOUT_SECONDS)
+        while int(time.time()) < readiness_deadline:
+            if cloudflared_ready(metrics_address):
+                return {
+                    "status": "ready",
+                    "hostname": config["hostname"],
+                    "expiresAt": expiry,
+                }
+            time.sleep(0.25)
+        raise RelayError("Cloudflare relay did not become ready before the startup deadline")
+    except BaseException:
+        invalidate_relay_lease(state)
+        try:
+            signal_relay_connector()
+        except (OSError, RelayError):
+            print("herdr-relay: cleanup could not stop the connector", file=sys.stderr)
+        raise
+
+
+def relay_status(config: dict[str, object], state: Path) -> dict[str, object]:
+    """Report stopped, expired, connecting, or ready from the lease and /ready."""
+    expiry = read_relay_expiry(state)
+    if expiry is None:
+        return {"status": "stopped", "hostname": config["hostname"]}
+    result: dict[str, object] = {
+        "status": "expired" if expiry <= int(time.time()) else "connecting",
+        "hostname": config["hostname"],
+        "expiresAt": expiry,
     }
+    if result["status"] == "connecting" and cloudflared_ready(
+        str(config["metricsAddress"])
+    ):
+        result["status"] = "ready"
+    return result
 
 
-def main():
+def connect_relay(config: dict[str, object], state: Path) -> int:
+    """Exec cloudflared beneath native timeout for exactly the lease time remaining."""
+    expiry = read_relay_expiry(state)
+    if expiry is None:
+        return 0
+    remaining = expiry - int(time.time())
+    if remaining <= 0:
+        return 0
+    arguments = [
+        "timeout",
+        "--foreground",
+        "--signal=TERM",
+        "--kill-after=5s",
+        str(remaining),
+        "cloudflared",
+        "tunnel",
+        "--config",
+        str(config["tunnelConfig"]),
+        "--no-autoupdate",
+        "--metrics",
+        str(config["metricsAddress"]),
+        "run",
+        str(config["tunnelId"]),
+    ]
+    os.execvp(arguments[0], arguments)
+    return 1
+
+
+def load_relay_config(path: str) -> tuple[dict[str, object], Path]:
+    """Load the Cloudflare relay config and secure its user-owned state directory."""
+    config = json.loads(Path(path).read_text())
+    required = ("stateDirectory", "hostname", "tunnelId", "tunnelConfig")
+    if not isinstance(config, dict) or any(
+        not isinstance(config.get(key), str) or not config[key] for key in required
+    ):
+        raise RelayError("Relay configuration is missing a required string value")
+    config.setdefault("metricsAddress", "127.0.0.1:17478")
+    if not isinstance(config["metricsAddress"], str):
+        raise RelayError("Relay metrics address is invalid")
+    split_metrics_address(config["metricsAddress"])
+
+    state = Path(config["stateDirectory"])
+    if state.is_symlink():
+        raise RelayError(
+            "Relay state directory must be owned by the current user and not a symlink"
+        )
+    state.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if state.stat().st_uid != os.getuid():
+        raise RelayError(
+            "Relay state directory must be owned by the current user and not a symlink"
+        )
+    state.chmod(0o700)
+    return config, state
+
+
+def main() -> int:
+    """Run the herdr-relay command-line lifecycle interface."""
     parser = argparse.ArgumentParser(
         prog="herdr-relay",
-        description="Use hcloud and frp for the ephemeral Hooh relay",
+        description="Manage an on-demand Cloudflare Tunnel connector",
     )
     parser.add_argument(
         "--config",
         default=os.environ.get("HERDR_RELAY_CONFIG", "/etc/herdr-relay.json"),
     )
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser(
-        "prepare", help="create retained infrastructure and a NixOS snapshot"
-    ).add_argument("--flake", required=True)
-    commands.add_parser("start", help="create a leased VPS and start frp").add_argument(
-        "--ttl", type=parse_relay_ttl, default=28800
+    commands.add_parser("start", help="start a leased Cloudflare connector").add_argument(
+        "--ttl", type=parse_relay_ttl, default=DEFAULT_TTL_SECONDS
     )
-    for command, help_text in [
-        ("stop", "stop frp and delete the session VPS"),
-        ("status", "show cloud resources"),
-        ("reap", "delete expired VPSs"),
-        ("connect", "run frpc under launchd for the current lease"),
-    ]:
-        commands.add_parser(command, help=help_text)
+    commands.add_parser("stop", help="stop the Cloudflare connector")
+    commands.add_parser("status", help="show the local connector lease and readiness")
+    commands.add_parser("connect", help="run cloudflared under launchd for the lease")
     arguments = parser.parse_args()
-    os.umask(0o077)
-    config = json.loads(Path(arguments.config).read_text())
-    state = Path(config["stateDirectory"])
-    state.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if state.is_symlink() or state.stat().st_uid != os.getuid():
-        raise RelayError(
-            "Relay state directory must be owned by the current user and not a symlink"
-        )
-    state.chmod(0o700)
-    if arguments.command == "connect":
-        return connect_frp(config, state)
-    cloud = HcloudRelay(config["tokenFile"])
-    with relay_lock(state):
-        if arguments.command == "start":
-            result = start_relay(config, state, cloud, arguments.ttl)
-        elif arguments.command == "prepare":
-            from relay_image import prepare_relay_image
 
-            result = prepare_relay_image(config, state, cloud, arguments.flake)
-        elif arguments.command == "stop":
-            try:
-                stop_frp(state)
-            finally:
-                with relay_cleanup_errors():
-                    for server in cloud.owned_servers():
-                        if server["name"] == "hooh":
-                            cloud.delete_server(server["id"])
-            result = {"status": "stopped", "retainedResourcesStillBilled": True}
-        elif arguments.command == "reap":
-            result = reap_relay(cloud)
-        else:
-            result = relay_status(cloud)
-    print(json.dumps(result))
+    os.umask(0o077)
+    config, state = load_relay_config(arguments.config)
+    if arguments.command == "connect":
+        return connect_relay(config, state)
+    if arguments.command == "status":
+        result = relay_status(config, state)
+    else:
+        with relay_lock(state):
+            if arguments.command == "start":
+                result = start_relay(config, state, arguments.ttl)
+            else:
+                result = stop_relay(config, state)
+    print(json.dumps(result, separators=(",", ":")))
     return 0
 
 
-def terminate_relay(_signal, _frame):
-    """Turn service-manager disconnect signals into normal unwinding and cleanup."""
+def terminate_relay(_signal: int, _frame: object) -> None:
+    """Turn service-manager signals into startup unwinding that invalidates the lease."""
     raise KeyboardInterrupt
 
 
-def install_signal_handlers():
-    """Ensure terminal hangups and service stops unwind active relay operations."""
+def install_signal_handlers() -> None:
+    """Ensure interruption unwinds a start operation through its cleanup path."""
     signal.signal(signal.SIGTERM, terminate_relay)
     signal.signal(signal.SIGHUP, terminate_relay)
 
@@ -408,16 +324,10 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except KeyboardInterrupt:
-        print(
-            "herdr-relay: interrupted; inspect status if cloud cleanup could not finish",
-            file=sys.stderr,
-        )
+        print("herdr-relay: interrupted; relay lease was invalidated", file=sys.stderr)
         sys.exit(130)
-    except (RelayError, OSError, ValueError, KeyError) as error:
-        message = (
-            str(error)
-            if isinstance(error, RelayError)
-            else "configuration or local I/O failed"
-        )
+    except (RelayError, OSError, ValueError, KeyError, subprocess.SubprocessError):
+        error = sys.exception()
+        message = str(error) if isinstance(error, RelayError) else "configuration or local I/O failed"
         print("herdr-relay: " + message, file=sys.stderr)
         sys.exit(1)

@@ -145,7 +145,7 @@ in {
     ../../modules/github-cli.nix
     ../../modules/ghostty.nix
     ../../modules/herdr.nix
-    (import ../../modules/herdr-relay.nix {platform = "darwin";})
+    ../../modules/herdr-relay.nix
     ../../modules/hunk.nix
     (import ../../modules/local-lan-dns-resolver.nix {platform = "darwin";})
     ../../modules/neovim
