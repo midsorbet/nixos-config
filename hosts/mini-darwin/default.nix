@@ -81,6 +81,7 @@
     '';
   };
   dactylKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAkcCO74k1FF3rHzIfX07QdaJXpOqyl3tUdLguL0kJzc dactyl";
+  delcattyKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN6UTmG0UPXAPh37Vvtihuh6ljKTZw8x498Cbd9Xsrzk law14711@MININT-C659J1H";
   ompBrokerLocalPort = 18765;
   ompBrokerRemotePort = 8765;
   baymaxKnownHosts = pkgs.writeText "baymax-known-hosts" ''
@@ -160,7 +161,7 @@ in {
     name = "${user}";
     home = "/Users/${user}";
     isHidden = false;
-    openssh.authorizedKeys.keys = [dactylKey];
+    openssh.authorizedKeys.keys = [dactylKey delcattyKey];
   };
 
   local.herdrRelay.enable = true;
