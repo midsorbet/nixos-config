@@ -16,7 +16,10 @@
       http://169.254.169.254/hetzner/v1/userdata > /run/herdr-relay/user-data
     IFS= read -r header < /run/herdr-relay/user-data
     test "$header" = '#cloud-config'
-    ${pkgs.coreutils}/bin/tail -n +2 /run/herdr-relay/user-data > /run/herdr-relay/lease.json
+    ${pkgs.coreutils}/bin/tail -n +2 /run/herdr-relay/user-data | ${pkgs.jq}/bin/jq -e '
+      [.write_files[] | select(.path == "/run/herdr-relay/lease.json")] |
+      select(length == 1) | .[0].content | fromjson
+    ' > /run/herdr-relay/lease.json
     now="$(${pkgs.coreutils}/bin/date +%s)"
     expires="$(${pkgs.jq}/bin/jq -er --argjson now "$now" '
       .herdr_relay | select(.role == "session" or .role == "image-builder") |
@@ -89,9 +92,9 @@ in {
       maxPortsPerClient = 1;
       transport.tls = {
         force = true;
-        certFile = toString ./frp-server.crt;
+        certFile = "${./frp-server.crt}";
         keyFile = "/run/credentials/frp-hooh.service/tls-key";
-        trustedCaFile = toString ./frp-ca.crt;
+        trustedCaFile = "${./frp-ca.crt}";
       };
     };
   };

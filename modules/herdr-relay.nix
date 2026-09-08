@@ -20,8 +20,8 @@
     transport.tls = {
       enable = true;
       serverName = "hooh";
-      trustedCaFile = toString ../hosts/hooh/frp-ca.crt;
-      certFile = toString ../hosts/hooh/frp-client.crt;
+      trustedCaFile = "${../hosts/hooh/frp-ca.crt}";
+      certFile = "${../hosts/hooh/frp-client.crt}";
       keyFile = config.age.secrets.hooh-frp-client-key.path;
     };
     proxies = [

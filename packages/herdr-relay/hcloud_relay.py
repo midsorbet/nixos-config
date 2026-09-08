@@ -209,6 +209,16 @@ def refuse_existing_hooh(cloud):
 
 def write_relay_userdata(path, expiry, role, extra=None):
     """Hetzner metadata carries only a finite lease, plus bootstrap keys during preparation."""
-    data = {"herdr_relay": {"expires_at": expiry, "role": role}, **(extra or {})}
+    lease = {"herdr_relay": {"expires_at": expiry, "role": role}}
+    data = {
+        **(extra or {}),
+        "write_files": [
+            {
+                "path": "/run/herdr-relay/lease.json",
+                "permissions": "0600",
+                "content": json.dumps(lease),
+            }
+        ],
+    }
     Path(path).write_text("#cloud-config\n" + json.dumps(data) + "\n")
     Path(path).chmod(0o600)

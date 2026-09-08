@@ -118,7 +118,7 @@ def wait_relay_ssh(config, known_hosts, address, user, command, timeout=240):
         "-o",
         "StrictHostKeyChecking=yes",
         "-o",
-        f"UserKnownHostsFile={known_hosts}",
+        f"UserKnownHostsFile={json.dumps(str(known_hosts))}",
         "-o",
         "GlobalKnownHostsFile=/dev/null",
         f"{user}@{address}",
@@ -172,7 +172,8 @@ def prepare_relay_image(config, state, cloud, flake):
             "Hooh's decrypted private host key does not match the configured public key"
         )
     refuse_existing_hooh(cloud)
-    with tempfile.TemporaryDirectory(prefix="image-", dir=state) as temporary:
+    # nixos-anywhere serializes NIX_SSHOPTS with whitespace delimiters.
+    with tempfile.TemporaryDirectory(prefix="herdr-relay-image-", dir="/tmp") as temporary:
         temporary = Path(temporary)
         endpoint, firewall = prepare_relay_network(cloud, temporary, admin_public)
         if endpoint.get("assignee_id") is not None:
@@ -279,7 +280,7 @@ def prepare_relay_image(config, state, cloud, flake):
                     "--ssh-option",
                     "StrictHostKeyChecking=yes",
                     "--ssh-option",
-                    f"UserKnownHostsFile={known_hosts}",
+                    f"UserKnownHostsFile={json.dumps(str(known_hosts))}",
                     "--ssh-option",
                     "GlobalKnownHostsFile=/dev/null",
                 ],

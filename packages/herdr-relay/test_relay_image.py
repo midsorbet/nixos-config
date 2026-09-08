@@ -73,9 +73,9 @@ class FakeCloud:
             userdata = Path(
                 arguments[arguments.index("--user-data-from-file") + 1]
             ).read_text()
-            self.userdata_expiry = json.loads(userdata.split("\n", 1)[1])[
-                "herdr_relay"
-            ]["expires_at"]
+            cloud_config = json.loads(userdata.split("\n", 1)[1])
+            lease = json.loads(cloud_config["write_files"][0]["content"])
+            self.userdata_expiry = lease["herdr_relay"]["expires_at"]
             return ""
         if arguments[:2] == ("server", "describe"):
             return json.dumps({"status": "off"})
@@ -146,6 +146,26 @@ class RelayImagePermissionsTest(unittest.TestCase):
 
 class RelaySshWaitTest(unittest.TestCase):
     config = {"sshCommand": "ssh", "adminKeyFile": "/private/admin"}
+
+    def test_known_hosts_path_with_spaces_remains_one_ssh_file(self):
+        run = subprocess.run
+        known_hosts = "/tmp/Application Support/relay/known_hosts"
+
+        def inspect_ssh_config(arguments, **kwargs):
+            return run([arguments[0], "-G", *arguments[1:]], **kwargs)
+
+        with patch.object(
+            relay_image.subprocess, "run", side_effect=inspect_ssh_config
+        ):
+            output = relay_image.wait_relay_ssh(
+                self.config, known_hosts, "192.0.2.1", "root", "true"
+            )
+        line = next(
+            line
+            for line in output.splitlines()
+            if line.startswith("userknownhostsfile ")
+        )
+        self.assertEqual(line, f"userknownhostsfile {known_hosts}")
 
     def test_subprocess_timeout_is_retried_until_ready(self):
         clock = FakeClock()
