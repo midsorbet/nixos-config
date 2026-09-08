@@ -93,7 +93,8 @@
         "flake-parts": "flake-parts_3",
         "import-tree": "import-tree",
         "nixpkgs": [
-          "nixpkgs-darwin-compat"
+          "hunk",
+          "nixpkgs"
         ],
         "systems": [
           "hunk",
@@ -542,16 +543,16 @@
         "systems": "systems_4"
       },
       "locked": {
-        "lastModified": 1787970923,
-        "narHash": "sha256-QPo9lPxbTUfBuWEzk2YViYSaJ8/7hTC+fAnTEnI0Y20=",
+        "lastModified": 1788544180,
+        "narHash": "sha256-8faDOqDXSdp5j8WP07rTW0L44keCPpv9mWoXGKXgvpY=",
         "owner": "modem-dev",
         "repo": "hunk",
-        "rev": "4ae6f8f6c8afbdbabcc037e0e0e7fff85d41d6fd",
+        "rev": "5ec26982507a6f77420a20064427c94a2512dcd3",
         "type": "github"
       },
       "original": {
         "owner": "modem-dev",
-        "ref": "v0.20.1",
+        "ref": "v0.21.1",
         "repo": "hunk",
         "type": "github"
       }

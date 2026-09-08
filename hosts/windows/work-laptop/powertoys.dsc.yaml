@@ -3,7 +3,8 @@
 $schema: https://raw.githubusercontent.com/PowerShell/DSC/main/schemas/2023/08/config/document.json
 metadata:
   winget:
-    processor: dscv3
+    processor:
+      identifier: dscv3
 resources:
   - name: Configure PowerToys app shell
     type: Microsoft.PowerToys/AppSettings

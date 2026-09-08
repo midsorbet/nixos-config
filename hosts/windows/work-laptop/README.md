@@ -41,7 +41,10 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\bootstrap.ps1
 ```
 
-The no-argument run prints checks only. Apply explicit pieces after review:
+The no-argument run prints checks only. Applying these files requires WinGet 1.11 or later
+because they use the DSC v3 processor. WinGet supplies the DSC v3 processor package
+when configuration is applied; this profile does not install the obsolete WinGet
+PowerShell DSC module. Apply explicit pieces after reviewing the YAML:
 
 ```powershell
 .\bootstrap.ps1 -ApplyPackages
@@ -51,17 +54,26 @@ The no-argument run prints checks only. Apply explicit pieces after review:
 ```
 
 Add `-AcceptAgreements` to the WinGet steps only after reviewing the YAML.
-The Terminal fragment merge creates a timestamped backup next to the existing
-Windows Terminal settings file and rewrites the settings as plain JSON. Do not
-use it if the company manages Terminal settings through policy.
+The Terminal merge parses and validates both JSON documents before changing the
+settings file. If the merged content differs, it creates a timestamped backup next
+to the existing Windows Terminal settings file and then writes the merged JSON.
+If it already matches, it does not rewrite the file or create another backup. Do
+not use it if the company manages Terminal settings through policy.
+
+The Terminal merge applies the fragment's top-level `theme`, merges profile
+defaults by property, replaces managed color schemes by their `name`, and merges
+actions by their `keys`. Unrelated schemes, actions, profile properties, and
+other top-level settings remain untouched. It is safe to run repeatedly: managed
+schemes and actions are not duplicated. A malformed fragment fails before backup
+or write.
 
 Command Palette stores its settings outside the PowerToys DSC surface. Start
 Command Palette once, close it, and then apply the managed fragment. The merge
 creates a timestamped backup and preserves settings not owned by the fragment.
 
-The managed Terminal fragment also sets Windows Terminal itself to follow the
-system theme, with `Everforest Light Hard` for light mode and `Kanagawa Wave`
-for dark mode.
+The managed Terminal fragment sets Windows Terminal itself to follow the system
+theme, with `Everforest Light Hard` for light mode and `Kanagawa Wave` for dark
+mode.
 
 `Microsoft.WSL` is included in the package baseline because WSL is the intended
 developer substrate, but enabling the underlying Windows optional features may
