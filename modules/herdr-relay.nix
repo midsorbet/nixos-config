@@ -3,6 +3,7 @@
   lib,
   pkgs,
   secrets,
+  self,
   ...
 }: let
   cfg = config.local.herdrRelay;
@@ -13,6 +14,8 @@
     then "${homeDirectory}/Library/Application Support/herdr-relay"
     else "/var/lib/herdr-relay";
   relayPackage = pkgs.callPackage ../packages/herdr-relay {};
+  # Compare the Linux build identity without adding its closure to Mini.
+  expectedSystem = builtins.unsafeDiscardStringContext (toString self.nixosConfigurations.hooh.config.system.build.toplevel);
   frpcConfig = (pkgs.formats.toml {}).generate "hooh-frpc.toml" {
     serverAddr = "mini.midsorbet.me";
     serverPort = 7000;
@@ -36,10 +39,10 @@
   };
   relayConfig = pkgs.writeText "herdr-relay.json" (builtins.toJSON ({
       tokenFile = config.age.secrets.herdr-relay-hcloud-token.path;
-      inherit stateDirectory;
+      inherit stateDirectory expectedSystem;
       hostname = "mini.midsorbet.me";
       imageIdentity = builtins.substring 0 32 (builtins.hashString "sha256" (
-        builtins.readFile ../hosts/hooh/frp-ca.crt + builtins.readFile ../hosts/hooh/hooh-host-key.pub
+        expectedSystem + builtins.readFile ../hosts/hooh/frp-ca.crt + builtins.readFile ../hosts/hooh/hooh-host-key.pub
       ));
     }
     // lib.optionalAttrs isDarwin {

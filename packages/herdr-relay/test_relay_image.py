@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import stat
@@ -32,6 +33,7 @@ class FakeCloud:
         self.deleted = []
         self.expiry = None
         self.userdata_expiry = None
+        self.userdata = None
 
     def resources(self, kind, selector=OWNER_SELECTOR, *filters):
         if kind == "server":
@@ -73,6 +75,7 @@ class FakeCloud:
             userdata = Path(
                 arguments[arguments.index("--user-data-from-file") + 1]
             ).read_text()
+            self.userdata = userdata
             cloud_config = json.loads(userdata.split("\n", 1)[1])
             lease = json.loads(cloud_config["write_files"][0]["content"])
             self.userdata_expiry = lease["herdr_relay"]["expires_at"]
@@ -103,6 +106,11 @@ class FakeCloud:
 def command_result(arguments, *, timeout=120, capture=True, environment=None):
     if arguments[:3] == ["nix", "eval", "--raw"]:
         return "/nix/store/hooh-system\n"
+    if arguments[0] == "ssh-keygen" and "-t" in arguments:
+        private_file = Path(arguments[arguments.index("-f") + 1])
+        private_file.write_text("BOOTSTRAP PRIVATE\n")
+        private_file.with_suffix(".pub").write_text("ssh-ed25519 BOOTSTRAP\n")
+        return ""
     if arguments[0] == "ssh-keygen":
         return "ssh-ed25519 PUBLIC\n"
     if arguments[0] == "nixos-anywhere":
@@ -228,6 +236,7 @@ class RelayImageLeaseTest(unittest.TestCase):
             "hostPublicKey": "ssh-ed25519 PUBLIC",
             "hostname": "mini.example.test",
             "imageIdentity": "test-identity",
+            "expectedSystem": "/nix/store/hooh-system",
             "sshCommand": "ssh",
         }
         return state, flake, config
@@ -263,6 +272,69 @@ class RelayImageLeaseTest(unittest.TestCase):
         self.assertEqual(result["snapshotId"], "snapshot-1")
         self.assertEqual(cloud.deleted, ["builder-1"])
 
+    def test_bootstrap_and_canonical_host_keys_stay_in_their_own_phases(self):
+        cloud = FakeCloud()
+        observed_trust = []
+        installer = {}
+
+        def record_command(arguments, **options):
+            if arguments[0] == "nixos-anywhere":
+                root = Path(arguments[arguments.index("--extra-files") + 1])
+                installer["staged_private"] = (
+                    root / "etc" / "ssh" / "ssh_host_ed25519_key"
+                ).read_text()
+                known_hosts_option = next(
+                    argument
+                    for argument in arguments
+                    if str(argument).startswith("UserKnownHostsFile=")
+                )
+                known_hosts = Path(json.loads(known_hosts_option.split("=", 1)[1]))
+                installer["known_hosts"] = known_hosts.read_text()
+            return command_result(arguments, **options)
+
+        def observe_trust(config, known_hosts, address, user, command, timeout=240):
+            observed_trust.append((user, Path(known_hosts).read_text()))
+            return config["expectedSystem"] if user == "me" else ""
+
+        with tempfile.TemporaryDirectory() as temporary:
+            state, flake, config = self.prepare_fixture(temporary)
+            Path(config["hostKeyFile"]).write_text("CANONICAL PRIVATE\n")
+            with (
+                patch.object(relay_image, "relay_command", side_effect=record_command),
+                patch.object(relay_image, "wait_relay_ssh", side_effect=observe_trust),
+                patch.object(relay_image.time, "time", return_value=1_000_000),
+            ):
+                relay_image.prepare_relay_image(config, state, cloud, flake)
+
+        bootstrap_hosts = "192.0.2.10 ssh-ed25519 BOOTSTRAP\n"
+        canonical_hosts = "192.0.2.10 ssh-ed25519 PUBLIC\n"
+        self.assertIn("BOOTSTRAP PRIVATE", cloud.userdata)
+        self.assertNotIn("CANONICAL PRIVATE", cloud.userdata)
+        self.assertEqual(installer["staged_private"], "CANONICAL PRIVATE\n")
+        self.assertEqual(installer["known_hosts"], bootstrap_hosts)
+        self.assertEqual(
+            observed_trust, [("root", bootstrap_hosts), ("me", canonical_hosts)]
+        )
+
+    def test_expected_system_mismatch_is_rejected_before_cloud_access(self):
+        class UnexpectedCloudAccess:
+            def __getattr__(self, name):
+                raise AssertionError(f"cloud accessed through {name}")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            state, flake, config = self.prepare_fixture(temporary)
+            with patch.object(
+                relay_image,
+                "relay_command",
+                return_value="/nix/store/different-system\n",
+            ):
+                with self.assertRaisesRegex(
+                    RelayError, "Prepared Hooh system does not match"
+                ):
+                    relay_image.prepare_relay_image(
+                        config, state, UnexpectedCloudAccess(), flake
+                    )
+
     def test_failed_preparation_deletes_created_builder(self):
         cloud = FakeCloud()
         with tempfile.TemporaryDirectory() as temporary:
@@ -281,6 +353,32 @@ class RelayImageLeaseTest(unittest.TestCase):
 
         self.assertTrue(cloud.created)
         self.assertEqual(cloud.deleted, ["builder-1"])
+
+    def test_cleanup_failure_does_not_replace_preparation_failure(self):
+        class CleanupFailureCloud(FakeCloud):
+            def delete_server(self, server_id):
+                raise RelayError("builder cleanup failed")
+
+        cloud = CleanupFailureCloud()
+        diagnostic = io.StringIO()
+        with tempfile.TemporaryDirectory() as temporary:
+            state, flake, config = self.prepare_fixture(temporary)
+            with (
+                patch.object(relay_image, "relay_command", side_effect=command_result),
+                patch.object(
+                    relay_image,
+                    "wait_relay_ssh",
+                    side_effect=RelayError("bootstrap failed"),
+                ),
+                patch.object(relay_image.time, "time", return_value=1_000_000),
+                patch("sys.stderr", diagnostic),
+            ):
+                with self.assertRaisesRegex(RelayError, "bootstrap failed"):
+                    relay_image.prepare_relay_image(config, state, cloud, flake)
+
+        self.assertIn(
+            "cleanup also failed: builder cleanup failed", diagnostic.getvalue()
+        )
 
     def test_shutdown_polling_deadline_refuses_snapshot_and_deletes_builder(self):
         clock = FakeClock()

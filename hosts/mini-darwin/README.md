@@ -43,9 +43,17 @@ services.
   only deletion ends server billing. No cloud resources are created by activation.
 - After approving costs, run `herdr-relay prepare --flake /path/to/nixos-config`. It creates the retained IPv4/firewall and a NixOS snapshot, then deletes the temporary builder. The temporary builder has a fixed four-hour lease, established only when creation begins; slow preparation cannot extend it, and failures still clean up the owned builder.
   Configure a Cloudflare DNS-only A record for `mini.midsorbet.me` using the returned IPv4. Retired snapshots remain billable until explicitly deleted after verifying their replacement.
+- Snapshots must match the expected Hooh system build as well as its trust identity.
+  After changing Hooh configuration or server certificates, activate the reviewed
+  Mini/Baymax configuration, then run `prepare` from the matching checkout.
+  `start` refuses stale snapshots before creating a VPS; `prepare` refuses a
+  checkout that differs from the activated expected build.
 - Run `herdr-relay start --ttl 8h`, `herdr-relay status`, and `herdr-relay stop`.
   Start checks the forwarded Mini SSH host key before reporting readiness.
   Leases cannot exceed 12 hours; repeated starts never extend an existing lease.
+  Terminal hangups unwind active preparation/start operations and attempt cleanup.
+  Cleanup errors preserve the original failure; inspect `status` afterward.
+  Invalid expiry labels remain visible in `status` but never authorize deletion.
 - At work, use `herdr --remote ssh://me@mini.midsorbet.me:2222`, or a compatible
   Herdr version with `machine add`. No frp or Cloudflare client is needed there.
 - Mutual TLS authenticates Mini to Hooh. SSH still authenticates the work user
@@ -54,3 +62,7 @@ services.
   `openssl x509 -in hosts/hooh/frp-server.crt -noout -enddate` expiry.
 - Hooh uses its canonical SSH host key to decrypt only its server TLS key.
   The Hetzner API token is never deployed to Hooh.
+  Preparation uses a fresh temporary SSH host key for Debian and the installer.
+  The canonical private key is installed through the pinned SSH connection, never
+  placed in cloud-init metadata. Post-install verification trusts only that
+  canonical key.

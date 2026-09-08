@@ -11,6 +11,7 @@ from hcloud_relay import (
     RelayError,
     one_relay_resource,
     refuse_existing_hooh,
+    relay_cleanup_errors,
     relay_command,
     relay_expiry,
     relay_network,
@@ -42,6 +43,26 @@ def stage_relay_host_key(root, host_private):
     private_file.write_text(host_private)
     private_file.chmod(0o600)
     return private_file
+
+
+def _generate_bootstrap_host_key(temporary):
+    """Generate one temporary SSH host key used only before NixOS finishes installing."""
+    private_file = temporary / "bootstrap_host_ed25519_key"
+    relay_command(
+        [
+            "ssh-keygen",
+            "-q",
+            "-t",
+            "ed25519",
+            "-N",
+            "",
+            "-f",
+            str(private_file),
+        ]
+    )
+    return private_file.read_text(), private_file.with_suffix(
+        ".pub"
+    ).read_text().strip()
 
 
 def prepare_relay_network(cloud, temporary, admin_public):
@@ -139,7 +160,7 @@ def wait_relay_ssh(config, known_hosts, address, user, command, timeout=240):
                 return result.stdout.strip()
             if "REMOTE HOST IDENTIFICATION HAS CHANGED" in result.stderr:
                 raise RelayError(
-                    "Hooh SSH host identity does not match the canonical key"
+                    "Hooh SSH host identity does not match the key expected during this phase"
                 )
         remaining = deadline - time.monotonic()
         if remaining > 0:
@@ -161,6 +182,10 @@ def prepare_relay_image(config, state, cloud, flake):
         ],
         timeout=180,
     ).strip()
+    if expected_system != config["expectedSystem"]:
+        raise RelayError(
+            "Prepared Hooh system does not match the configured expected system"
+        )
     admin_public = relay_command(
         ["ssh-keygen", "-y", "-f", config["adminKeyFile"]]
     ).strip()
@@ -173,7 +198,9 @@ def prepare_relay_image(config, state, cloud, flake):
         )
     refuse_existing_hooh(cloud)
     # nixos-anywhere serializes NIX_SSHOPTS with whitespace delimiters.
-    with tempfile.TemporaryDirectory(prefix="herdr-relay-image-", dir="/tmp") as temporary:
+    with tempfile.TemporaryDirectory(
+        prefix="herdr-relay-image-", dir="/tmp"
+    ) as temporary:
         temporary = Path(temporary)
         endpoint, firewall = prepare_relay_network(cloud, temporary, admin_public)
         if endpoint.get("assignee_id") is not None:
@@ -202,8 +229,13 @@ def prepare_relay_image(config, state, cloud, flake):
         host_private = Path(config["hostKeyFile"]).read_text()
         root = temporary / "root"
         stage_relay_host_key(root, host_private)
-        known_hosts = temporary / "known_hosts"
-        known_hosts.write_text(f"{endpoint['ip']} {config['hostPublicKey'].strip()}\n")
+        bootstrap_private, bootstrap_public = _generate_bootstrap_host_key(temporary)
+        bootstrap_known_hosts = temporary / "bootstrap_known_hosts"
+        bootstrap_known_hosts.write_text(f"{endpoint['ip']} {bootstrap_public}\n")
+        canonical_known_hosts = temporary / "canonical_known_hosts"
+        canonical_known_hosts.write_text(
+            f"{endpoint['ip']} {config['hostPublicKey'].strip()}\n"
+        )
         if BUILDER_PHASE_TIMEOUT_SECONDS >= BUILDER_LEASE_SECONDS:
             raise RelayError("Image builder phase timeouts exceed its finite lease")
         try:
@@ -215,8 +247,8 @@ def prepare_relay_image(config, state, cloud, flake):
                 "image-builder",
                 {
                     "ssh_keys": {
-                        "ed25519_private": host_private,
-                        "ed25519_public": config["hostPublicKey"],
+                        "ed25519_private": bootstrap_private,
+                        "ed25519_public": bootstrap_public,
                     },
                     "ssh_pwauth": False,
                 },
@@ -258,7 +290,7 @@ def prepare_relay_image(config, state, cloud, flake):
             )
             wait_relay_ssh(
                 config,
-                known_hosts,
+                bootstrap_known_hosts,
                 endpoint["ip"],
                 "root",
                 "cloud-init status --wait >/dev/null",
@@ -280,7 +312,7 @@ def prepare_relay_image(config, state, cloud, flake):
                     "--ssh-option",
                     "StrictHostKeyChecking=yes",
                     "--ssh-option",
-                    f"UserKnownHostsFile={json.dumps(str(known_hosts))}",
+                    f"UserKnownHostsFile={json.dumps(str(bootstrap_known_hosts))}",
                     "--ssh-option",
                     "GlobalKnownHostsFile=/dev/null",
                 ],
@@ -293,7 +325,7 @@ def prepare_relay_image(config, state, cloud, flake):
                 "readlink -f /run/current-system"
             )
             installed = wait_relay_ssh(
-                config, known_hosts, endpoint["ip"], "me", verification
+                config, canonical_known_hosts, endpoint["ip"], "me", verification
             )
             if installed != expected_system:
                 raise RelayError(
@@ -360,10 +392,11 @@ def prepare_relay_image(config, state, cloud, flake):
                 "nextStep": f"Set a DNS-only A record for {config['hostname']} to this IPv4",
             }
         finally:
-            # hcloud handles action polling. Labels let Baymax recover if this machine disappears.
-            for server in cloud.owned_servers():
-                if (
-                    server["name"] == "hooh-image-builder"
-                    and relay_expiry(server) == expiry
-                ):
-                    cloud.delete_server(server["id"])
+            with relay_cleanup_errors():
+                # hcloud handles action polling. Labels let Baymax recover if this machine disappears.
+                for server in cloud.owned_servers():
+                    if (
+                        server["name"] == "hooh-image-builder"
+                        and relay_expiry(server) == expiry
+                    ):
+                        cloud.delete_server(server["id"])

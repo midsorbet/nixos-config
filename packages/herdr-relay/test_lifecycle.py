@@ -173,6 +173,77 @@ class RelayLifecycleTests(unittest.TestCase):
         self.assertEqual(cloud.deleted, [42])
         self.assertFalse((self.state / "lease.json").exists())
 
+    def test_readiness_failure_survives_delete_cleanup_failure(self):
+        self.host_key.write_text(ed25519_public_key() + " mini\n")
+        server = {"id": 43, "name": "hooh", "labels": {"expires-at": "1060"}}
+        cloud = SessionCloud([[server], [server]])
+        cloud.delete_server = mock.Mock(side_effect=RelayError("delete cleanup failed"))
+        readiness = RelayError("endpoint verification failed")
+
+        with (
+            mock.patch.object(herdr_relay.sys, "stderr") as stderr,
+            self.assertRaises(RelayError) as raised,
+        ):
+            self.start_relay(cloud, verify=readiness)
+
+        self.assertIs(raised.exception, readiness)
+        self.assertIn(
+            "delete cleanup failed",
+            "".join(call.args[0] for call in stderr.write.call_args_list),
+        )
+
+    def test_sighup_unwinds_start_and_runs_cleanup(self):
+        previous = {
+            signum: herdr_relay.signal.getsignal(signum)
+            for signum in (herdr_relay.signal.SIGTERM, herdr_relay.signal.SIGHUP)
+        }
+        self.host_key.write_text(ed25519_public_key() + " mini\n")
+        server = {"id": 45, "name": "hooh", "labels": {"expires-at": "1060"}}
+        cloud = SessionCloud([[server], [server]])
+
+        def hang_up_during_readiness(*_arguments):
+            herdr_relay.signal.raise_signal(herdr_relay.signal.SIGHUP)
+
+        try:
+            herdr_relay.install_signal_handlers()
+            with self.assertRaises(KeyboardInterrupt):
+                self.start_relay(cloud, verify=hang_up_during_readiness)
+        finally:
+            for signum, handler in previous.items():
+                herdr_relay.signal.signal(signum, handler)
+
+        self.assertEqual(cloud.deleted, [45])
+        self.assertFalse((self.state / "lease.json").exists())
+
+    def test_status_retains_server_identity_when_expiry_is_malformed(self):
+        server = {
+            "id": 44,
+            "name": "hooh",
+            "status": "running",
+            "labels": {
+                "herdr-relay": "hooh",
+                "role": "session",
+                "expires-at": "not-an-epoch",
+            },
+        }
+        cloud = mock.Mock()
+        cloud.owned_servers.return_value = [server]
+        cloud.resources.side_effect = lambda kind, *args: []
+
+        status = herdr_relay.relay_status(cloud)
+
+        reported = status["servers"][0]
+        self.assertIn("expiryError", reported)
+        self.assertEqual(
+            {key: reported[key] for key in ("id", "name", "status", "expiresAt")},
+            {
+                "id": 44,
+                "name": "hooh",
+                "status": "running",
+                "expiresAt": "not-an-epoch",
+            },
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

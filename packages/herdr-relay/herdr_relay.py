@@ -24,6 +24,7 @@ from hcloud_relay import (
     is_relay_server,
     one_relay_resource,
     refuse_existing_hooh,
+    relay_cleanup_errors,
     relay_command,
     relay_expiry,
     relay_network,
@@ -272,9 +273,9 @@ def start_relay(config, state, cloud, seconds):
             }
     finally:
         if not ready:
-            try:
+            with relay_cleanup_errors():
                 stop_frp(state)
-            finally:
+            with relay_cleanup_errors():
                 for server in cloud.owned_servers():
                     if server["name"] == "hooh" and relay_expiry(server) == expiry:
                         cloud.delete_server(server["id"])
@@ -301,17 +302,24 @@ def reap_relay(cloud):
     return {"deleted": deleted}
 
 
+def relay_server_status(server):
+    """Render identity and raw invalid lease data without hiding the server."""
+    status = {
+        "id": server["id"],
+        "name": server["name"],
+        "status": server["status"],
+    }
+    try:
+        status["expiresAt"] = relay_expiry(server)
+    except RelayError as error:
+        status["expiresAt"] = server.get("labels", {}).get("expires-at")
+        status["expiryError"] = str(error)
+    return status
+
+
 def relay_status(cloud):
     return {
-        "servers": [
-            {
-                "id": server["id"],
-                "name": server["name"],
-                "status": server["status"],
-                "expiresAt": relay_expiry(server),
-            }
-            for server in cloud.owned_servers()
-        ],
+        "servers": [relay_server_status(server) for server in cloud.owned_servers()],
         "endpoints": [
             {"id": ip["id"], "ip": ip["ip"]} for ip in cloud.resources("primary-ip")
         ],
@@ -371,9 +379,10 @@ def main():
             try:
                 stop_frp(state)
             finally:
-                for server in cloud.owned_servers():
-                    if server["name"] == "hooh":
-                        cloud.delete_server(server["id"])
+                with relay_cleanup_errors():
+                    for server in cloud.owned_servers():
+                        if server["name"] == "hooh":
+                            cloud.delete_server(server["id"])
             result = {"status": "stopped", "retainedResourcesStillBilled": True}
         elif arguments.command == "reap":
             result = reap_relay(cloud)
@@ -383,12 +392,19 @@ def main():
     return 0
 
 
-if __name__ == "__main__":
+def terminate_relay(_signal, _frame):
+    """Turn service-manager disconnect signals into normal unwinding and cleanup."""
+    raise KeyboardInterrupt
 
-    def terminate_relay(_signal, _frame):
-        raise KeyboardInterrupt
 
+def install_signal_handlers():
+    """Ensure terminal hangups and service stops unwind active relay operations."""
     signal.signal(signal.SIGTERM, terminate_relay)
+    signal.signal(signal.SIGHUP, terminate_relay)
+
+
+if __name__ == "__main__":
+    install_signal_handlers()
     try:
         sys.exit(main())
     except KeyboardInterrupt:

@@ -1,23 +1,33 @@
 """Small adapters for the official hcloud CLI, not a second Hetzner API client."""
 
+import contextlib
 import json
 import os
 import re
 import subprocess
+import sys
 import time
 from pathlib import Path
 
 OWNER_SELECTOR = "herdr-relay=hooh"
 SERVER_ROLES = {"hooh": "session", "hooh-image-builder": "image-builder"}
+DELETE_SERVER_DEADLINE_SECONDS = 30
+DELETE_SERVER_RETRY_DELAY_SECONDS = 1
+TRANSIENT_DELETE_ERROR_CODES = frozenset({"locked", "conflict"})
 
 
 class RelayError(RuntimeError):
     """A user-facing error that never contains credential values."""
 
+    def __init__(self, message, *, hcloud_code=None):
+        super().__init__(message)
+        self.hcloud_code = hcloud_code
+
 
 COMMAND_DIAGNOSTIC_LIMIT = 512
 HCLOUD_GLOBAL_OPTIONS_WITH_VALUES = {"--config", "--endpoint", "--http-timeout"}
 CREDENTIAL_ENV_SUFFIXES = ("_TOKEN", "_SECRET", "_PASSWORD", "_KEY")
+HCLOUD_ERROR_CODE_PATTERN = re.compile(r"\(([a-z][a-z0-9_]*)(?:,\s*[^()\r\n]+)?\)\s*$")
 PRIVATE_KEY_PATTERN = re.compile(
     r"-----BEGIN [^-\r\n]*PRIVATE KEY-----.*?-----END [^-\r\n]*PRIVATE KEY-----",
     re.DOTALL,
@@ -61,6 +71,29 @@ def safe_hcloud_diagnostic(stderr, environment):
     return diagnostic
 
 
+def hcloud_error_code(stderr):
+    """Extract the official API code from hcloud's terminal error suffix."""
+    match = HCLOUD_ERROR_CODE_PATTERN.search(stderr or "")
+    return match.group(1) if match else None
+
+
+@contextlib.contextmanager
+def relay_cleanup_errors():
+    """Preserve an active failure while safely reporting secondary cleanup errors."""
+    active_error = sys.exception()
+    try:
+        yield
+    except BaseException as cleanup_error:
+        if active_error is None:
+            raise
+        detail = (
+            str(cleanup_error)
+            if isinstance(cleanup_error, RelayError)
+            else type(cleanup_error).__name__
+        )
+        print(f"herdr-relay: cleanup also failed: {detail}", file=sys.stderr)
+
+
 def relay_command(arguments, *, timeout=120, capture=True, environment=None):
     """Run an existing tool with bounded execution and no shell interpolation."""
     try:
@@ -75,11 +108,13 @@ def relay_command(arguments, *, timeout=120, capture=True, environment=None):
     except subprocess.CalledProcessError as error:
         description = relay_command_description(arguments)
         message = f"{description} failed with exit code {error.returncode}"
+        code = None
         if Path(arguments[0]).name == "hcloud":
+            code = hcloud_error_code(error.stderr)
             diagnostic = safe_hcloud_diagnostic(error.stderr, environment)
             if diagnostic:
                 message += f": {diagnostic}"
-        raise RelayError(message) from None
+        raise RelayError(message, hcloud_code=code) from None
     except subprocess.TimeoutExpired:
         raise RelayError(
             f"{Path(arguments[0]).name} timed out; check status for unfinished cloud operations"
@@ -111,11 +146,11 @@ class HcloudRelay:
             environment=self.environment,
         )
 
-    def resources(self, kind, selector=OWNER_SELECTOR, *filters):
+    def resources(self, kind, selector=OWNER_SELECTOR, *filters, timeout=900):
         arguments = [kind, "list", "--output", "json", *filters]
         if selector:
             arguments.extend(["--selector", selector])
-        return json.loads(self.run(*arguments))
+        return json.loads(self.run(*arguments, timeout=timeout))
 
     def owned_servers(self):
         return [
@@ -123,31 +158,54 @@ class HcloudRelay:
         ]
 
     def delete_server(self, server_id):
-        """Delete only a freshly verified owned ID, then confirm its absence."""
-        matches = [
-            server
-            for server in self.resources("server", None)
-            if server["id"] == server_id
-        ]
-        if not matches:
+        """Delete a freshly owned ID with bounded retries for transient API actions."""
+        deadline = time.monotonic() + DELETE_SERVER_DEADLINE_SECONDS
+
+        def remaining_seconds():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise RelayError(f"Server {server_id} deletion reached its deadline")
+            return remaining
+
+        def verified_server():
+            matches = [
+                server
+                for server in self.resources(
+                    "server", None, timeout=remaining_seconds()
+                )
+                if server.get("id") == server_id
+            ]
+            if not matches:
+                return None
+            if len(matches) != 1 or not is_relay_server(matches[0]):
+                raise RelayError(
+                    f"Refusing to delete server {server_id}: ownership does not match"
+                )
+            return matches[0]
+
+        while verified_server() is not None:
+            try:
+                self.run("server", "delete", server_id, timeout=remaining_seconds())
+            except RelayError as error:
+                if verified_server() is None:
+                    return
+                if error.hcloud_code not in TRANSIENT_DELETE_ERROR_CODES:
+                    raise
+                delay = min(DELETE_SERVER_RETRY_DELAY_SECONDS, remaining_seconds())
+                time.sleep(delay)
+                continue
+
+            while verified_server() is not None:
+                delay = min(DELETE_SERVER_RETRY_DELAY_SECONDS, remaining_seconds())
+                time.sleep(delay)
             return
-        if len(matches) != 1 or not is_relay_server(matches[0]):
-            raise RelayError(
-                f"Refusing to delete server {server_id}: ownership does not match"
-            )
-        self.run("server", "delete", server_id)
-        for _ in range(5):
-            if all(
-                server["id"] != server_id for server in self.resources("server", None)
-            ):
-                return
-            time.sleep(1)
-        raise RelayError(f"Server {server_id} still exists after deletion")
 
 
 def is_relay_server(server):
     """Only the two fixed Hooh server names and matching labels are deletable."""
     labels = server.get("labels", {})
+    if not isinstance(labels, dict):
+        return False
     expected_role = SERVER_ROLES.get(server.get("name"))
     return (
         expected_role is not None
