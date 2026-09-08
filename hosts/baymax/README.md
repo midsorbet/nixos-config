@@ -210,6 +210,30 @@ Never copy it into this repository, the vault, Reminders, Nix configuration, or
 backup archives. This deliberately leaves one custodian: losing password-manager
 access makes encrypted Actual data and encrypted backup history unrecoverable.
 
+## ZFS Replication and Disk Health
+
+Sanoid takes the configured hourly source snapshots. The daily Syncoid transfers
+use `--no-stream --no-sync-snap --use-hold --create-bookmark`. `--no-stream`
+sends only the newest available snapshot per run and ensures that bookmark-based
+recovery in the locked Syncoid 2.3.0 reaches its hold and bookmark lifecycle.
+After a completed transfer, Syncoid holds the newest snapshot on both sides,
+releases its previous holds, and creates a source bookmark as the durable
+incremental base. While each unit runs, the module delegates only
+`bookmark,hold,release,send` on its source and
+`create,hold,mount,receive,release,rollback` on its target.
+Both replication units and Sanoid publish failures to the local ntfy system topic;
+smartd health-warning events use the same publisher while retaining the ntfy
+publisher credentials in the smartd service environment.
+
+Inspect replication state without changing datasets:
+
+```zsh
+ssh me@192.168.4.200 'systemctl show sanoid.service syncoid-baymax-persist-save.service syncoid-baymax-persist-host.service -p Result -p ExecMainStatus -p ExecMainExitTimestamp --no-pager'
+ssh me@192.168.4.200 'journalctl -u syncoid-baymax-persist-save.service -u syncoid-baymax-persist-host.service --since "7 days ago" --no-pager'
+ssh me@192.168.4.200 'zfs list -t snapshot -o name,creation -s creation data/persistSave archive/replica/baymax-persistSave'
+ssh me@192.168.4.200 'zfs list -t bookmark -o name,creation -s creation data/persistSave'
+```
+
 ## Atuin Security and Recovery
 
 - Keep Atuin bound to loopback behind its reviewed split-horizon HTTPS route.
