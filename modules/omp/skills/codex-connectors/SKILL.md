@@ -54,7 +54,7 @@ When that exact failure occurs:
 1. Do not retry the same search or start an OAuth-refresh loop.
 2. For recent or otherwise bounded mail requests, inspect the current schemas for `get_recent_emails` or `list_messages`, retrieve the smallest useful page, and filter only those returned fields locally.
 3. Fetch full content only for the exact message IDs needed, using `fetch_message` or `fetch_messages_batch` after reading its current schema.
-4. If a broad historical search cannot be answered from bounded list/fetch calls, explain the connector limitation. Use Outlook's visible signed-in UI through the `chatgpt-sky-computer-use` workflow only when the user requested that mailbox work and the current app state verifies the intended Outlook surface.
+4. If a broad historical search cannot be answered from bounded list/fetch calls, explain the connector limitation. Use Outlook's visible signed-in UI through the `cua-computer-use` workflow only when the user requested that mailbox work, Outlook's bundle ID is explicitly approved in the bounded Cua policy, and the current app state verifies the intended Outlook surface.
 
 ## Safety
 
