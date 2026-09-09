@@ -137,7 +137,8 @@ Intended Access posture:
 - `herdr.midsorbet.me` is a proxied CNAME to the dedicated Mini connector for
   Cloudflare Tunnel `bd9f42c3-efc9-41c0-92f2-dba61e205ffd`; never add it to
   `baymax-apps`. The existing `private-herdr` Access policy allows
-  `l.khadka@outlook.com` for 30-minute sessions. Mini controls its eight-hour
+  `l.khadka@outlook.com` and inherits the Herdr SSH application's eight-hour
+  session; leave the policy duration unset. Mini separately controls its eight-hour
   default, twelve-hour maximum lease with `herdr-relay start --ttl 8h`,
   `herdr-relay status`, and `herdr-relay stop`; starting it again never silently
   extends an active lease. Clients use the Delcatty SSH key with

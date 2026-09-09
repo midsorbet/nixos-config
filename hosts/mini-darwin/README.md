@@ -44,8 +44,10 @@ services.
   and `herdr-relay stop`. The default lease is eight hours and the maximum is
   twelve hours. Starting an active relay never silently extends its lease.
 - Cloudflare Access uses the existing `private-herdr` policy for
-  `l.khadka@outlook.com` with a 30-minute session. SSH continues to authenticate
-  with the Delcatty key. WARP is not required for Herdr SSH.
+  `l.khadka@outlook.com`. Leave the policy session duration unset so it inherits
+  the Herdr SSH application's eight-hour session. This authorization window is
+  separate from the connector lease above. SSH continues to authenticate with
+  the Delcatty key. WARP is not required for Herdr SSH.
 - In WSL, enter `nix shell nixpkgs#cloudflared` and configure SSH:
 
   ```sshconfig
