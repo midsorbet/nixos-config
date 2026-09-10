@@ -2,8 +2,6 @@
   description = "Starter Configuration with secrets for MacOS and NixOS";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    # Isolate mdfried's Python 3.14 remarshal incompatibility.
-    nixpkgs-darwin-compat.url = "github:nixos/nixpkgs/nixpkgs-26.05-darwin";
     # Shared agent skill revisions are pinned only by flake.lock.
     skill-agent-stuff = {
       url = "github:mitsuhiko/agent-stuff";
@@ -126,10 +124,6 @@
       flake = false;
     };
     vscode-server.url = "github:nix-community/nixos-vscode-server";
-    mdfried = {
-      url = "github:benjajaja/mdfried/v0.22.5";
-      inputs.nixpkgs.follows = "nixpkgs-darwin-compat";
-    };
   };
   outputs = {
     darwin,

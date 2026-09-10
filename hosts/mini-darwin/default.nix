@@ -399,7 +399,7 @@ in {
       agenix.packages."${pkgs.stdenv.hostPlatform.system}".default
       miniWarpDnsDriftCheck
       pkgs.hister
-      pkgs.mdfried
+      pkgs.mdterm
       pkgs.nh
     ]
     ++ (import ./packages.nix {inherit pkgs;});

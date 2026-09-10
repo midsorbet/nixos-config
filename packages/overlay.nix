@@ -11,10 +11,8 @@
       github-copilot-cli = import ./github-copilot-cli.nix {pkgs = prev;};
     };
 
-    mdfried = final: prev: {
-      mdfried = final.callPackage ./mdfried.nix {
-        mdfriedInput = inputs.mdfried;
-      };
+    mdterm = final: prev: {
+      mdterm = final.callPackage ./mdterm.nix {};
     };
 
     hister = final: prev: {
@@ -40,7 +38,7 @@
   overlayList = [
     overlays.apyanki
     overlays.github-copilot-cli
-    overlays.mdfried
+    overlays.mdterm
     overlays.hister
     overlays.herdr-annotate
     overlays.omp
