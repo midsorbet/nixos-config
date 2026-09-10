@@ -34,7 +34,7 @@
       flake = false;
     };
     skill-remindctl = {
-      url = "github:openclaw/remindctl/v0.3.4";
+      url = "github:openclaw/remindctl/v0.3.6";
       flake = false;
     };
     agenix.url = "github:ryantm/agenix";
@@ -58,7 +58,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-wrapper-modules = {
-      url = "github:BirdeeHub/nix-wrapper-modules";
+      url = "github:nix-community/nix-wrapper-modules";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     hunk = {
@@ -74,7 +74,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     paneru = {
-      url = "github:karinushka/paneru/v0.4.4";
+      url = "github:karinushka/paneru/v0.5.0";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nix-darwin.follows = "darwin";
     };

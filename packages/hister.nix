@@ -5,16 +5,16 @@
   stdenv,
   versionCheckHook,
 }: let
-  version = "0.18.0";
+  version = "0.19.0";
   releaseBaseUrl = "https://github.com/asciimoo/hister/releases/download/v${version}";
   binaries = {
     "aarch64-darwin" = {
       name = "hister_${version}_darwin_arm64";
-      hash = "sha256-7I5tmkv36F7gNwKhL5ktS1fyDXziHRBGsSqEifKzg4Y=";
+      hash = "sha256-5/axOoMuIeOdKfPZ0PV7zez1rIMrpq7x/CoSBN6W8d4=";
     };
     "x86_64-linux" = {
       name = "hister_${version}_linux_amd64";
-      hash = "sha256-ydfA+6tLf+UrEvlx6Oaj4umbSyZC3vA9YCfdSAP1wao=";
+      hash = "sha256-dXH3uUA5kX1Rk3L6av8Y/hLC71D5gayEfsGv9NfkFwE=";
     };
   };
   binary =

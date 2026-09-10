@@ -1,14 +1,14 @@
 {pkgs}: let
-  version = "1.0.82";
+  version = "1.0.83";
   releaseBaseUrl = "https://github.com/github/copilot-cli/releases/download/v${version}";
   tarballs = {
     "aarch64-linux" = {
       name = "copilot-linux-arm64";
-      hash = "sha256-hsTHepGx/13XMTy+qfhhaZos3OtGlvOGTz8FhOloTg8=";
+      hash = "sha256-ITs6JnBC26w82K4iyC9eoE/zyrwAgQjA+JUFXUa+RHM=";
     };
     "x86_64-linux" = {
       name = "copilot-linux-x64";
-      hash = "sha256-N/pnaGqeTtjUbc1qnICrUk3qhA7KoKP37fjQn5Ybl6k=";
+      hash = "sha256-/74cQpZkuKBe/tZ+zbRnEj5A/Ko8bBTvmpi6dNpGh7c=";
     };
   };
   tarball =
@@ -49,7 +49,7 @@ in
     postInstall = ''
       makeWrapper "$out/libexec/copilot" "$out/bin/copilot" \
         --add-flags "--no-auto-update" \
-        --prefix PATH : "${pkgs.lib.makeBinPath [pkgs.bash]}"
+        --prefix PATH : "${pkgs.lib.makeBinPath [pkgs.bash pkgs.slirp4netns pkgs.util-linux pkgs.iptables]}"
     '';
 
     nativeInstallCheckInputs = [pkgs.versionCheckHook];

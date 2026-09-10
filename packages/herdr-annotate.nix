@@ -8,14 +8,14 @@
   stdenv,
 }: let
   version = "0.3.0";
-  revision = "46cbf5dab1746dfeb46eb160c33990b0e0de15b0";
-  plannotatorTuiVersion = "0.6.0";
+  revision = "39f2b6dd29c2d36d2797fe55253783c43ae9ee5a";
+  plannotatorTuiVersion = "0.8.0";
   plannotatorTuiBinary =
     if stdenv.hostPlatform.system == "aarch64-darwin"
     then
       fetchurl {
         url = "https://github.com/plannotator/plannotator-tui/releases/download/v${plannotatorTuiVersion}/plannotator-tui-aarch64-apple-darwin";
-        hash = "sha256-CW0MWr2oYsFzrHN5xgb4kJdo9DRYMzrHBr1u3gQkyLc=";
+        hash = "sha256-fQV/Oho6ojywpEhD/tPwTUmKHaUhl83sAhLG+OFhjLI=";
       }
     else throw "herdr-annotate is not packaged for ${stdenv.hostPlatform.system}";
 in
@@ -27,7 +27,7 @@ in
       owner = "plannotator";
       repo = "herdr-annotate";
       rev = revision;
-      hash = "sha256-U5w0q5IxoqSpndnjV6zoPCbrTApBRuExGoq0qxbaizs=";
+      hash = "sha256-3ev9NTf6qqHtqdDCwuJenRNcalB0rR4SoLOWHCWeFVQ=";
     };
 
     nativeBuildInputs = [makeWrapper];
