@@ -12,6 +12,9 @@
     theme = light:${lightThemeName},dark:${darkThemeName}
     font-family = "${cfg.fontFamily}"
     font-size = ${toString cfg.fontSize}
+    adjust-cell-height = 8%
+    # Correct low-contrast application text without replacing either palette.
+    minimum-contrast = 4.5
     copy-on-select = "clipboard"
     cursor-style-blink = false
     window-save-state = never
@@ -91,13 +94,13 @@ in {
 
     fontPackage = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.maple-mono.NF;
+      default = pkgs.nerd-fonts.blex-mono;
       description = "Font package to install for Ghostty.";
     };
 
     fontFamily = lib.mkOption {
       type = lib.types.str;
-      default = "Maple Mono NF";
+      default = "BlexMono Nerd Font Mono";
       description = "Font family name written to Ghostty's config.";
     };
 
