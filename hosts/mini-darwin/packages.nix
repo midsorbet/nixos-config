@@ -14,4 +14,5 @@ in
     remindctl
     seedsCli
     uv
+    yazi
   ]

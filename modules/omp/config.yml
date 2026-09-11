@@ -128,7 +128,6 @@ terminal:
   showProgress: true
 tui:
   codexResetFireworks: true
-  mouse: true
   vimMode: true
   vimModeDisplay: text
 symbolPreset: nerd
