@@ -153,6 +153,7 @@ in {
     ../../modules/plannotator.nix
     ../../modules/shared-agent-skills.nix
     ../../modules/shared
+    ../../modules/yazi
     agenix.darwinModules.default
     paneru.darwinModules.paneru
   ];
@@ -282,6 +283,10 @@ in {
     inherit user;
     projectDirectories = ["~/vault/projects"];
     promptTheme = "kanagawa-everforest";
+  };
+  local.yazi = {
+    enable = true;
+    inherit user;
   };
 
   homebrew = {

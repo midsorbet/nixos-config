@@ -1,0 +1,136 @@
+#:schema https://yazi-rs.github.io/schemas/theme.json
+
+[mgr]
+marker_copied = { fg = "#8da101", bg = "#8da101" }
+marker_cut = { fg = "#f85552", bg = "#f85552" }
+marker_marked = { fg = "#df69ba", bg = "#df69ba" }
+marker_selected = { fg = "#f57d26", bg = "#f57d26" }
+
+cwd = { fg = "#dfa000", bold = true }
+
+find_keyword = { fg = "#f57d26", bg = "#fef2d5", bold = true }
+find_position = {}
+
+count_copied = { fg = "#fffbef", bg = "#8da101" }
+count_cut = { fg = "#fffbef", bg = "#f85552" }
+count_selected = { fg = "#fffbef", bg = "#f57d26" }
+
+border_symbol = "│"
+border_style = { fg = "#939f91" }
+
+[indicator]
+parent = { reversed = true }
+current = { reversed = true }
+preview = { reversed = true }
+
+[tabs]
+active = { fg = "#fffbef", bg = "#8da101" }
+inactive = { fg = "#8da101", bg = "#e8e5d5" }
+
+sep_inner = { open = "", close = "" }
+sep_outer = { open = "", close = "" }
+
+[mode]
+normal_main = { fg = "#fffbef", bg = "#8da101" }
+normal_alt = { fg = "#8da101", bg = "#e8e5d5" }
+select_main = { fg = "#fffbef", bg = "#df69ba" }
+select_alt = { fg = "#df69ba", bg = "#e8e5d5" }
+unset_main = { fg = "#fffbef", bg = "#dfa000" }
+unset_alt = { fg = "#dfa000", bg = "#e8e5d5" }
+
+[status]
+sep_left = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+overall = { fg = "#5c6a72", bg = "#e8e5d5" }
+
+progress_label = { fg = "#8da101", bold = true }
+progress_normal = { fg = "#bec5b2", bg = "#f2efdf" }
+progress_error = { fg = "#f85552", bg = "#f2efdf" }
+
+perm_type = { fg = "#8da101" }
+perm_read = { fg = "#dfa000" }
+perm_write = { fg = "#f85552" }
+perm_exec = { fg = "#35a77c" }
+perm_sep = { fg = "#df69ba" }
+
+[pick]
+border = { fg = "#3a94c5" }
+active = { fg = "#df69ba", bold = true }
+inactive = {}
+
+[input]
+border = { fg = "#3a94c5" }
+title = {}
+value = {}
+selected = { reversed = true }
+
+[cmp]
+border = { fg = "#3a94c5" }
+active = { fg = "#df69ba", bold = true }
+inactive = {}
+
+[tasks]
+border = { fg = "#3a94c5" }
+title = {}
+hovered = { fg = "#df69ba", bold = true }
+
+[which]
+border = { fg = "#3a94c5" }
+cols = 2
+separator = " - "
+separator_style = { fg = "#939f91" }
+mask = { bg = "#e8e5d5" }
+rest = { fg = "#939f91" }
+cand = { fg = "#3a94c5" }
+desc = { fg = "#829181" }
+
+[confirm]
+border = { fg = "#3a94c5" }
+title = { fg = "#5c6a72" }
+body = {}
+list = {}
+btn_yes = { reversed = true }
+btn_no = {}
+btn_labels = ["  [Y]es  ", "  (N)o  "]
+
+[spot]
+border = { fg = "#3a94c5" }
+title = { fg = "#5c6a72" }
+tbl_col = { fg = "#3a94c5" }
+tbl_cell = { fg = "#dfa000", reversed = true }
+
+[help]
+border = { fg = "#3a94c5" }
+chord = { fg = "#35a77c" }
+action = { fg = "#df69ba" }
+hovered = { reversed = true, bold = true }
+
+[notify]
+title_info = { fg = "#8da101" }
+title_warn = { fg = "#dfa000" }
+title_error = { fg = "#f85552" }
+
+[filetype]
+rules = [
+    # Images
+    { mime = "image/*", fg = "#dfa000" },
+
+    # Media
+    { mime = "{audio,video}/*", fg = "#df69ba" },
+
+    # Archives
+    { mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "#f85552" },
+
+    # Documents
+    { mime = "application/{pdf,doc,rtf,vnd.*}", fg = "#35a77c" },
+
+    # Broken links
+    { url = "*", is = "orphan", fg = "#f85552" },
+
+    # Executables
+    { url = "*", is = "exec", fg = "#8da101" },
+
+    # Fallback
+    { url = "*", fg = "#5c6a72" },
+    { url = "*/", fg = "#3a94c5" },
+]
