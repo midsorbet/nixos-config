@@ -36,9 +36,6 @@
   histerSkill = pkgs.writeTextDir "share/agents/skills/hister/SKILL.md" (
     builtins.readFile ./skills/hister/SKILL.md
   );
-  codexConnectorsSkill = pkgs.writeTextDir "share/agents/skills/codex-connectors/SKILL.md" (
-    builtins.readFile ./skills/codex-connectors/SKILL.md
-  );
 
   collabRelayPackage = pkgs.callPackage ../../packages/omp-collab-relay {};
   yamlFormat = pkgs.formats.yaml {};
@@ -810,7 +807,7 @@ in {
         };
         ".agents/skills/codex-connectors" = {
           type = "symlink";
-          source = "${codexConnectorsSkill}/share/agents/skills/codex-connectors";
+          source = ./skills/codex-connectors;
           clobber = true;
         };
         ".omp/agent/extensions/hister.ts" = lib.mkIf cfg.hister.enable {

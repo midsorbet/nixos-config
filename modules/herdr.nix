@@ -207,8 +207,9 @@ in {
 
       files = lib.mkMerge [
         (lib.mkIf cfg.installCodexSkill {
-          ".codex/skills/herdr/SKILL.md" = {
-            source = "${herdr}/skills/herdr/SKILL.md";
+          ".codex/skills/herdr" = {
+            type = "symlink";
+            source = ./herdr-skills/herdr;
             clobber = true;
           };
         })
@@ -221,9 +222,9 @@ in {
         })
 
         (lib.mkIf cfg.installAnnotateOmpSkill {
-          ".omp/agent/skills/plannotator-tui/SKILL.md" = {
+          ".omp/agent/skills/plannotator-tui" = {
             type = "symlink";
-            source = "${cfg.annotatePackage}/share/agents/skills/plannotator-tui/SKILL.md";
+            source = ./herdr-skills/plannotator-tui;
             clobber = true;
           };
         })

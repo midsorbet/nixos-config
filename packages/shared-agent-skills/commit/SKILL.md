@@ -1,110 +1,60 @@
 ---
 name: commit
-description: "Create Git commits using Scoped Commits format"
+description: "Create Git commits using Scoped Commits format when the user requests a commit or repository instructions grant commit authority."
 ---
 
 # Create Scoped Commits
 
-Create Git commits when the user explicitly requests one or repository
-instructions grant standing commit authority. Use scope-first subjects so the
-log shows where each change belongs before it describes what changed.
+Commit only with explicit user authority or standing repository authority.
+Caller-provided paths and globs are hard boundaries; preserve unrelated worktree
+changes. Never bypass hooks, amend, or expand scope without explicit permission.
+Review staged content for secrets, credentials, debug artifacts, and unrelated
+churn. Do not invoke `git push` directly.
 
-## Format
+In `/Users/me/vault/projects/<name>`, the configured post-commit hook may
+commit the vault gitlink and push the project branch when
+`/Users/me/vault/AGENTS.md` conditions pass. Do not duplicate that pointer
+commit or promise that the project commit cannot push.
 
-Use this format for normal commits:
+## Subject
 
-`<scope>: <summary>`
+Normal commits use `<scope>: <summary>`, or
+`<scope>: <subscope>: <summary>` when an established hierarchy improves
+scanning. Merge, revert, and other Git-generated commits may keep their standard
+format.
 
-When a stable hierarchy improves log scanning, add colon-delimited area
-prefixes:
+- Follow repository instructions first. Reuse an accurate repository scope;
+  inspect recent subjects with `git log -n 50 --pretty=format:%s` when history
+  is needed. Otherwise infer a short lowercase area from the changed paths and
+  domain.
+- Scope names the affected subsystem, not a change kind: do not substitute
+  `feat`, `fix`, `chore`, or `refactor`. Ticket numbers belong in the body or
+  trailers.
+- Use a lowercase imperative summary describing the observable result, with no
+  final period. Keep the full subject at 72 characters or fewer unless the
+  repository requires another convention.
+- Split unrelated scopes into atomic commits. Keep implementation, tests, and
+  directly related documentation together. For an irreducibly cross-cutting
+  change, use an established parent/tree-wide scope or a concise comma-separated
+  scope.
 
-`<scope>: <subscope>: <summary>`
-
-Examples:
-
-`auth: prevent expired sessions from refreshing`
-
-`terminal: osc: handle malformed color requests`
-
-`projects: nixos-config: update pointer`
-
-Merge commits, revert commits, and other Git-generated special commits MAY keep
-their established format.
-
-## Scope
-
-- Scope is REQUIRED for normal commits. It identifies the subsystem, area,
-  module, package, or other project-specific subject of the change.
-- Follow repository instructions first. Then inspect recent subjects with
-  `git log -n 50 --pretty=format:%s` and reuse an established scope when it
-  accurately describes the change.
-- When history does not provide a scope, infer a short, lowercase scope from
-  the changed paths and the domain they implement.
-- Use colon-delimited area prefixes when a stable hierarchy is useful and
-  unambiguous. Write `terminal: osc: ...`, not `terminal/osc: ...`.
-- Do not substitute change-kind labels such as `feat`, `fix`, `chore`, or
-  `refactor` for the affected area. A label such as `build`, `docs`, or
-  `tests` is valid only when it is the actual project area.
-- A ticket number is not a scope. Put it in the body or an appropriate trailer.
-- Split unrelated scopes into separate commits. For one irreducibly
-  cross-cutting change, prefer a shared parent scope. If none exists, use a
-  concise comma-separated scope or an established tree-wide scope.
-
-## Summary
-
-- Start with a lowercase imperative verb unless the repository convention
-  requires different capitalization.
-- Describe the observable result, not the implementation process.
-- Keep the complete subject line at 72 characters or fewer.
-- Do not add a redundant type before the scope.
-- Do not end the subject with a period.
+Examples: `auth: prevent expired sessions from refreshing`;
+`terminal: osc: handle malformed color requests`.
 
 ## Body and trailers
 
-- The body is OPTIONAL. Omit it when the subject explains an obvious change.
-- When useful, explain why the change is needed, the important previous
-  behavior, and the new behavior at a high level. Do not write an implementation
-  diary or restate the diff.
-- Use short paragraphs and wrap prose at approximately 72 characters.
-- Add issue references or trailers only when the relationship is known from the
-  user request, repository context, branch, or diff.
-- Do not add assistant attribution, sign-offs, or generated-by text.
-- Do not add Conventional Commits breaking-change markers solely for release
-  automation. Explain compatibility impact in normal prose when it matters.
+Omit an unnecessary body. When useful, explain why and the behavioral change,
+not an implementation diary; wrap prose near 72 characters. Add issue references
+or trailers only when their relationship is known. Never add assistant
+attribution or generated-by text. Do not add Conventional Commits
+breaking-change markers solely for release automation; explain compatibility
+impact in normal prose when it matters.
 
-## Commit boundaries
+## Commit
 
-- Keep each commit atomic around one logical change.
-- Keep implementation, tests, and directly related documentation together.
-- Split unrelated work, but do not split one coherent change merely because its
-  parts would have different Conventional Commits types.
-- Preserve unrelated existing worktree changes.
-
-## Safety
-
-- Treat caller-provided paths or globs as hard commit boundaries. Stage and
-  commit only those paths unless the user explicitly expands the request.
-- If it is unclear whether a file or hunk belongs in the commit, ask the user.
-- Review staged content before committing. Do not commit secrets, credentials,
-  debug artifacts, or unrelated formatting churn.
-- Never bypass commit hooks unless the user explicitly requests it.
-- Do not amend an existing commit unless the user explicitly requests it.
-- Do not invoke `git push` directly.
-
-In `/Users/me/vault/projects/<name>`, the configured post-commit hook
-automatically commits the vault gitlink and may push the project branch when the
-conditions in `/Users/me/vault/AGENTS.md` pass. Do not create a duplicate
-pointer commit or promise that the project commit cannot push.
-
-## Workflow
-
-1. Confirm commit authority from the user request or repository instructions,
-   then infer any authorized files, globs, and commit guidance.
-2. Review `git status`, `git diff`, and `git diff --cached` to understand
-   both staged and unstaged changes. Stop if there is nothing to commit.
-3. Choose the logical commit boundary and scope from repository instructions,
-   recent history, changed paths, and the affected domain.
-4. Stage only the intended files or hunks, then review `git diff --cached`.
-5. Run `git commit -m "<scope>: <summary>"`. Add a second `-m` argument only
-   when a body is useful.
-6. Confirm the commit was recorded and report its subject. Do not push directly.
+Inspect `git status`, `git diff`, and `git diff --cached` to determine the
+authorized boundary. Stop if there is nothing to commit. If file or hunk
+ownership is ambiguous, ask the user. Stage only intended files or hunks and
+review `git diff --cached` before running
+`git commit -m "<scope>: <summary>"` (with a second `-m` when a body is useful).
+Confirm the commit was recorded and report its subject.

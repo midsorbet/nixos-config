@@ -49,8 +49,6 @@ in
     mkdir -p "$skillRoot"
 
     cp -R ${skillBro}/skills/bro "$skillRoot/bro"
-    # Keep the vault project-hook workflow that is intentionally absent upstream.
-    cp -R ${./shared-agent-skills/commit} "$skillRoot/commit"
     cp -R ${skillDiagnosingBugs}/home/.agents/skills/diagnosing-bugs "$skillRoot/diagnosing-bugs"
     cp -R ${skillBro}/skills/facts "$skillRoot/facts"
     cp -R ${skillEffectiveHtml}/skills/html "$skillRoot/html"
@@ -80,6 +78,9 @@ in
     for skillName in ${lib.escapeShellArgs frogSkillNames}; do
       cp -R "$frogProject/.agents/skills/$skillName" "$skillRoot/$skillName"
     done
+
+    chmod -R u+w "$skillRoot"
+    cp -R ${./shared-agent-skills}/. "$skillRoot/"
 
     for skillName in ${lib.escapeShellArgs skillNames}; do
       test -f "$skillRoot/$skillName/SKILL.md"

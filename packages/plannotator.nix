@@ -27,6 +27,7 @@
     rev = "v${version}";
     hash = "sha256-Z3k/YnGXB/OGL3BP+2Z/Ck1H28rJeA+ihdZ8EaXKwIA=";
   };
+  localSkills = ./plannotator-skills;
 
   skills = stdenv.mkDerivation {
     pname = "plannotator-skills";
@@ -43,6 +44,10 @@
       cp -R apps/skills/core/plannotator-annotate "$out/share/agents/skills/"
       cp -R apps/skills/core/plannotator-last "$out/share/agents/skills/"
       cp -R apps/skills/core/plannotator-review "$out/share/agents/skills/"
+      for skill in plannotator-annotate plannotator-last plannotator-review; do
+        chmod -R u+w "$out/share/agents/skills/$skill"
+        cp -R "${localSkills}/$skill/." "$out/share/agents/skills/$skill/"
+      done
       runHook postInstall
     '';
   };
