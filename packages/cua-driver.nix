@@ -2,8 +2,8 @@
   fetchurl,
   lib,
   stdenv,
-  version ? "0.24.0",
-  hash ? "688c91e2f9b195869b2db27f1e37512a01cb403426f3314324b5d6cdd7f7bfd1",
+  version ? "0.28.1",
+  hash ? "sha256-Uv2r0ZR8myUtiBolfTFpNy7RotTqkM3M591iToNg0TM=",
 }:
 stdenv.mkDerivation {
   pname = "cua-driver";
