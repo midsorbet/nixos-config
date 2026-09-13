@@ -800,6 +800,18 @@ in {
           permissions = "0600";
           clobber = true;
         };
+        ".omp/agent/rules/nh-console-tty.md" = {
+          source = ./rules/nh-console-tty.md;
+          clobber = true;
+        };
+        ".omp/agent/rules/sudo-session-lifecycle.md" = {
+          source = ./rules/sudo-session-lifecycle.md;
+          clobber = true;
+        };
+        ".omp/agent/rules/standalone-terminal-windows.md" = {
+          source = ./rules/standalone-terminal-windows.md;
+          clobber = true;
+        };
         ".omp/agent/extensions/spinoff" = {
           type = "symlink";
           source = spinoffExtension;

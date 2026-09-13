@@ -13,6 +13,34 @@ astGrep:
 bashInterceptor:
   enabled: true
 bash:
+  # Deny common standalone terminal launches; use the console TTY or Herdr.
+  patterns:
+    - match: "open *Ghostty*"
+      approval: deny
+    - match: "open *ghostty.app*"
+      approval: deny
+    - match: "open *com.mitchellh.ghostty*"
+      approval: deny
+    - match: "open *Terminal*"
+      approval: deny
+    - match: "open *iTerm*"
+      approval: deny
+    - match: "*/open *Ghostty*"
+      approval: deny
+    - match: "*/open *ghostty.app*"
+      approval: deny
+    - match: "*/open *com.mitchellh.ghostty*"
+      approval: deny
+    - match: "*/open *Terminal*"
+      approval: deny
+    - match: "*/open *iTerm*"
+      approval: deny
+    - match: "*ghostty *-e *"
+      approval: deny
+    - match: "*ghostty *--command*"
+      approval: deny
+    - match: "*ghostty +new-window*"
+      approval: deny
   autoBackground:
     enabled: true
     thresholdMs: 60000
