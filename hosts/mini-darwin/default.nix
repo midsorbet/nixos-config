@@ -304,6 +304,7 @@ in {
       "ghostty"
       "helium-browser"
       "karabiner-elements"
+      "localsend"
       "visual-studio-code"
     ];
     onActivation = {
