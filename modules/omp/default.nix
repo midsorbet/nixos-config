@@ -23,7 +23,7 @@
     hash = "sha256-nS/0+RVX5BBqlA6Zi9c52sazk3ukK3StG9xtnupA0/A=";
   };
   runtimePath =
-    lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage pkgs.metals pkgs.nixd] ++ cfg.extraRuntimePackages);
+    lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
   cxporterPackage = pkgs.callPackage ../../packages/cxporter.nix {};
   rootshellNotifyPackage = pkgs.callPackage ../../packages/rootshell-notify.nix {};
   histerExtension = pkgs.replaceVars ./extensions/hister.ts {
