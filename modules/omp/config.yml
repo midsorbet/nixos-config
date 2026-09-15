@@ -140,7 +140,6 @@ statusLine:
     - pi
     - model
     - mode
-    - vim
     - collab
     - status
     - path
@@ -156,8 +155,7 @@ terminal:
   showProgress: true
 tui:
   codexResetFireworks: true
-  vimMode: true
-  vimModeDisplay: text
+  vimMode: false
 symbolPreset: nerd
 theme:
   dark: kanagawa-wave
