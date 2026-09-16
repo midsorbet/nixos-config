@@ -82,11 +82,11 @@ providers:
   openai-codex:
     codeMode: auto
 modelRoles:
-  default: openai-codex/gpt-6-astra:medium
+  default: openai-codex/gpt-6-sol:medium
   smol: openai-codex/gpt-5.6-luna:high
   slow: openai-codex/gpt-5.6-terra:max
   vision: openai-codex/gpt-5.6-sol:high
-  plan: openai-codex/gpt-5.6-sol:high
+  plan: openai-codex/gpt-5.astra:xhigh
   commit: openai-codex/gpt-5.3-codex-spark:low
   tiny: openai-codex/gpt-5.6-luna:low
   task: openai-codex/gpt-5.6-sol:medium
