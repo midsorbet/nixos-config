@@ -1,23 +1,23 @@
 {pkgs}: let
   inherit (pkgs) lib stdenv;
-  version = "0.27.14";
+  version = "0.27.15";
   releaseBaseUrl = "https://github.com/backnotprop/plannotator/releases/download/v${version}";
   binaries = {
     "aarch64-darwin" = {
       name = "plannotator-darwin-arm64";
-      hash = "sha256-Hp9w9FTTkwKPLW/hLaiqq5MbNZH9NBqtNCgP8ZgepNA=";
+      hash = "sha256-8z4RRFH9GWv/xGqiF0kvxyT+FYKM6GAHYJz+vAitUwQ=";
     };
     "x86_64-darwin" = {
       name = "plannotator-darwin-x64";
-      hash = "sha256-jGyTq+4m6BSvS50ddyDKk7Ez64JLis2YTd2cMUHGFHk=";
+      hash = "sha256-8GCS8OMWrefRFeY06drswJQyU0T+d0GWGTQKGGmuwkg=";
     };
     "aarch64-linux" = {
       name = "plannotator-linux-arm64";
-      hash = "sha256-XrvW0VEwwmM7+pspUxIFfoJ3lUqY9ALbZesSSzHnCE0=";
+      hash = "sha256-GGtP7snEf/8gOKDOrwY09L9s4k9qtteAw+9CLCS01A8=";
     };
     "x86_64-linux" = {
       name = "plannotator-linux-x64";
-      hash = "sha256-ldslSssqmW6w2DKJq7uR384rDd7jeLY3UgXj6CUajbA=";
+      hash = "sha256-79sz9OCqFNZufwNYdzoRzEb1tfwiVwnW6sTZ6Nllo1U=";
     };
   };
 
@@ -25,7 +25,7 @@
     owner = "backnotprop";
     repo = "plannotator";
     rev = "v${version}";
-    hash = "sha256-okEuCmWKe7wBMwssMM+Dpxxi+1CS4jFfGmic24GZRhg=";
+    hash = "sha256-uYgWrzTXDBLY/eXdTSg0hWjvlFn4VOFxTU1PzRMEIkE=";
   };
   localSkills = ./plannotator-skills;
 
