@@ -1,6 +1,6 @@
 {pkgs}: let
   inherit (pkgs) lib stdenvNoCC;
-  version = "0.3.6";
+  version = "0.3.7";
 in
   stdenvNoCC.mkDerivation {
     pname = "remindctl";
@@ -8,7 +8,7 @@ in
 
     src = pkgs.fetchurl {
       url = "https://github.com/openclaw/remindctl/releases/download/v${version}/remindctl-macos.zip";
-      hash = "sha256-d7fS5vMHlmmbtMNbsdkbaSwShNsxJ+ubj/rSSADuILs=";
+      hash = "sha256-vM7uUlYNpGCIKWdgQPjMc+GH9ouXxgRYq6V7trlzZrU=";
     };
     sourceRoot = ".";
 
