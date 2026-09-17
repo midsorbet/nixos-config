@@ -59,6 +59,11 @@
 -- It is a global variable which can be use both as `_G.Config` and `Config`
 _G.Config = {}
 
+-- Route clipboard writes through the active Herdr client. This reaches the
+-- viewing machine whether the client is local or remote; outside Herdr, let
+-- Neovim select the native clipboard provider.
+if vim.env.HERDR_ENV == '1' then vim.g.clipboard = 'osc52' end
+
 -- Define custom autocommand group and helper to create an autocommand.
 -- Autocommands are Neovim's way to define actions that are executed on events
 -- (like creating a buffer, setting an option, etc.).
