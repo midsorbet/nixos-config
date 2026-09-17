@@ -5,12 +5,12 @@
   lib,
   python314,
 }: let
-  version = "0.21.0";
+  version = "0.22.0";
   src = fetchFromGitHub {
     owner = "lervag";
     repo = "apy";
     tag = "v${version}";
-    hash = "sha256-LqMXy0d3UUgkI7vriQaNK04NE9YKWZlJK717BKbAvxM=";
+    hash = "sha256-dLNU7BqE/+IXg4bxQEBE3PVsRb2I8BOzxMdUWcaxzpI=";
   };
 
   workspace = inputs.uv2nix.lib.workspace.loadWorkspace {

@@ -10,7 +10,7 @@
   piWireVersion = packageJson.dependencies."@oh-my-pi/pi-wire";
   piWireTarball = fetchurl {
     url = "https://registry.npmjs.org/@oh-my-pi/pi-wire/-/pi-wire-${piWireVersion}.tgz";
-    hash = "sha256-lUXgUNSpVGdB3s2pdx/Q/OZCsUySX2rdNpVEqHiQesw=";
+    hash = "sha256-0AUslL+lWCvRyrzrYaVcE92gQO7z0JcKyGxi1+baP5c=";
   };
 in
   stdenv.mkDerivation {
@@ -27,7 +27,7 @@ in
       ];
     };
 
-    nativeBuildInputs = [bun makeWrapper] ++ lib.optionals stdenv.isDarwin [rcodesign];
+    nativeBuildInputs = [bun makeWrapper] ++ lib.optionals stdenv.hostPlatform.isDarwin [rcodesign];
 
     configurePhase = ''
       runHook preConfigure
@@ -65,7 +65,7 @@ in
           --add-flags "--web-root $out/share/omp-collab-relay/web"
         runHook postInstall
       ''
-      + lib.optionalString stdenv.isDarwin ''
+      + lib.optionalString stdenv.hostPlatform.isDarwin ''
         rcodesign sign "$out/libexec/omp-collab-relay"
       '';
 

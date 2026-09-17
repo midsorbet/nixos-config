@@ -66,7 +66,7 @@ in {
     directory = lib.mkOption {
       type = lib.types.path;
       default =
-        if pkgs.stdenv.isDarwin
+        if pkgs.stdenv.hostPlatform.isDarwin
         then "/Users/${cfg.user}"
         else "/home/${cfg.user}";
       description = "Home directory for the user managed by Hjem.";

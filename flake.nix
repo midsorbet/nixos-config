@@ -32,7 +32,7 @@
       flake = false;
     };
     skill-remindctl = {
-      url = "github:openclaw/remindctl/v0.3.6";
+      url = "github:openclaw/remindctl/v0.3.7";
       flake = false;
     };
     agenix.url = "github:ryantm/agenix";
@@ -72,7 +72,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     paneru = {
-      url = "github:karinushka/paneru/v0.5.0";
+      url = "github:karinushka/paneru/v0.5.1";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nix-darwin.follows = "darwin";
     };

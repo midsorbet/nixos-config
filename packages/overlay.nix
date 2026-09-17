@@ -7,6 +7,12 @@
       apyanki = final.callPackage ./apyanki.nix {inherit inputs;};
     };
 
+    paperless-ngx = final: prev: {
+      paperless-ngx = prev.paperless-ngx.overrideAttrs (old: {
+        patches = (old.patches or []) ++ [./paperless-mtime-timezone.patch];
+      });
+    };
+
     github-copilot-cli = final: prev: {
       github-copilot-cli = import ./github-copilot-cli.nix {pkgs = prev;};
     };
@@ -38,6 +44,7 @@
   overlayList = [
     overlays.apyanki
     overlays.github-copilot-cli
+    overlays.paperless-ngx
     overlays.mdterm
     overlays.hister
     overlays.herdr-annotate

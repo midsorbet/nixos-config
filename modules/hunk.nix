@@ -10,11 +10,11 @@
   defaultPackage = hunk.packages.${pkgs.stdenv.hostPlatform.system}.hunk.overrideAttrs (old: {
     postInstall =
       (old.postInstall or "")
-      + lib.optionalString pkgs.stdenv.isDarwin ''
+      + lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
         /usr/bin/codesign --force --sign - "$out/bin/.hunk-wrapped"
       '';
-    doInstallCheck = pkgs.stdenv.isDarwin;
-    installCheckPhase = lib.optionalString pkgs.stdenv.isDarwin ''
+    doInstallCheck = pkgs.stdenv.hostPlatform.isDarwin;
+    installCheckPhase = lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
       runHook preInstallCheck
       "$out/bin/hunk" --version
       runHook postInstallCheck

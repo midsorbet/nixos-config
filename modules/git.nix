@@ -8,7 +8,7 @@
   cfg = config.local.git;
   gitConfigFormat = pkgs.formats.gitIni {};
   homeDirectory =
-    if pkgs.stdenv.isDarwin
+    if pkgs.stdenv.hostPlatform.isDarwin
     then "/Users/${cfg.user}"
     else "/home/${cfg.user}";
 

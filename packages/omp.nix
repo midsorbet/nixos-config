@@ -1,16 +1,16 @@
 {pkgs}: let
   inherit (pkgs) lib stdenv;
 
-  version = "18.2.2";
+  version = "18.2.3";
   releaseBaseUrl = "https://github.com/can1357/oh-my-pi/releases/download/v${version}";
   binaries = {
     "aarch64-darwin" = {
       name = "omp-darwin-arm64";
-      hash = "sha256-4DAqmWQ+/vtivz0GAdXYTrq27R860QXMKHTIJ0r0SKk=";
+      hash = "sha256-XJ+ONZ7tIBqihIo0GEw7EmQas+KdMDc4+ryXrdLxKf4=";
     };
     "x86_64-linux" = {
       name = "omp-linux-x64";
-      hash = "sha256-d8NSCrjvgxjdoCoHFeO25pWJxCfcI/kKS7l2UMqnL3I=";
+      hash = "sha256-+FvftKdj0zmd3RhBP4gLJrNtp2Wqdb1fzH0lIjnH8Xo=";
     };
   };
   binary =
@@ -30,7 +30,7 @@ in
     dontConfigure = true;
     dontBuild = true;
     dontStrip = true;
-    nativeBuildInputs = lib.optionals stdenv.isLinux [pkgs.patchelf];
+    nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [pkgs.patchelf];
 
     installPhase = ''
       runHook preInstall
@@ -39,7 +39,7 @@ in
     '';
 
     postInstall = ''
-      ${lib.optionalString stdenv.isLinux ''
+      ${lib.optionalString stdenv.hostPlatform.isLinux ''
         patchelf --set-interpreter ${stdenv.cc.bintools.dynamicLinker} "$out/bin/omp"
       ''}
 

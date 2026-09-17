@@ -726,7 +726,7 @@ in {
       ]
       ++ lib.optionals cfg.collab.enable [
         {
-          assertion = pkgs.stdenv.isDarwin;
+          assertion = pkgs.stdenv.hostPlatform.isDarwin;
           message = "local.omp.collab is only supported on Darwin.";
         }
         {
