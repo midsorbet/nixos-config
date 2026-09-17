@@ -17,6 +17,10 @@
       github-copilot-cli = import ./github-copilot-cli.nix {pkgs = prev;};
     };
 
+    grove = final: prev: {
+      grove = final.callPackage ./grove.nix {};
+    };
+
     mdterm = final: prev: {
       mdterm = final.callPackage ./mdterm.nix {};
     };
