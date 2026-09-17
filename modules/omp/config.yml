@@ -59,6 +59,7 @@ display:
   cacheMissMarker: true
 composer:
   shape: band
+  tokenRate: true
 generate_image:
   enabled: true
 github:
