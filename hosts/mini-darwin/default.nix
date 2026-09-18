@@ -193,12 +193,6 @@ in {
     inherit user;
   };
   hjem.users.${user} = {
-    files."Projects" = {
-      type = "symlink";
-      source = "${homeDir}/vault/projects";
-      clobber = true;
-    };
-
     files.".finicky.js" = {
       text = ''
         export default {
