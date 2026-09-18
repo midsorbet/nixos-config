@@ -27,7 +27,7 @@ in {
       files = {
         "Projects/mani.yaml" = {
           text = lib.replaceStrings ["@PROJECTS_ROOT@"] [projectsDir] (
-            builtins.readFile ./mani.yaml
+            builtins.readFile ./mani.yaml.in
           );
           clobber = true;
         };
