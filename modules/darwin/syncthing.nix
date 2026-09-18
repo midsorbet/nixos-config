@@ -76,7 +76,7 @@
       fi
       "''${cli[@]}" config devices ${lib.escapeShellArg cfg.peerDeviceId} addresses 0 set ${lib.escapeShellArg cfg.peerAddress}
       if "''${cli[@]}" config folders list | grep -Fxq vault; then
-        "''${cli[@]}" config folders remove vault
+        "''${cli[@]}" config folders vault delete
       fi
       if ! "''${cli[@]}" config folders list | grep -Fxq projects; then
         "''${cli[@]}" config folders add-json "$(cat ${lib.escapeShellArg projectsFolderConfig})"
