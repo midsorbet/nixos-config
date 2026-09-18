@@ -42,7 +42,6 @@ in {
       xdg.config.files = {
         "git/hooks/projects/post-commit" = {
           source = ./post-commit.sh;
-          permissions = "0755";
           clobber = true;
         };
         "git/includes/projects-hooks.gitconfig" = {
