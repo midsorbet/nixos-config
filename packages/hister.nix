@@ -47,8 +47,10 @@
     versionCheckProgramArg = "--version";
   };
 
-  # Upstream Darwin releases use the netgo tag, which bypasses macOS scoped DNS.
-  # Build from source so Hister uses the native resolver for private split DNS.
+  # macOS specifically needs a source build because upstream Darwin releases use
+  # the netgo tag, which bypasses scoped DNS. On each Hister upgrade, check the
+  # upstream GoReleaser config and return to the release binary once it stops
+  # forcing netgo on Darwin.
   source = fetchFromGitHub {
     owner = "asciimoo";
     repo = "hister";
