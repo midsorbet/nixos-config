@@ -1,60 +1,116 @@
 {
+  buildGoModule,
+  buildNpmPackage,
+  fetchFromGitHub,
   fetchurl,
+  importNpmLock,
   lib,
-  rcodesign,
+  pkg-config,
+  sqlite,
   stdenv,
   versionCheckHook,
 }: let
   version = "0.19.0";
-  releaseBaseUrl = "https://github.com/asciimoo/hister/releases/download/v${version}";
-  binaries = {
-    "aarch64-darwin" = {
-      name = "hister_${version}_darwin_arm64";
-      hash = "sha256-5/axOoMuIeOdKfPZ0PV7zez1rIMrpq7x/CoSBN6W8d4=";
-    };
-    "x86_64-linux" = {
-      name = "hister_${version}_linux_amd64";
-      hash = "sha256-dXH3uUA5kX1Rk3L6av8Y/hLC71D5gayEfsGv9NfkFwE=";
-    };
+  platforms = [
+    "aarch64-darwin"
+    "x86_64-linux"
+  ];
+  meta = {
+    description = "Private full-text search engine for visited pages and local files";
+    homepage = "https://hister.org";
+    changelog = "https://github.com/asciimoo/hister/releases/tag/v${version}";
+    license = lib.licenses.agpl3Plus;
+    mainProgram = "hister";
+    inherit platforms;
   };
-  binary =
-    binaries.${stdenv.hostPlatform.system}
-    or (throw "Hister is not packaged for ${stdenv.hostPlatform.system}");
-in
-  stdenv.mkDerivation {
+
+  linuxBinary = stdenv.mkDerivation {
     pname = "hister";
-    inherit version;
+    inherit version meta;
 
     src = fetchurl {
-      url = "${releaseBaseUrl}/${binary.name}";
-      inherit (binary) hash;
+      url = "https://github.com/asciimoo/hister/releases/download/v${version}/hister_${version}_linux_amd64";
+      hash = "sha256-dXH3uUA5kX1Rk3L6av8Y/hLC71D5gayEfsGv9NfkFwE=";
     };
 
     dontUnpack = true;
     dontStrip = true;
 
-    nativeBuildInputs = lib.optionals stdenv.hostPlatform.isDarwin [rcodesign];
-
     installPhase = ''
       runHook preInstall
       install -Dm755 "$src" "$out/bin/hister"
-      ${lib.optionalString stdenv.hostPlatform.isDarwin ''
-        rcodesign sign "$out/bin/hister"
-      ''}
       runHook postInstall
     '';
 
     nativeInstallCheckInputs = [versionCheckHook];
     doInstallCheck = true;
     versionCheckProgramArg = "--version";
+  };
 
-    meta = {
-      description = "Private full-text search engine for visited pages and local files";
-      homepage = "https://hister.org";
-      changelog = "https://github.com/asciimoo/hister/releases/tag/v${version}";
-      license = lib.licenses.agpl3Plus;
-      mainProgram = "hister";
-      platforms = builtins.attrNames binaries;
-      sourceProvenance = [lib.sourceTypes.binaryNativeCode];
-    };
-  }
+  # Upstream Darwin releases use the netgo tag, which bypasses macOS scoped DNS.
+  # Build from source so Hister uses the native resolver for private split DNS.
+  source = fetchFromGitHub {
+    owner = "asciimoo";
+    repo = "hister";
+    rev = "v${version}";
+    hash = "sha256-0DNrO8wLgkVKTNWfSjkVpwUBn0+X7xb2pb7mXnD1SIU=";
+  };
+
+  frontend = buildNpmPackage {
+    pname = "hister-frontend";
+    inherit version;
+    src = source;
+    npmWorkspace = "webui/app";
+    npmDeps = importNpmLock {npmRoot = source;};
+    npmConfigHook = importNpmLock.npmConfigHook;
+    dontNpmBuild = false;
+
+    preBuild = ''
+      patchShebangs webui
+    '';
+
+    installPhase = ''
+      runHook preInstall
+      mkdir -p "$out"
+      cp -r webui/app/build/* "$out/"
+      runHook postInstall
+    '';
+  };
+
+  darwinSource = buildGoModule {
+    pname = "hister";
+    inherit version meta;
+    src = source;
+
+    vendorHash = "sha256-5weBvVQotKuVaBPqaBWzsK571EDPTnAKpim4i6fpeg0=";
+    proxyVendor = true;
+
+    nativeBuildInputs = [pkg-config];
+    buildInputs = [sqlite];
+    tags = ["libsqlite3"];
+
+    preBuild = ''
+      mkdir -p server/static/app
+      cp -r ${frontend}/* server/static/app/
+    '';
+
+    ldflags = [
+      "-s"
+      "-w"
+      "-X main.version=${version}"
+      "-X main.commit=v${version}"
+    ];
+
+    subPackages = ["."];
+    nativeInstallCheckInputs = [versionCheckHook];
+    doInstallCheck = true;
+    versionCheckProgramArg = "--version";
+
+    passthru = {inherit frontend;};
+  };
+in
+  if stdenv.hostPlatform.system == "aarch64-darwin"
+  then darwinSource
+  else if stdenv.hostPlatform.system == "x86_64-linux"
+  then linuxBinary
+  else throw "Hister is not packaged for ${stdenv.hostPlatform.system}"
