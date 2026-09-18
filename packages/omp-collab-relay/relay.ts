@@ -681,7 +681,7 @@ export const DEFAULT_OPTIONS: RelayOptions = {
 	webRoot: null,
 	quiet: false,
 	herdrSocketPath: `${homedir()}/.config/herdr/herdr.sock`,
-	vaultRoot: "/Users/me/vault",
+	vaultRoot: "/Users/me/Projects/vault",
 	publicOrigin: "https://omp.midsorbet.me",
 	activationTimeoutSecs: 30,
 	reconnectDelayMs: 250,

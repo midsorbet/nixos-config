@@ -27,7 +27,7 @@
       "(?i)(authorization:|x-api-key:)[[:space:]]*[^[:space:]]+"
     ];
     cwd_filter = [
-      "^/Users/me/vault/private(?:/|$)"
+      "^/Users/me/Projects/vault/private(?:/|$)"
       "^/home/me/vault/private(?:/|$)"
     ];
 

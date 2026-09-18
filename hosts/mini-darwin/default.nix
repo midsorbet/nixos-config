@@ -153,6 +153,7 @@ in {
     ../../modules/plannotator.nix
     ../../modules/shared-agent-skills.nix
     ../../modules/shared
+    ../../modules/workspace
     ../../modules/yazi
     agenix.darwinModules.default
     paneru.darwinModules.paneru
@@ -182,9 +183,6 @@ in {
     inherit user;
     settings = {
       core.pager = "hunk pager";
-      "includeIf \"gitdir:${homeDir}/vault/.git/modules/projects/\"" = {
-        path = "${homeDir}/.config/git/includes/vault-project-hooks.gitconfig";
-      };
     };
     commitSigning.enable = true;
   };
@@ -219,14 +217,10 @@ in {
       '';
       clobber = true;
     };
-
-    xdg.config.files."git/includes/vault-project-hooks.gitconfig" = {
-      text = ''
-        [core]
-          hooksPath = ${homeDir}/vault/.githooks/project
-      '';
-      clobber = true;
-    };
+  };
+  local.workspace = {
+    enable = true;
+    inherit user;
   };
   local.grayjay.enable = true;
   local.ghostty = {
@@ -275,7 +269,7 @@ in {
   local.zsh = {
     enable = true;
     inherit user;
-    projectDirectories = ["~/vault/projects"];
+    projectDirectories = ["~/Projects"];
     promptTheme = "kanagawa-everforest";
   };
   local.yazi = {
@@ -405,7 +399,7 @@ in {
     ++ (import ./packages.nix {inherit pkgs;});
 
   environment.variables = {
-    NH_FLAKE = "/Users/${user}/vault/projects/nixos-config";
+    NH_FLAKE = "${homeDir}/Projects/nixos-config";
     CODEX_JS_REPL_NODE_PATH = "${pkgs.nodejs}/bin/node";
     # Let terminals provide TERMINFO and fall back to the system database.
     # The default profile-based TERMINFO_DIRS entries may not exist on Darwin.

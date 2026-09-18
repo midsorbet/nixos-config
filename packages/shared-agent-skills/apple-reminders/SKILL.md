@@ -14,7 +14,7 @@ Use `remindctl` on macOS 14+. It works through EventKit, so changes follow the n
 - If access is unknown, check it without prompting with `remindctl status`. Use `remindctl authorize` only when access is `notDetermined` and the user wants to proceed.
 - Read the current list or reminder before changing it. Resolve mutations to an unambiguous full reminder ID; clarify an ambiguous title, list, or date rather than guessing.
 - Treat reminder and list deletion as destructive. Require clear user intent, use `--dry-run` when scope is uncertain, and use `--force` only for an intentionally destructive request.
-- For work in `/Users/me/vault`, follow the canonical Reminders account targeting, full-ID resolution, mutation, and verification policy in `/Users/me/vault/AGENTS.md`. Fail closed when its required iCloud list ID is absent. That policy overrides generic defaults and examples.
+- For work in `/Users/me/Projects/vault`, follow the canonical Reminders account targeting, full-ID resolution, mutation, and verification policy in `/Users/me/Projects/vault/AGENTS.md`. Fail closed when its required iCloud list ID is absent. That policy overrides generic defaults and examples.
 - Verify every mutation by reading the resulting reminder or confirming the deleted full ID is absent. Do not infer success from command exit alone.
 - Do not put secrets or sensitive raw documents in Reminders.
 

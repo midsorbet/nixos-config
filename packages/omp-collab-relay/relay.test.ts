@@ -23,7 +23,7 @@ const PANE: HerdrPane = {
 	identity: "herdr:omp:omp:path:/tmp/omp-session.json",
 	session: SESSION,
 	label: "OMP",
-	cwd: "/Users/me/vault",
+	cwd: "/Users/me/Projects/vault",
 	status: "idle",
 	focused: true,
 };
@@ -163,7 +163,7 @@ describe("Herdr socket dashboard", () => {
 		const transport = new FakeHerdrTransport();
 		const dashboard = createHerdrDashboard({
 			socketPath: "/tmp/herdr.sock",
-			vaultRoot: "/Users/me/vault",
+			vaultRoot: "/Users/me/Projects/vault",
 			activationTimeoutMs: 100,
 			reconnectDelayMs: 1,
 			pluginId: "local.omp-dashboard",
@@ -187,7 +187,7 @@ describe("Herdr socket dashboard", () => {
 		const transport = new FakeHerdrTransport();
 		const dashboard = createHerdrDashboard({
 			socketPath: "/tmp/herdr.sock",
-			vaultRoot: "/Users/me/vault",
+			vaultRoot: "/Users/me/Projects/vault",
 			activationTimeoutMs: 100,
 			reconnectDelayMs: 1,
 			pluginId: "local.omp-dashboard",

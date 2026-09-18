@@ -11,10 +11,11 @@ changes. Never bypass hooks, amend, or expand scope without explicit permission.
 Review staged content for secrets, credentials, debug artifacts, and unrelated
 churn. Do not invoke `git push` directly.
 
-In `/Users/me/vault/projects/<name>`, the configured post-commit hook may
-commit the vault gitlink and push the project branch when
-`/Users/me/vault/AGENTS.md` conditions pass. Do not duplicate that pointer
-commit or promise that the project commit cannot push.
+Repositories under `~/Projects` are independent peers, including the vault. Do
+not create pointer commits between them. A project repository’s configured
+post-commit hook may publish its branch only when the safe conditional publishing
+rules in `/Users/me/Projects/vault/AGENTS.md` pass; do not promise that a commit
+cannot publish. Back up the vault independently under its own repository policy.
 
 ## Subject
 

@@ -7,6 +7,7 @@
 }: let
   domain = "midsorbet.me";
   user = "me";
+  projectIgnorePatterns = builtins.filter (pattern: pattern != "") (lib.splitString "\n" (builtins.readFile ../../modules/workspace/ignore-patterns.txt));
   ompBrokerPort = 8765;
   keys = {
     boot = [
@@ -415,34 +416,17 @@ in {
           addresses = ["dynamic"];
           compression = "metadata";
         };
-        folders.vault = {
-          id = "vault";
-          label = "Vault";
-          path = "/persist/save/vault-mirror";
+        folders.projects = {
+          id = "projects";
+          label = "Projects";
+          path = "/persist/save/projects-mirror";
           type = "receiveonly";
           devices = ["mini"];
           rescanIntervalS = 3600;
           fsWatcherEnabled = true;
           fsWatcherDelayS = 10;
           ignorePerms = true;
-          ignorePatterns = [
-            "(?d).git"
-            "(?d).git/**"
-            "(?d)**/.git"
-            "(?d)**/.git/**"
-            "(?d)/private"
-            "(?d)**/.DS_Store"
-            "(?d)**/.direnv"
-            "(?d)**/.devenv"
-            "(?d)**/node_modules"
-            "(?d)**/.venv"
-            "(?d)**/__pycache__"
-            "(?d)**/.cache"
-            "(?d)**/result"
-            "(?d)**/target"
-            "(?d)**/.next"
-            "(?d)**/.svelte-kit"
-          ];
+          ignorePatterns = projectIgnorePatterns;
         };
       };
     };

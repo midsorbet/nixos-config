@@ -1,0 +1,35 @@
+// Privacy exclusions must precede the Git metadata inclusions below.
+(?d)/vault/private
+(?d)/vault/private/**
+(?d)/.stignore
+
+// Git metadata must remain available everywhere outside privacy exclusions.
+!/.git
+!/.git/**
+!**/.git
+!**/.git/**
+
+// Common generated caches must precede linked-worktree inclusions.
+(?d)**/.DS_Store
+(?d)**/.direnv
+(?d)**/.devenv
+(?d)**/node_modules
+(?d)**/.venv
+(?d)**/__pycache__
+(?d)**/.cache
+(?d)**/result
+(?d)**/.next
+(?d)**/.svelte-kit
+
+// These target subtrees contain preserved linked worktrees, not build output.
+// Keep their source while dropping generated target output inside each worktree.
+(?d)/sfix/target/goal-worktrees/**/target
+(?d)/sfix/target/goal-worktrees/**/target/**
+(?d)/spark-linkage-checker/target/implementation-worktrees/**/target
+(?d)/spark-linkage-checker/target/implementation-worktrees/**/target/**
+!/sfix/target/goal-worktrees
+!/sfix/target/goal-worktrees/**
+!/spark-linkage-checker/target/implementation-worktrees
+!/spark-linkage-checker/target/implementation-worktrees/**
+
+(?d)**/target

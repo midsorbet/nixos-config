@@ -6,17 +6,20 @@
 }: let
   cfg = config.local.syncthing;
   homeDir = config.hjem.users.${cfg.user}.directory;
+  projectsHomePrefix = "${homeDir}/";
+  projectsRelativePath = lib.removePrefix projectsHomePrefix cfg.projectsPath;
   configDir = "${homeDir}/Library/Application Support/Syncthing";
+  canonicalIgnorePolicy = ../workspace/ignore-patterns.txt;
   peerDeviceConfig = pkgs.writeText "syncthing-baymax-device.json" (builtins.toJSON {
     deviceID = cfg.peerDeviceId;
     name = "baymax";
     addresses = [cfg.peerAddress];
     compression = "metadata";
   });
-  vaultFolderConfig = pkgs.writeText "syncthing-vault-folder.json" (builtins.toJSON {
-    id = "vault";
-    label = "Vault";
-    path = cfg.vaultPath;
+  projectsFolderConfig = pkgs.writeText "syncthing-projects-folder.json" (builtins.toJSON {
+    id = "projects";
+    label = "Projects";
+    path = cfg.projectsPath;
     type = "sendonly";
     devices = [{deviceID = cfg.peerDeviceId;}];
     rescanIntervalS = 3600;
@@ -26,12 +29,21 @@
   });
   syncthingStart = pkgs.writeShellApplication {
     name = "syncthing-mini-start";
-    runtimeInputs = [cfg.package pkgs.coreutils];
+    runtimeInputs = [cfg.package pkgs.coreutils pkgs.diffutils];
     text = ''
       set -euo pipefail
       install -d -m 700 ${lib.escapeShellArg configDir}
+      install -d -m 700 ${lib.escapeShellArg cfg.projectsPath}
       install -m 600 ${lib.escapeShellArg cfg.certFile} ${lib.escapeShellArg "${configDir}/cert.pem"}
       install -m 600 ${lib.escapeShellArg cfg.keyFile} ${lib.escapeShellArg "${configDir}/key.pem"}
+      if [[ ! -f ${lib.escapeShellArg "${cfg.projectsPath}/.stignore"} ]]; then
+        echo "syncthing-mini-start: refusing to start: Hjem-managed .stignore is missing" >&2
+        exit 1
+      fi
+      if ! cmp -s ${lib.escapeShellArg canonicalIgnorePolicy} ${lib.escapeShellArg "${cfg.projectsPath}/.stignore"}; then
+        echo "syncthing-mini-start: refusing to start: Hjem-managed .stignore does not match the canonical policy" >&2
+        exit 1
+      fi
       exec syncthing serve \
         --no-browser \
         --no-restart \
@@ -63,8 +75,11 @@
         "''${cli[@]}" config devices add-json "$(cat ${lib.escapeShellArg peerDeviceConfig})"
       fi
       "''${cli[@]}" config devices ${lib.escapeShellArg cfg.peerDeviceId} addresses 0 set ${lib.escapeShellArg cfg.peerAddress}
-      if ! "''${cli[@]}" config folders list | grep -Fxq vault; then
-        "''${cli[@]}" config folders add-json "$(cat ${lib.escapeShellArg vaultFolderConfig})"
+      if "''${cli[@]}" config folders list | grep -Fxq vault; then
+        "''${cli[@]}" config folders remove vault
+      fi
+      if ! "''${cli[@]}" config folders list | grep -Fxq projects; then
+        "''${cli[@]}" config folders add-json "$(cat ${lib.escapeShellArg projectsFolderConfig})"
       fi
 
       "''${cli[@]}" config options global-ann-enabled set false
@@ -78,12 +93,12 @@
   };
 in {
   options.local.syncthing = {
-    enable = lib.mkEnableOption "send-only Mini Syncthing service";
+    enable = lib.mkEnableOption "send-only Mini Projects Syncthing service";
 
     user = lib.mkOption {
       type = lib.types.str;
       default = "me";
-      description = "User that owns the Syncthing service and vault folder.";
+      description = "User that owns the Syncthing service and Projects folder.";
     };
 
     package = lib.mkOption {
@@ -113,16 +128,29 @@ in {
       description = "Static LAN address for Baymax Syncthing.";
     };
 
-    vaultPath = lib.mkOption {
+    projectsPath = lib.mkOption {
       type = lib.types.str;
-      default = "${homeDir}/vault";
-      description = "Authoritative Mini vault directory shared send-only.";
+      default = "${homeDir}/Projects";
+      description = "Authoritative Mini Projects directory shared send-only.";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    hjem.users.${cfg.user}.packages = [cfg.package];
-
+    assertions = [
+      {
+        assertion = lib.hasPrefix projectsHomePrefix cfg.projectsPath && projectsRelativePath != "";
+        message = "local.syncthing.projectsPath must be a directory beneath the configured Hjem home";
+      }
+    ];
+    hjem.users.${cfg.user} = {
+      packages = [cfg.package];
+      files."${projectsRelativePath}/.stignore" = {
+        type = "copy";
+        source = canonicalIgnorePolicy;
+        permissions = "0600";
+        clobber = true;
+      };
+    };
     launchd.user.agents.syncthing = {
       serviceConfig = {
         ProgramArguments = ["${syncthingStart}/bin/syncthing-mini-start"];

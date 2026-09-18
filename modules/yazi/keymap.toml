@@ -44,17 +44,17 @@ desc = "Go to the current Git repository root"
 
 [[mgr.prepend_keymap]]
 on   = [ "g", "v" ]
-run  = "cd ~/vault"
+run  = "cd ~/Projects/vault"
 desc = "Go to the vault"
 
 [[mgr.prepend_keymap]]
 on   = [ "g", "p" ]
-run  = "cd ~/vault/projects"
+run  = "cd ~/Projects"
 desc = "Go to projects"
 
 [[mgr.prepend_keymap]]
 on   = [ "g", "n" ]
-run  = "cd ~/vault/projects/nixos-config"
+run  = "cd ~/Projects/nixos-config"
 desc = "Go to the Nix configuration"
 
 [[input.prepend_keymap]]

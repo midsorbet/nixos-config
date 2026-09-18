@@ -1,0 +1,112 @@
+# Read-only workspace catalog, not a repository lockfile or a second task database.
+# Existing Git configuration remains authoritative for remotes and revisions.
+sync_gitignore: false
+sync_remotes: false
+
+projects:
+  vault:
+    path: "@PROJECTS_ROOT@/vault"
+    desc: Personal context, planning, and workspace routing
+    tags: [context]
+    sync: false
+  nixos-config:
+    path: "@PROJECTS_ROOT@/nixos-config"
+    desc: System, agent, and tool configuration
+    tags: [system]
+    sync: false
+  sfix:
+    path: "@PROJECTS_ROOT@/sfix"
+    desc: Maven-to-sbt reactor integration
+    tags: [build]
+    sync: false
+  learning-workspace:
+    path: "@PROJECTS_ROOT@/learning-workspace"
+    desc: Learning topics, references, and exercises
+    tags: [learning]
+    sync: false
+  dx-plugins:
+    path: "@PROJECTS_ROOT@/dx-plugins"
+    desc: Scala.js plugin API and contract testkit
+    tags: [build, plugins]
+    sync: false
+  kitchen-flow:
+    path: "@PROJECTS_ROOT@/kitchen-flow"
+    desc: Meal planning, kitchen inventory, and cooking workflows
+    tags: [kitchen]
+    sync: false
+  maven-sbt-workspace:
+    path: "@PROJECTS_ROOT@/maven-sbt-workspace"
+    desc: Personal development workspace for Maven repositories
+    tags: [build]
+    sync: false
+  mealprep-app-automation:
+    path: "@PROJECTS_ROOT@/mealprep-app-automation"
+    desc: Historical meal-planning app automation experiments
+    tags: [kitchen, historical]
+    sync: false
+  reader-placeholder:
+    path: "@PROJECTS_ROOT@/reader-placeholder"
+    desc: Public landing page for the reading service
+    tags: [reading, web]
+    sync: false
+  research:
+    path: "@PROJECTS_ROOT@/research"
+    desc: Replayable research investigations and evidence
+    tags: [research]
+    sync: false
+  self-cut-companion:
+    path: "@PROJECTS_ROOT@/self-cut-companion"
+    desc: Self-haircut companion application
+    tags: [personal, web]
+    sync: false
+  spark-linkage-checker:
+    path: "@PROJECTS_ROOT@/spark-linkage-checker"
+    desc: JVM linkage and Spark compatibility analysis
+    tags: [build]
+    sync: false
+  doomscroller:
+    path: "@PROJECTS_ROOT@/doomscroller"
+    desc: Reading discovery, publication, and Readeck maintenance
+    tags: [tools, reading]
+    sync: false
+  inbox-cleanup:
+    path: "@PROJECTS_ROOT@/inbox-cleanup"
+    desc: Mailbox cleanup guardrails and audit history
+    tags: [tools, mail]
+    sync: false
+  nimbot-stickers:
+    path: "@PROJECTS_ROOT@/nimbot-stickers"
+    desc: Thermal label artwork and guarded print tooling
+    tags: [tools, labels]
+    sync: false
+
+tasks:
+  context:
+    desc: Locate local and inherited instructions, skills, and documentation
+    cmd: |
+      set -eu
+      printf 'Directory: %s\n' "$PWD"
+      printf 'Git root: %s\n' "$(git rev-parse --show-toplevel)"
+      directory=$PWD
+      while :; do
+        if [ -f "$directory/AGENTS.md" ]; then
+          printf 'Instructions: %s/AGENTS.md\n' "$directory"
+        fi
+        if [ -d "$directory/.agents/skills" ]; then
+          printf 'Skills: %s/.agents/skills\n' "$directory"
+        fi
+        if [ "$directory" = / ]; then
+          break
+        fi
+        directory=$(dirname "$directory")
+      done
+      if [ -f README.md ]; then
+        printf 'Documentation: %s/README.md\n' "$PWD"
+      fi
+  status:
+    desc: Query Git status within the selected directory without refreshing the index
+    cmd: |
+      set -eu
+      printf 'Directory: %s\n' "$PWD"
+      printf 'Git root: %s\n' "$(git rev-parse --show-toplevel)"
+      GIT_OPTIONAL_LOCKS=0 git status --short --branch -- .

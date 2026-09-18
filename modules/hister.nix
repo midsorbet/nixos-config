@@ -10,7 +10,7 @@
     app = {
       directory = cfg.dataDir;
       title = "Hister";
-      subtitle = "Private search across browsing, Readeck, and the vault";
+      subtitle = "Private search across browsing, Readeck, and Projects";
       search_url = "https://kagi.com/search?q={query}";
       open_results_on_new_tab = true;
       disable_previews = false;
@@ -26,8 +26,8 @@
       max_file_size_mb = 10;
       directories = [
         {
-          path = cfg.vaultMirrorDir;
-          label = "vault";
+          path = cfg.projectsMirrorDir;
+          label = "projects";
           include_hidden = false;
           delete_on_remove = true;
         }
@@ -65,10 +65,10 @@ in {
       description = "Backed-up Hister database, previews, and vector index directory.";
     };
 
-    vaultMirrorDir = lib.mkOption {
+    projectsMirrorDir = lib.mkOption {
       type = lib.types.str;
-      default = "/persist/save/vault-mirror";
-      description = "Receive-only Syncthing vault mirror watched by Hister.";
+      default = "/persist/save/projects-mirror";
+      description = "Receive-only Syncthing Projects mirror watched by Hister.";
     };
 
     environmentFile = lib.mkOption {
@@ -119,7 +119,7 @@ in {
 
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 hister hister - -"
-      "d ${cfg.vaultMirrorDir} 0770 me users - -"
+      "d ${cfg.projectsMirrorDir} 0770 me users - -"
     ];
 
     systemd.services.hister = {
@@ -156,11 +156,11 @@ in {
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
         ReadWritePaths = [cfg.dataDir];
-        ReadOnlyPaths = [cfg.vaultMirrorDir];
+        ReadOnlyPaths = [cfg.projectsMirrorDir];
         SystemCallArchitectures = "native";
         SystemCallFilter = ["@system-service" "~@privileged"];
       };
-      unitConfig.RequiresMountsFor = [cfg.dataDir cfg.vaultMirrorDir];
+      unitConfig.RequiresMountsFor = [cfg.dataDir cfg.projectsMirrorDir];
     };
 
     systemd.services.hister-readeck-import = {
