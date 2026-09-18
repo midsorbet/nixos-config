@@ -1,15 +1,9 @@
 {
   config,
-  herdr-omp-plugins,
   lib,
   pkgs,
   ...
 }: let
-  inherit
-    (herdr-omp-plugins.lib.buildersFor pkgs)
-    mkRemoteCollabExtension
-    mkSpinoffExtension
-    ;
   cfg = config.local.omp;
   authBrokerUrlIsSecure =
     cfg.authBrokerUrl
@@ -25,13 +19,9 @@
   runtimePath =
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
   cxporterPackage = pkgs.callPackage ../../packages/cxporter.nix {};
-  rootshellNotifyPackage = pkgs.callPackage ../../packages/rootshell-notify.nix {};
   histerExtension = pkgs.replaceVars ./extensions/hister.ts {
     HISTER_BASE_URL = cfg.hister.baseUrl;
     HISTER_ENV_FILE = toString cfg.hister.environmentFile;
-  };
-  rootshellPushExtension = pkgs.replaceVars ./extensions/rootshell-push.ts {
-    ROOTSHELL_NOTIFY_EXECUTABLE = lib.getExe rootshellNotifyPackage;
   };
   histerSkill = pkgs.writeTextDir "share/agents/skills/hister/SKILL.md" (
     builtins.readFile ./skills/hister/SKILL.md
@@ -321,12 +311,6 @@
     '';
   };
 
-  collabExtension = mkRemoteCollabExtension {
-    startCommand = lib.getExe collabStart;
-    stopCommand = lib.getExe collabStop;
-    statusCommand = lib.getExe collabStatus;
-  };
-
   wrappedPackage =
     pkgs.runCommand "omp-${cfg.package.version}-with-runtimes" {
       nativeBuildInputs = [pkgs.makeWrapper];
@@ -347,11 +331,6 @@
         --set-default PI_JS 1 \
         --set-default PI_PACKAGE_DIR "$out/share/omp"
     '';
-  spinoffExtension = mkSpinoffExtension {
-    ompCommand = "${wrappedPackage}/bin/omp";
-    herdrCommand = lib.getExe config.local.herdr.package;
-    vaultRoot = "/Users/${cfg.user}/vault";
-  };
   managedSettingsSuffix =
     lib.optionalString (cfg.authBrokerUrl != null)
     "\nauth:\n  broker:\n    url: ${builtins.toJSON cfg.authBrokerUrl}\n"
@@ -774,7 +753,6 @@ in {
     environment.systemPackages = [
       wrappedPackage
       cxporterPackage
-      rootshellNotifyPackage
     ];
 
     hjem.users.${cfg.user} = {
@@ -812,11 +790,6 @@ in {
           source = ./rules/standalone-terminal-windows.md;
           clobber = true;
         };
-        ".omp/agent/extensions/spinoff" = {
-          type = "symlink";
-          source = spinoffExtension;
-          clobber = true;
-        };
         ".agents/skills/codex-connectors" = {
           type = "symlink";
           source = ./skills/codex-connectors;
@@ -827,21 +800,12 @@ in {
           source = histerExtension;
           clobber = true;
         };
-        ".omp/agent/extensions/rootshell-push.ts" = {
-          type = "symlink";
-          source = rootshellPushExtension;
-          clobber = true;
-        };
         ".omp/agent/skills/hister/SKILL.md" = lib.mkIf cfg.hister.enable {
           type = "symlink";
           source = "${histerSkill}/share/agents/skills/hister/SKILL.md";
           clobber = true;
         };
 
-        ".omp/agent/extensions/remote-collab.ts" = lib.mkIf cfg.collab.enable {
-          source = "${collabExtension}/remote-collab.ts";
-          clobber = true;
-        };
         ".omp/agent/themes/kanagawa-wave.json" = {
           text = builtins.toJSON kanagawaWaveTheme;
           clobber = true;
