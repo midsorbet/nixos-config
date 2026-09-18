@@ -5,27 +5,31 @@ description: Use Cua Driver for bounded native macOS interaction only when no de
 
 # Cua computer use
 
-Use the signed native `cua-driver` stdio MCP server only for native macOS UI,
+Use the signed native `cua-driver` MCP server only for native macOS UI,
 authorized browser chrome, accessibility semantics, authenticated desktop-only
 surfaces, or visible verification. Prefer, in order, a dedicated plugin/API/CLI,
 OMP's named browser controller for webpage internals, AppleScript/JXA or App
 Intents for scriptable macOS apps, and XCUITest/Appium for iOS. A Cua refusal or
 absence never authorizes global native control or another bypass.
 
-## One-turn activation
+## Native MCP discovery
 
-Call `cua_computer_use` once with `{}`; when mounted at
-`xd://cua_computer_use`, write `{}` there. The extension initially exposes
-only this activator, loads the signed driver's stdio transport and native tools
-on demand, and closes them after the turn. It has no Sky compatibility layer,
-nested model, HTTP server, JavaScript `sky` environment, or
-`computer_use({code})` wrapper.
+The managed configuration registers the server as `cua-driver`. OMP discovers
+its tools automatically. In Code Mode, use the advertised
+`tool.mcp__cua_driver_*` methods through Eval. When tools are exposed through
+`xd://`, read the catalog and the selected tool's schema before calling it.
+A newly started server can finish connecting after the first request. Use only
+the currently advertised tools and schemas; do not infer arguments from old Sky
+behavior.
 
-The current MCP `tools/list` and mounted input schemas are authoritative. Do
-not infer tools or arguments from old Sky behavior. Cua 0.24.0 commonly exposes
-`list_apps`, `list_windows`, `launch_app`, `get_window_state`, `click`,
-`double_click`, `right_click`, `type_text`, `press_key`, `hotkey`,
-`set_value`, `scroll`, and `drag`; use only what is mounted this turn.
+Common Cua Driver tools include `mcp__cua_driver_list_apps`,
+`mcp__cua_driver_list_windows`, `mcp__cua_driver_launch_app`,
+`mcp__cua_driver_get_window_state`, `mcp__cua_driver_click`,
+`mcp__cua_driver_double_click`, `mcp__cua_driver_right_click`,
+`mcp__cua_driver_type_text`, `mcp__cua_driver_press_key`,
+`mcp__cua_driver_hotkey`, `mcp__cua_driver_set_value`,
+`mcp__cua_driver_scroll`, and `mcp__cua_driver_drag`; use only tools actually
+returned by discovery and only their current schemas.
 
 Before operating, read [Native action protocol](references/native-action-protocol.md).
 Read [Browser handoff and recovery](references/browser-handoff-recovery.md) only
@@ -34,8 +38,8 @@ recovery.
 
 ## Authorization boundary
 
-Activation exposes a capability; it neither expands app policy nor authorizes a
-consequential action.
+Native MCP access exposes a capability; it neither expands app policy nor
+authorizes a consequential action.
 
 - Production policy initially allows TextEdit (`com.apple.TextEdit`) and
   Calculator (`com.apple.calculator`). Cook Well (`com.cookwell.app`) is
@@ -43,28 +47,27 @@ consequential action.
   delete, save, or otherwise mutate its data.
 - Any added bundle ID requires explicit configuration approval. There is no
   unbounded or standard-mode fallback for an absent app.
-- Cua 0.24.0 enforces manifest app/window scope for observation and native
-  actions, but raw `launch_app` does not enforce the app resource grant. OMP's
-  gate therefore accepts it only with an explicit allowlisted `bundle_id` and
-  rejects name-only or nonlisted launches.
-- Target an allowed app's exact PID and window. Never use windowless desktop
-  targets, global keyboard/click input, or another foreground app as a workaround.
-- Treat policy and safety refusals as final. Never weaken policy, change
-  transport/profile, or substitute a different tool to bypass them.
+- Resolve app identity with `mcp__cua_driver_list_apps` and resolve its exact
+  PID/window with `mcp__cua_driver_list_windows`. If identity or target scope
+  cannot be grounded, stop; never use a windowless desktop target, global input,
+  or another foreground app as a workaround.
+- Treat the driver's bounded capability manifest and returned refusal as
+  authoritative. Never weaken policy, change transport/profile, or substitute a
+  different tool to bypass it.
 
 Immediately before sending, publishing, uploading, downloading, deleting,
 purchasing, accepting terms, authenticating, transmitting credentials,
 changing permissions/security, or disclosing private data, inspect the target
 and obtain confirmation for the exact values. Perform only that action in a
-separate tool call, then inspect again. Prior task approval, activation, and app
-allowlisting are not confirmation.
+separate tool call, then inspect again. Prior task approval and app allowlisting
+are not confirmation.
 
 ## Privacy and lifetime
 
-Each activation and transport-owned driver session is finite; transport close or
-idle expiry cleans up that session. The signed
-`/Applications/CuaDriver.app` owns macOS Accessibility and Screen Recording
-grants. Never widen TCC permissions or operate the permission UI. The managed
-module disables telemetry and startup update checks; do not re-enable them, run
-autonomous updates, persist computer history, or add a network transport.
-Transport close does not guarantee a separately running daemon stops.
+The managed launcher starts the exact signed `/Applications/CuaDriver.app` with
+bounded manifest permissions and refuses an expired or conflicting daemon. It
+disables telemetry and startup update checks; do not re-enable them, run
+autonomous updates, persist computer history, or add a network transport. The
+signed app owns macOS Accessibility and Screen Recording grants. Never widen TCC
+permissions or operate the permission UI. A transport disconnect does not
+promise that a separately running daemon stops.

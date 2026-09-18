@@ -19,9 +19,47 @@
   runtimePath =
     lib.makeBinPath ([cfg.pythonPackage cfg.bunPackage cfg.uvPackage cxporterPackage] ++ cfg.extraRuntimePackages);
   cxporterPackage = pkgs.callPackage ../../packages/cxporter.nix {};
-  histerExtension = pkgs.replaceVars ./extensions/hister.ts {
-    HISTER_BASE_URL = cfg.hister.baseUrl;
-    HISTER_ENV_FILE = toString cfg.hister.environmentFile;
+  histerCredentialFile =
+    if cfg.hister.environmentFile == null
+    then "/dev/null"
+    else toString cfg.hister.environmentFile;
+  histerCredentialCommand = pkgs.writeShellApplication {
+    name = "omp-hister-access-token";
+    text = ''
+      set -euo pipefail
+
+      credential_file=${lib.escapeShellArg histerCredentialFile}
+      if [[ ! -r "$credential_file" ]]; then
+        echo >&2 "Hister credential file is not readable."
+        exit 1
+      fi
+
+      token=""
+      token_count=0
+      while IFS= read -r line || [[ -n "$line" ]]; do
+        case "$line" in
+          HISTER__APP__ACCESS_TOKEN=*)
+            token="''${line#HISTER__APP__ACCESS_TOKEN=}"
+            token_count=$((token_count + 1))
+            ;;
+        esac
+      done < "$credential_file"
+
+      if ((token_count == 0)); then
+        echo >&2 "Hister credential file is missing HISTER__APP__ACCESS_TOKEN."
+        exit 1
+      fi
+      if ((token_count != 1)); then
+        echo >&2 "Hister credential file contains duplicate HISTER__APP__ACCESS_TOKEN entries."
+        exit 1
+      fi
+      if [[ ! "$token" =~ ^[0-9a-f]{64}$ ]]; then
+        echo >&2 "Hister HISTER__APP__ACCESS_TOKEN must be exactly 64 lowercase hexadecimal characters."
+        exit 1
+      fi
+
+      printf '%s\n' "$token"
+    '';
   };
   histerSkill = pkgs.writeTextDir "share/agents/skills/hister/SKILL.md" (
     builtins.readFile ./skills/hister/SKILL.md
@@ -473,7 +511,10 @@
     statusLineBg = "#e5dfc5";
   };
 in {
-  imports = [./cua-computer-use.nix];
+  imports = [
+    ./cua-computer-use.nix
+    ./mcp.nix
+  ];
   options.local.omp = {
     enable = lib.mkEnableOption "global OMP with Nix-provided eval runtimes";
 
@@ -527,18 +568,18 @@ in {
     };
 
     hister = {
-      enable = lib.mkEnableOption "one-turn lazy Hister retrieval tools";
+      enable = lib.mkEnableOption "private Hister native MCP retrieval";
 
       baseUrl = lib.mkOption {
         type = lib.types.str;
         default = "https://hister.midsorbet.me";
-        description = "Split-DNS HTTPS Hister URL used by the lazy tools.";
+        description = "Private split-DNS HTTPS base URL for the Hister MCP server.";
       };
 
       environmentFile = lib.mkOption {
         type = with lib.types; nullOr path;
         default = null;
-        description = "Agenix-decrypted environment file containing the Hister access token.";
+        description = "Agenix-decrypted environment file assigning a lowercase 64-hex HISTER__APP__ACCESS_TOKEN.";
       };
     };
 
@@ -692,6 +733,11 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
+    local.omp.mcpServers.hister = lib.mkIf cfg.hister.enable {
+      url = "${lib.removeSuffix "/" cfg.hister.baseUrl}/mcp";
+      headers."X-Access-Token" = "!${lib.getExe histerCredentialCommand}";
+    };
+
     assertions =
       [
         {
@@ -700,7 +746,7 @@ in {
         }
         {
           assertion = !cfg.hister.enable || cfg.hister.environmentFile != null;
-          message = "local.omp.hister.environmentFile must be set when lazy Hister tools are enabled.";
+          message = "local.omp.hister.environmentFile must be set when the Hister MCP server is enabled.";
         }
       ]
       ++ lib.optionals cfg.collab.enable [
@@ -793,11 +839,6 @@ in {
         ".agents/skills/codex-connectors" = {
           type = "symlink";
           source = ./skills/codex-connectors;
-          clobber = true;
-        };
-        ".omp/agent/extensions/hister.ts" = lib.mkIf cfg.hister.enable {
-          type = "symlink";
-          source = histerExtension;
           clobber = true;
         };
         ".omp/agent/skills/hister/SKILL.md" = lib.mkIf cfg.hister.enable {

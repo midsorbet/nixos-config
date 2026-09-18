@@ -7,7 +7,6 @@
   cfg = config.local.omp;
   computerUseCfg = cfg.computerUse;
   cuaDriverPackage = pkgs.callPackage ../../packages/cua-driver.nix {};
-  cuaMcpClientPackage = pkgs.callPackage ../../packages/cua-mcp-client {};
   installedCuaDriver = "/Applications/CuaDriver.app/Contents/MacOS/cua-driver";
 
   capabilityManifestText = builtins.toJSON {
@@ -44,7 +43,7 @@
 
       print_stop_and_retry_recovery() {
         echo >&2 "Stop the user-owned daemon explicitly with: $driver stop"
-        echo >&2 'Then call cua_computer_use again. The managed launcher will not stop or replace an existing daemon automatically.'
+        echo >&2 'Then reconnect the native Cua Driver MCP server. The managed launcher will not stop or replace an existing daemon automatically.'
       }
 
       verify_bounded_daemon() {
@@ -85,17 +84,6 @@
       exec "$driver" mcp
     '';
   };
-
-  cuaExtensionSource = pkgs.replaceVars ./extensions/cua-computer-use.ts {
-    CUA_ALLOWED_APP_IDS = builtins.toJSON computerUseCfg.allowedAppBundleIds;
-    CUA_MCP_CLIENT = "${cuaMcpClientPackage}/lib/cua-mcp-client.ts";
-    CUA_MCP_LAUNCHER = lib.getExe cuaMcpLauncher;
-  };
-  cuaExtensionTree = pkgs.runCommand "omp-cua-computer-use-extension" {} ''
-    mkdir -p "$out/extensions"
-    cp ${cuaExtensionSource} "$out/extensions/cua-computer-use.ts"
-    cp ${./cua-native-tools.json} "$out/cua-native-tools.json"
-  '';
 
   reconcileCuaConfiguration = pkgs.writeShellApplication {
     name = "omp-reconcile-cua-computer-use";
@@ -151,35 +139,6 @@
         end
       '
 
-      reconcile_json_atomically "$HOME/.omp/agent/mcp.json" '
-        if type != "object" then
-          error("OMP MCP configuration must be a JSON object")
-        elif has("mcpServers") and (.mcpServers | type) != "object" then
-          error("OMP mcpServers must be a JSON object")
-        elif has("disabledServers") and (.disabledServers | type) != "array" then
-          error("OMP disabledServers must be a JSON array")
-        else
-          if has("mcpServers") then
-            .mcpServers |= del(
-              .["chatgpt-computer-use"],
-              .["computer-use"],
-              .["cua-driver"]
-            )
-          else
-            .
-          end
-          | if has("disabledServers") then
-              .disabledServers |= map(select(
-                . != "chatgpt-computer-use"
-                and . != "computer-use"
-                and . != "cua-driver"
-              ))
-            else
-              .
-            end
-        end
-      '
-
       remove_managed_sky_symlink() {
         local stale_path="$1"
         local stale_target
@@ -229,7 +188,7 @@ in {
       "com.apple.calculator"
       "com.cookwell.app"
     ];
-    description = "Exact native application bundle identifiers admitted by the Cua capability manifest and OMP launch guard.";
+    description = "Exact native application bundle identifiers admitted by the Cua capability manifest.";
   };
 
   config = lib.mkIf cfg.enable {
@@ -250,11 +209,6 @@ in {
         source = ./skills/cua-computer-use;
         clobber = true;
       };
-      ".omp/agent/extensions/cua-computer-use.ts" = {
-        type = "symlink";
-        source = "${cuaExtensionTree}/extensions/cua-computer-use.ts";
-        clobber = true;
-      };
     };
 
     system.activationScripts.postActivation.text = lib.mkAfter ''
@@ -263,5 +217,9 @@ in {
       echo >&2 "Installing signed Cua Driver application..."
       ${lib.getExe installSignedCuaApplication}
     '';
+
+    local.omp.mcpServers.cua-driver = {
+      command = lib.getExe cuaMcpLauncher;
+    };
   };
 }
