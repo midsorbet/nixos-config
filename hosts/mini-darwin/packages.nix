@@ -11,6 +11,7 @@ in
     frog
     fswatch
     gh
+    mani
     remindctl
     seedsCli
     uv
