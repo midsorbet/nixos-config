@@ -28,7 +28,7 @@
     ];
     cwd_filter = [
       "^/Users/me/Projects/vault/private(?:/|$)"
-      "^/home/me/vault/private(?:/|$)"
+      "^/home/me/Projects/vault/private(?:/|$)"
     ];
 
     search.filters = [
