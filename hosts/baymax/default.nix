@@ -425,7 +425,7 @@ in {
           rescanIntervalS = 3600;
           fsWatcherEnabled = true;
           fsWatcherDelayS = 10;
-          ignorePerms = true;
+          ignorePerms = false;
           ignorePatterns = projectIgnorePatterns;
         };
       };

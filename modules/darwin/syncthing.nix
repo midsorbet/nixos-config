@@ -25,7 +25,7 @@
     rescanIntervalS = 3600;
     fsWatcherEnabled = true;
     fsWatcherDelayS = 10;
-    ignorePerms = true;
+    ignorePerms = false;
   });
   syncthingStart = pkgs.writeShellApplication {
     name = "syncthing-mini-start";
@@ -81,6 +81,7 @@
       if ! "''${cli[@]}" config folders list | grep -Fxq projects; then
         "''${cli[@]}" config folders add-json "$(cat ${lib.escapeShellArg projectsFolderConfig})"
       fi
+      "''${cli[@]}" config folders projects ignore-perms set false
 
       "''${cli[@]}" config options global-ann-enabled set false
       "''${cli[@]}" config options local-ann-enabled set false
