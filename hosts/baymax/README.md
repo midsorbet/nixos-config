@@ -252,6 +252,91 @@ ssh me@192.168.4.200 'zfs list -t bookmark -o name,creation -s creation data/per
   bypasses runtime history and secret filters. Sanitize any future import first
   and retain the original history only as protected rollback evidence.
 
+## Boot Disk Failure (2026-09)
+
+Hardware: Beelink Mini S13 Pro (firmware `AZW MINI S`, BIOS `MINISF005`,
+Alder Lake-N). Two M.2 2280 slots: the left `SATA3/NVMe` combo slot held the
+bundled boot SSD; the right `PCIe 3.0 x1` slot is NVMe-only and holds the 2 TB
+SPCC data NVMe.
+
+On 2026-09-19 at about 03:31 UTC the boot SSD
+(`ata-512GB_SSD_MQ23W96605594`; label AZW `S302F512G`, M.2 2280 SATA, B+M key)
+dropped off the bus while the system was running. SSH accepted TCP but never
+sent a banner, ping kept answering, and the foreground Hister query could not
+be interrupted. On the next boot the firmware listed SATA ports 0-2 as Empty
+and offered no boot entry. Secure Boot was still enabled in Custom mode with
+the existing keys.
+
+Evidence from the NixOS live USB (kernels 6.18.52 and 7.2.6):
+
+```text
+ahci 0000:00:17.0: 1/1 ports implemented (port mask 0x2)
+ata2: link is slow to respond, please be patient (ready=0)
+ata2: found unknown device (class 0)
+ata2: SATA link down (SStatus 0 SControl 300)
+```
+
+The link completes OOB negotiation, but the drive never sends its signature
+FIS. Link power policy, controller reprobe, forced 1.5 Gbps, reseating, and a
+second kernel did not change the result. The firmware detects the 2 TB NVMe in
+the combo slot, so that slot has power and PCIe. Deployed source `5e89bb0`
+evaluates to the same kernel, parameters, initrd and kernel modules, EFI, and
+Lanzaboote settings as pre-migration `cbe2c66`; `disk-config.nix` and
+`flake.lock` did not change. Assessment: SSD failure is the most likely cause;
+a slot SATA-lane fault remains possible. Evidence is retained on Mini under
+`/Users/me/.local/state/workspace-migration-20260918T205619Z/verification/`
+(`live-usb-storage-diagnosis.json`, `sata-isolation-20260919.json`,
+`alternate-kernel-test.json`).
+
+Recovery dependencies:
+
+- `rpool` (`/`, `/nix`, `/home`, `/persist`, `/persist/host`) lived only on the
+  failed SSD.
+- `data` and `archive` are `ONLINE` but locked. Their key file
+  `/persist/host/secrets/zfs/data.key` was on the SSD. The passphrase is known
+  and can be supplied with `zfs load-key -L prompt <pool>`.
+- `archive/replica/baymax-persistHost` is the configured daily Syncoid copy of
+  `/persist/host`: agenix host key, `data.key`, `sbctl` PKI, initrd host key,
+  and `machine-id`. Verify its newest snapshot at import. Recovering it
+  restores every Baymax-only secret, including the Hetzner Borg credentials.
+- `/home` had no snapshot or replica. Restore it from the Hetzner Borg repo
+  (`repokey-blake2`; passphrase known). Loss is limited to changes since the
+  last daily run.
+- Not backed up: `/var/lib/cloudflare-warp`, `/var/lib/nixos`,
+  `/var/log/journal`, and the failure-time journal.
+
+Rebuild plan:
+
+1. From the live USB: `zpool import -f -N -o readonly=on archive` and `data`,
+   `zfs load-key -L prompt` for each, check `zpool status`, mount the
+   `baymax-persistHost` replica, confirm the recovered host public key matches
+   the `baymax` recipient in the secrets repo, copy `/persist/host` off the
+   host, confirm `borg list` reaches Hetzner, then export both pools.
+2. Boot disk: use an NVMe 2280 drive in the combo slot. It works whether the
+   SSD or the slot's SATA lanes failed. Change the `system` device in
+   `disk-config.nix` to the new `nvme-...` ID; keep the ESP and `rpool` layout.
+3. Install: partition only the new disk (filter the disko config so `data` and
+   `archive` are untouched; keep the Seagate unplugged), restore
+   `/persist/host` before the first `nixos-install`, install `5e89bb0` with the
+   device change, restore `/home` from Borg, then re-enable Secure Boot with the
+   existing keys.
+4. Keep the failed SSD. If an M.2 SATA USB enclosure reads it, image it first,
+   then import `rpool` read-only to recover the last day of `/home` and the
+   journal. Never initialize or format it.
+
+Open fixes this incident calls for:
+
+- Encrypt the Hetzner Borg secrets, the Baymax host SSH private key,
+  `data.key`, and the `sbctl` bundle to the `mini` recipient as well, so any
+  machine with Mini's key can rebuild Baymax without the replica.
+- Alert from outside Baymax: a Mini-side reachability check that publishes to
+  a channel Baymax does not host. `ntfy-failure@` cannot report the host's own
+  death.
+- Out-of-band console (JetKVM class) on Baymax.
+- A second x86 box as ZFS replication target, second Syncthing receiver,
+  `x86_64-linux` remote builder, and cold standby; the N100 becomes the small
+  always-on standby. The purchase decision lives in the vault purchases note.
+
 ## Recovery
 
 If the tunnel token rotates or the Cloudflare tunnel object gets deleted and recreated:
