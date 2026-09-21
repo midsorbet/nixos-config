@@ -878,11 +878,12 @@ in {
       };
   };
 
-  # It's me, it's you, it's everyone
+  # Preserve recovered data owners when rebuilding the lost /var/lib/nixos state.
   users = {
     users = {
       ${user} = {
         isNormalUser = true;
+        uid = 1000;
         extraGroups = [
           "wheel" # Enable ‘sudo’ for the user.
         ];
@@ -892,17 +893,24 @@ in {
 
       actual = {
         isSystemUser = true;
+        uid = 989;
         group = "actual";
       };
 
+      hister.uid = 986;
+      immich.uid = 998;
+
       readeck = {
         isSystemUser = true;
+        uid = 991;
         group = "readeck";
       };
     };
 
-    groups.actual = {};
-    groups.readeck = {};
+    groups.actual.gid = 986;
+    groups.hister.gid = 983;
+    groups.immich.gid = 998;
+    groups.readeck.gid = 989;
 
     mutableUsers = false;
   };

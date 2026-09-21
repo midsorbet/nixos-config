@@ -307,15 +307,18 @@ Recovery dependencies:
   initrd identities, data key, Secure Boot PKI, machine-id, and user password
   hash. An independently verified encrypted `host-state.zfs` is also on Mini
   and Hetzner. Restore it before install activation. Never put private contents
-  into this repository.
+  into this repository. The host replica is its own encryption root: unlock
+  `archive/replica/baymax-persistHost` with the original boot-disk (`rpool`)
+  passphrase, not the parent `archive` pool. Its recovered
+  `secrets/zfs/data.key` then unlocks `archive` and `data` without more prompts.
 - `/home` had no ZFS replica. Borg archive
   `baymax-hetzner-2026-09-18T00:00:30` ran at 07:00:39-07:11:58 UTC on
   September 18 and contains `home/me`. Archive access and a one-file extraction
   were verified, but the complete `/home` payload has not yet been restored.
 - Generic `/persist` was not backed up. This includes `/var/lib/nixos`,
-  `/var/lib/systemd`, `/var/lib/cloudflare-warp`, and `/var/log/journal`. Recover
-  and pin the original numeric account IDs from protected data before
-  activation or tmpfiles can change ownership. WARP needs intentional
+  `/var/lib/systemd`, `/var/lib/cloudflare-warp`, and `/var/log/journal`. The host
+  configuration pins the verified original numeric IDs before activation or
+  tmpfiles can change ownership. WARP needs intentional
   re-registration; its previous state and the failure-time journal are not
   recovered.
 
@@ -348,10 +351,14 @@ Preparation evidence and remaining gates:
   build, installed boot, or Secure Boot verification.
 - The live rescue store cannot hold the full build: the baseline dry-run
   alone needs 12.902 GiB of unpacked cached paths, plus build outputs and
-  scratch space, against a 7.7 GiB store. Resolve build storage before claiming
-  the configuration is built or ready to install.
-- Original numeric IDs for `me`, `actual`, `hister`, `immich`, and `readeck`
-  still need read-only inspection. Do not guess fresh allocation numbers.
+  scratch space, against a 7.7 GiB store. For this rescue, the user approved
+  building directly inside Mini's existing Linux builder instead. Keep the
+  full Linux closure in that VM, not in Mini's host store.
+- Read-only inspection verified and pinned these UID:GID pairs: `me`
+  `1000:100`, `actual` `989:986`, `hister` `986:983`, `immich` `998:998`, and
+  `readeck` `991:989`. PostgreSQL `71:71` and Paperless `315:315` already match
+  their fixed IDs. The original host/initrd fingerprints, PKI file presence,
+  and saved password-hash syntax were also checked without exposing secrets.
 
 Rebuild sequence, subject to explicit destructive/deployment approval:
 
