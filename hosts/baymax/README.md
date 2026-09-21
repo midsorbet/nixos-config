@@ -299,9 +299,10 @@ Recovery dependencies:
 
 - `rpool` (`/`, `/nix`, `/home`, `/persist`, `/persist/host`) lived only on the
   failed SSD.
-- The surviving `data` and `archive` pools were verified and are protected
-  read-only during preparation. Their key file is
-  `/persist/host/secrets/zfs/data.key`; it is recoverable from the host replica.
+- Before the NVMe erase, the surviving `data` and `archive` pools were verified.
+  The NVMe now has a fresh, verified `data` pool; the original archive and both
+  data recovery copies remain intact. Their original key file is
+  `/persist/host/secrets/zfs/data.key`, recovered from the host replica.
 - `archive/replica/baymax-persistHost` was the daily copy at failure. Its
   `autosnap_2026-09-18_00:00:05_daily` snapshot contains the original host and
   initrd identities, data key, Secure Boot PKI, machine-id, and user password
@@ -313,8 +314,9 @@ Recovery dependencies:
   `secrets/zfs/data.key` then unlocks `archive` and `data` without more prompts.
 - `/home` had no ZFS replica. Borg archive
   `baymax-hetzner-2026-09-18T00:00:30` ran at 07:00:39-07:11:58 UTC on
-  September 18 and contains `home/me`. Archive access and a one-file extraction
-  were verified, but the complete `/home` payload has not yet been restored.
+  September 18. Its complete `home` tree was restored to encrypted `rpool/home`
+  and authenticated against the archive on September 21. The newer retained
+  workspace mirror was not replaced by this older home backup.
 - Generic `/persist` was not backed up. This includes `/var/lib/nixos`,
   `/var/lib/systemd`, `/var/lib/cloudflare-warp`, and `/var/log/journal`. The host
   configuration pins the verified original numeric IDs before activation or
@@ -336,7 +338,7 @@ archive is mount-only and has no formatting declaration. USB remains temporary
 rescue/install media and a native build workspace, not the installed boot
 device. This replaces the earlier spare-SSD plan.
 
-Preparation evidence and remaining gates:
+Recovery evidence and remaining gates:
 
 - The Seagate recovery copy preserved all 59 snapshots and six source holds.
   A separately keyed restore matched all 410,617 current regular files and
@@ -348,8 +350,8 @@ Preparation evidence and remaining gates:
 - The generated GPT procedure passed on a sparse RAM disk with the NVMe
   capacity of 2,048,408,248,320 bytes. Both physical GPTs and read-only guards
   were unchanged; the test loop and file were removed. Nix module assertions
-  and the evaluated mount/signing contracts passed. This is not a full system
-  build, installed boot, or Secure Boot verification.
+  and the evaluated mount/signing contracts passed. This preliminary test did
+  not establish a full system build, installed boot, or Secure Boot verification.
 - The original RAM-backed rescue store could not hold the full build: the
   baseline dry-run needed 12.902 GiB of unpacked cached paths, before outputs
   and scratch, against a 7.7 GiB store. The Mini VM attempt stopped at a
@@ -374,6 +376,34 @@ Preparation evidence and remaining gates:
   `readeck` `991:989`. PostgreSQL `71:71` and Paperless `315:315` already match
   their fixed IDs. The original host/initrd fingerprints, PKI file presence,
   and saved password-hash syntax were also checked without exposing secrets.
+- The separately authorized NVMe erase and restore completed on 2026-09-21.
+  The actual GPT and encrypted pools match the reviewed layout. All 58 child
+  snapshot GUIDs, five original child holds, and two bookmarks with retained
+  source snapshots were restored. Ten bookmark-only cursors remain recorded
+  evidence, not restored objects. The original empty `data` root snapshot
+  remains in the backups; it was not received over the fresh root.
+- Full checksum and metadata comparisons found no changes across 410,617
+  current data files or the 21 host-state files. All 55 original historical
+  snapshots were decrypted/read through after a fresh data-root-only key reload.
+  The restored host state also passed a fresh rpool-root-only key reload.
+- Home verification covered all 515,336 entries, including 456,773 regular
+  files and 17,015,673,476 bytes authenticated with Borg chunk IDs. Exact paths,
+  numeric owners, types/modes, nanosecond mtimes, xattrs, symlink targets, and
+  hardlink groups/counts matched. This is not a claim to restore ctime. Keep
+  `rpool/home@nvme-home-restore-20260921` and its `baymax-nvme-recovery` hold.
+- Both new pools passed physical-block scrubs with zero errors or repaired
+  bytes. All 3,540 original archive object identities and the Seagate/USB
+  partition tables remained unchanged. Intended dataset `readonly=off`
+  properties were restored before exporting `data`, `rpool`, and `archive`.
+  The NVMe, all three NVMe partitions, and the Seagate disk/partition are now
+  block-read-only. Temporary credentials, decoded Borg metadata, helpers, and
+  the private recovery terminal were removed or closed. Nothing was installed.
+
+The final restore report is
+`.git/agent-artifacts/baymax-nvme-restore-final-20260921.json`. The verification
+bundle and parked-state log have matching SHA-256 copies on Mini and under
+the USB workspace's `recovery-b862fc8/nvme-restore-evidence/` directory. Preserve
+both copies and all earlier recovery evidence.
 
 The native workspace is `/mnt/baymax-recovery-build`, mounted from ext4 UUID
 `558bfd41-b13e-4535-b6ac-e7c570978f45` on Samsung USB serial
@@ -390,7 +420,35 @@ by UUID, and restore both bindings with the Nix daemon and socket stopped.
 Keep the client store bind read-only; the daemon uses its writable namespace.
 The current bindings and native builds were tested; a rescue reboot was not.
 
-Rebuild sequence, subject to explicit destructive/deployment approval:
+The first boot must use the separately built `recovery-held` generation,
+retained at `recovery-b862fc8/firstboot-held-system`. Its isolated operational
+overlay masks 66 system units and one user unit without changing repository
+source. Native systemd resolved every generated mask to `/dev/null`; all 71
+new closure paths passed content verification. Kernel, initrd, configured
+kernel parameters, UID/GID assignments, essential mount/network/SSH units,
+and fstab are unchanged. The full unit inventory, overlay, audit, and build
+proof are under `recovery-b862fc8/firstboot-hold-evidence/`; the Mini report is
+`.git/agent-artifacts/baymax-firstboot-hold-report-20260921.json`.
+
+The holds cover application/database writers, backups and pruning, snapshot
+and replication jobs, Syncthing, Hister, Hjem, WARP, Caddy, Cloudflared, ACME,
+automatic upgrades, and the user VS Code fixer. Do not use boot-menu masks:
+the complete list exceeds the editor and kernel limits, does not cover the
+user manager, and Lanzaboote ignores edited options when Secure Boot is active.
+
+These service holds do not make the filesystems immutable. Normal install/boot
+activation still creates or normalizes persistent directories, links the
+original machine-id, creates pinned users, decrypts agenix secrets, reconciles
+`/etc`, and creates/replaces `/home/me/.ssh/id_github`. Required tmpfiles remains
+enabled. Preserve the home recovery snapshot before these approved writes.
+Release services only through a separately approved declarative generation;
+use the normal generation only when every remaining hold may be released.
+Do not bypass the held generation with runtime unmasking. No EFI image signing,
+installation, activation, NVMe boot, or Secure Boot verification has run.
+
+Recovery sequence: steps 1-4 are complete. Remaining installation and activation
+require explicit approval; Secure Boot remains a separate gate. Do not rerun
+Disko or the erase helpers for installation.
 
 1. Confirm the retained reviewed build, original identities, and ownership
    records before the erase boundary. Keep both backups and the original NVMe
@@ -411,10 +469,12 @@ Rebuild sequence, subject to explicit destructive/deployment approval:
    Restore `/persist/host`, including the password hash and original Secure Boot
    PKI, before `nixos-install` activation. Pin observed UID/GID assignments
    before generating new NixOS allocation state or running tmpfiles.
-5. Install the reviewed closure. Keep restored-data writers, backup/prune jobs,
-   Syncthing, Hister, WARP, and dependent Caddy stopped through first-boot
-   verification. Recreate WARP registration intentionally; verify its private
-   route before enabling Caddy. Keep Mini mirroring/private search paused.
+5. Install only the retained `recovery-held` generation. On the actual first
+   boot, verify every mask and confirm that held units never started. Keep
+   restored-data writers, backup/prune jobs, Syncthing, Hister, WARP, and
+   dependent Caddy stopped through verification. Recreate WARP registration
+   intentionally in an approved release stage; verify its private route before
+   enabling Caddy. Keep Mini mirroring/private search paused.
 6. Verify NVMe-only boot and original SSH identities. After separate approval,
    re-enable Secure Boot with the existing enrolled keys and verify signed
    startup. Only then accept the restored services, seed fresh active replicas,
