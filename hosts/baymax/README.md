@@ -333,7 +333,8 @@ Reviewed NVMe-only layout:
 The sole Disko target is
 `/dev/disk/by-id/nvme-SPCC_M.2_PCIe_SSD_20250501B1514`. The existing 2 TB Seagate
 archive is mount-only and has no formatting declaration. USB remains temporary
-rescue/install media. This replaces the earlier spare-SSD plan.
+rescue/install media and a native build workspace, not the installed boot
+device. This replaces the earlier spare-SSD plan.
 
 Preparation evidence and remaining gates:
 
@@ -349,25 +350,55 @@ Preparation evidence and remaining gates:
   were unchanged; the test loop and file were removed. Nix module assertions
   and the evaluated mount/signing contracts passed. This is not a full system
   build, installed boot, or Secure Boot verification.
-- The live rescue store cannot hold the full build: the baseline dry-run
-  alone needs 12.902 GiB of unpacked cached paths, plus build outputs and
-  scratch space, against a 7.7 GiB store. For this rescue, the user approved
-  building directly inside Mini's existing Linux builder instead. Keep the
-  full Linux closure in that VM, not in Mini's host store.
+- The original RAM-backed rescue store could not hold the full build: the
+  baseline dry-run needed 12.902 GiB of unpacked cached paths, before outputs
+  and scratch, against a 7.7 GiB store. The Mini VM attempt stopped at a
+  conservative free-space guard before building. The user then approved a
+  direct Baymax build using the unused rescue-USB space.
+- The Samsung USB now has a third, 237.379 GiB ext4 partition. An exact-capacity
+  RAM-loop test preceded the change. Only the third MBR entry changed; the
+  original ISO payload and both original partition entries were verified
+  unchanged. The new filesystem passed `e2fsck`. The NVMe and Seagate stayed
+  read-only. This was not a reboot test of the modified rescue USB.
+- The rescue Nix store and database moved to USB with all 13,987 registered
+  paths preserved and content-verified. A native build probe confirmed that
+  build scratch also uses USB rather than RAM.
+- The full native build of reviewed source `b862fc8` passed on 2026-09-21. Its
+  13,563,230,504-byte closure is retained on USB. The expected derivation,
+  kernel, initrd, boot specification, and original signing-key paths passed
+  readback checks. Recursive content verification passed for all 1,841 closure
+  paths. This does not establish installation, successful boot, active services,
+  or Secure Boot acceptance.
 - Read-only inspection verified and pinned these UID:GID pairs: `me`
   `1000:100`, `actual` `989:986`, `hister` `986:983`, `immich` `998:998`, and
   `readeck` `991:989`. PostgreSQL `71:71` and Paperless `315:315` already match
   their fixed IDs. The original host/initrd fingerprints, PKI file presence,
   and saved password-hash syntax were also checked without exposing secrets.
 
+The native workspace is `/mnt/baymax-recovery-build`, mounted from ext4 UUID
+`558bfd41-b13e-4535-b6ac-e7c570978f45` on Samsung USB serial
+`0373026010000352`. Its `nix/store` and `nix/var/nix` directories are bound to
+`/nix/store` and `/nix/var/nix`; build scratch uses its `build` directory. The
+`recovery-b862fc8/system` link retains the built system, while `source` and
+`input-roots/` retain the exact source and all 64 inputs. Keep the full closure
+there, not in Mini's host store. Preserve this USB until installed recovery
+passes acceptance.
+
+These live bind mounts do not survive a rescue reboot. After any restart,
+recheck disk identities and applicable read-only guards, mount the workspace
+by UUID, and restore both bindings with the Nix daemon and socket stopped.
+Keep the client store bind read-only; the daemon uses its writable namespace.
+The current bindings and native builds were tested; a rescue reboot was not.
+
 Rebuild sequence, subject to explicit destructive/deployment approval:
 
-1. Complete the ownership inspection, full reviewed build, and private recovery
-   identity checks. Keep both backups and the original NVMe read-only until
-   the erase boundary is approved. Recovery evidence remains under Mini
-   `/Users/me/.local/state/workspace-migration-20260918T205619Z/`; the latest
-   backup report is
-   `offsite-recovery-20260921T014217Z/verification/final-report.json`.
+1. Confirm the retained reviewed build, original identities, and ownership
+   records before the erase boundary. Keep both backups and the original NVMe
+   read-only until that boundary is approved. Native-build evidence is in
+   `.git/agent-artifacts/baymax-native-build-20260921.json`. Backup evidence
+   remains under Mini's
+   `/Users/me/.local/state/workspace-migration-20260918T205619Z/`; its latest
+   report is `offsite-recovery-20260921T014217Z/verification/final-report.json`.
 2. Partition only the named NVMe, then create fresh encrypted `rpool` and
    `data` roots. Preserve the archive and rescue media. Do not blindly run a
    complete provisioning script before restoring the original data key.
