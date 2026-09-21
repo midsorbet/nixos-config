@@ -13,67 +13,55 @@ _: let
     "com.sun:auto-snapshot" = "false";
   };
 in {
+  # The existing USB archive is mount-only; installation must never format it.
+  fileSystems = {
+    "/archive" = {
+      device = "archive/media";
+      fsType = "zfs";
+      options = ["nofail" "x-systemd.device-timeout=8s"];
+    };
+    "/archive/replica" = {
+      device = "archive/replica";
+      fsType = "zfs";
+      options = ["nofail" "x-systemd.device-timeout=8s"];
+    };
+  };
+
   disko.devices = {
-    disk = {
-      system = {
-        type = "disk";
-        device = "/dev/disk/by-id/ata-512GB_SSD_MQ23W96605594";
-        content = {
-          type = "gpt";
-          partitions = {
-            ESP = {
-              size = "1G";
-              type = "EF00";
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-                mountOptions = [
-                  "fmask=0077"
-                  "dmask=0077"
-                ];
-              };
-            };
-            zfs = {
-              size = "100%";
-              content = {
-                type = "zfs";
-                pool = "rpool";
-              };
+    disk.system = {
+      type = "disk";
+      device = "/dev/disk/by-id/nvme-SPCC_M.2_PCIe_SSD_20250501B1514";
+      content = {
+        type = "gpt";
+        partitions = {
+          ESP = {
+            priority = 1;
+            size = "4G";
+            type = "EF00";
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+              mountOptions = [
+                "fmask=0077"
+                "dmask=0077"
+              ];
             };
           };
-        };
-      };
-
-      data = {
-        type = "disk";
-        device = "/dev/disk/by-id/nvme-SPCC_M.2_PCIe_SSD_20250501B1514";
-        content = {
-          type = "gpt";
-          partitions = {
-            zfs = {
-              size = "100%";
-              content = {
-                type = "zfs";
-                pool = "data";
-              };
+          rpool = {
+            priority = 2;
+            size = "480G";
+            content = {
+              type = "zfs";
+              pool = "rpool";
             };
           };
-        };
-      };
-
-      archive = {
-        type = "disk";
-        device = "/dev/disk/by-id/wwn-0x5000c500eb0059f5";
-        content = {
-          type = "gpt";
-          partitions = {
-            zfs = {
-              size = "100%";
-              content = {
-                type = "zfs";
-                pool = "archive";
-              };
+          data = {
+            priority = 3;
+            size = "100%";
+            content = {
+              type = "zfs";
+              pool = "data";
             };
           };
         };
@@ -174,51 +162,6 @@ in {
               "com.sun:auto-snapshot" = "false";
             };
             mountpoint = "/persist/cache";
-          };
-        };
-      };
-
-      archive = {
-        type = "zpool";
-        options = {
-          ashift = "12";
-          autotrim = "off";
-        };
-        rootFsOptions = fsOpts // {keylocation = "file:///persist/host/secrets/zfs/data.key";};
-        datasets = {
-          "reserved" = {
-            type = "zfs_fs";
-            options = {
-              mountpoint = "none";
-              canmount = "off";
-              refreservation = "20G";
-            };
-          };
-
-          "media" = {
-            type = "zfs_fs";
-            options = {
-              mountpoint = "legacy";
-              "com.sun:auto-snapshot" = "false";
-            };
-            mountpoint = "/archive";
-            mountOptions = [
-              "nofail"
-              "x-systemd.device-timeout=8s"
-            ];
-          };
-
-          "replica" = {
-            type = "zfs_fs";
-            options = {
-              mountpoint = "legacy";
-              "com.sun:auto-snapshot" = "false";
-            };
-            mountpoint = "/archive/replica";
-            mountOptions = [
-              "nofail"
-              "x-systemd.device-timeout=8s"
-            ];
           };
         };
       };

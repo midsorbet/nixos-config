@@ -64,11 +64,10 @@ sudo tar -C / -czf /persist/host/boot-backup-$(date +%Y%m%d-%H%M%S).tgz boot
 Deploy risky boot changes with `boot` first, then reboot and verify before
 running `switch`.
 
-One-time key setup:
-
-```bash
-sudo sbctl create-keys
-```
+The existing `/persist/host/sbctl` bundle is required before installation.
+Automatic key generation and enrollment are disabled. Restore the original PK,
+KEK, db, and GUID; do not run `sbctl create-keys` or clear firmware keys during
+recovery. The explicit `/etc/sbctl/sbctl.conf` keeps `sbctl` on these same paths.
 
 Build/install signed UKIs:
 
@@ -82,7 +81,8 @@ nix run nixpkgs#nixos-rebuild -- \
   --ask-sudo-password
 ```
 
-BIOS key import (Custom mode, authenticated variable):
+Only if enrolled keys are genuinely missing, and after separate approval, import
+the original authenticated variables in BIOS Custom mode:
 
 - PK -> `PK.auth`
 - KEK -> `KEK.auth`
@@ -233,12 +233,19 @@ Both replication units and Sanoid publish failures to the local ntfy system topi
 smartd health-warning events use the same publisher while retaining the ntfy
 publisher credentials in the smartd service environment.
 
+The post-recovery targets are `archive/replica/baymax-persistSave-nvme` and
+`archive/replica/baymax-persistHost-nvme`. Seed them from the final restored
+encryption roots. Do not reuse the old raw incremental chains after
+`zfs change-key -i`: an accepted stream and matching snapshot GUIDs did not prove
+readability in the recovery experiment. Retain the old replicas and all recovery
+datasets until final acceptance.
+
 Inspect replication state without changing datasets:
 
 ```zsh
 ssh me@192.168.4.200 'systemctl show sanoid.service syncoid-baymax-persist-save.service syncoid-baymax-persist-host.service -p Result -p ExecMainStatus -p ExecMainExitTimestamp --no-pager'
 ssh me@192.168.4.200 'journalctl -u syncoid-baymax-persist-save.service -u syncoid-baymax-persist-host.service --since "7 days ago" --no-pager'
-ssh me@192.168.4.200 'zfs list -t snapshot -o name,creation -s creation data/persistSave archive/replica/baymax-persistSave'
+ssh me@192.168.4.200 'zfs list -t snapshot -o name,creation -s creation data/persistSave archive/replica/baymax-persistSave-nvme'
 ssh me@192.168.4.200 'zfs list -t bookmark -o name,creation -s creation data/persistSave'
 ```
 
@@ -292,37 +299,91 @@ Recovery dependencies:
 
 - `rpool` (`/`, `/nix`, `/home`, `/persist`, `/persist/host`) lived only on the
   failed SSD.
-- `data` and `archive` are `ONLINE` but locked. Their key file
-  `/persist/host/secrets/zfs/data.key` was on the SSD. The passphrase is known
-  and can be supplied with `zfs load-key -L prompt <pool>`.
-- `archive/replica/baymax-persistHost` is the configured daily Syncoid copy of
-  `/persist/host`: agenix host key, `data.key`, `sbctl` PKI, initrd host key,
-  and `machine-id`. Verify its newest snapshot at import. Recovering it
-  restores every Baymax-only secret, including the Hetzner Borg credentials.
-- `/home` had no snapshot or replica. Restore it from the Hetzner Borg repo
-  (`repokey-blake2`; passphrase known). Loss is limited to changes since the
-  last daily run.
-- Not backed up: `/var/lib/cloudflare-warp`, `/var/lib/nixos`,
-  `/var/log/journal`, and the failure-time journal.
+- The surviving `data` and `archive` pools were verified and are protected
+  read-only during preparation. Their key file is
+  `/persist/host/secrets/zfs/data.key`; it is recoverable from the host replica.
+- `archive/replica/baymax-persistHost` was the daily copy at failure. Its
+  `autosnap_2026-09-18_00:00:05_daily` snapshot contains the original host and
+  initrd identities, data key, Secure Boot PKI, machine-id, and user password
+  hash. An independently verified encrypted `host-state.zfs` is also on Mini
+  and Hetzner. Restore it before install activation. Never put private contents
+  into this repository.
+- `/home` had no ZFS replica. Borg archive
+  `baymax-hetzner-2026-09-18T00:00:30` ran at 07:00:39-07:11:58 UTC on
+  September 18 and contains `home/me`. Archive access and a one-file extraction
+  were verified, but the complete `/home` payload has not yet been restored.
+- Generic `/persist` was not backed up. This includes `/var/lib/nixos`,
+  `/var/lib/systemd`, `/var/lib/cloudflare-warp`, and `/var/log/journal`. Recover
+  and pin the original numeric account IDs from protected data before
+  activation or tmpfiles can change ownership. WARP needs intentional
+  re-registration; its previous state and the failure-time journal are not
+  recovered.
 
-Rebuild plan:
+Reviewed NVMe-only layout:
 
-1. From the live USB: `zpool import -f -N -o readonly=on archive` and `data`,
-   `zfs load-key -L prompt` for each, check `zpool status`, mount the
-   `baymax-persistHost` replica, confirm the recovered host public key matches
-   the `baymax` recipient in the secrets repo, copy `/persist/host` off the
-   host, confirm `borg list` reaches Hetzner, then export both pools.
-2. Boot disk: use an NVMe 2280 drive in the combo slot. It works whether the
-   SSD or the slot's SATA lanes failed. Change the `system` device in
-   `disk-config.nix` to the new `nvme-...` ID; keep the ESP and `rpool` layout.
-3. Install: partition only the new disk (filter the disko config so `data` and
-   `archive` are untouched; keep the Seagate unplugged), restore
-   `/persist/host` before the first `nixos-install`, install `5e89bb0` with the
-   device change, restore `/home` from Borg, then re-enable Secure Boot with the
-   existing keys.
-4. Keep the failed SSD. If an M.2 SATA USB enclosure reads it, image it first,
-   then import `rpool` read-only to recover the last day of `/home` and the
-   journal. Never initialize or format it.
+| Partition | Size | Use |
+| --- | --- | --- |
+| `disk-system-ESP` | 4 GiB | FAT EFI filesystem at `/boot` |
+| `disk-system-rpool` | 480 GiB | Encrypted `rpool` |
+| `disk-system-data` | Remaining 1,528,715,804,672 bytes | Encrypted `data` |
+
+The sole Disko target is
+`/dev/disk/by-id/nvme-SPCC_M.2_PCIe_SSD_20250501B1514`. The existing 2 TB Seagate
+archive is mount-only and has no formatting declaration. USB remains temporary
+rescue/install media. This replaces the earlier spare-SSD plan.
+
+Preparation evidence and remaining gates:
+
+- The Seagate recovery copy preserved all 59 snapshots and six source holds.
+  A separately keyed restore matched all 410,617 current regular files and
+  metadata; all 55 original historical snapshots were decrypted/read through.
+- The independent Hetzner copy preserved the encrypted streams. Every payload
+  passed complete-download checksums and native stream validation; an actual
+  offsite cache restore matched 21,126 regular files. This was not a second
+  full offsite restore of persisted-data history.
+- The generated GPT procedure passed on a sparse RAM disk with the NVMe
+  capacity of 2,048,408,248,320 bytes. Both physical GPTs and read-only guards
+  were unchanged; the test loop and file were removed. Nix module assertions
+  and the evaluated mount/signing contracts passed. This is not a full system
+  build, installed boot, or Secure Boot verification.
+- The live rescue store cannot hold the full build: the baseline dry-run
+  alone needs 12.902 GiB of unpacked cached paths, plus build outputs and
+  scratch space, against a 7.7 GiB store. Resolve build storage before claiming
+  the configuration is built or ready to install.
+- Original numeric IDs for `me`, `actual`, `hister`, `immich`, and `readeck`
+  still need read-only inspection. Do not guess fresh allocation numbers.
+
+Rebuild sequence, subject to explicit destructive/deployment approval:
+
+1. Complete the ownership inspection, full reviewed build, and private recovery
+   identity checks. Keep both backups and the original NVMe read-only until
+   the erase boundary is approved. Recovery evidence remains under Mini
+   `/Users/me/.local/state/workspace-migration-20260918T205619Z/`; the latest
+   backup report is
+   `offsite-recovery-20260921T014217Z/verification/final-report.json`.
+2. Partition only the named NVMe, then create fresh encrypted `rpool` and
+   `data` roots. Preserve the archive and rescue media. Do not blindly run a
+   complete provisioning script before restoring the original data key.
+3. Receive the preserved data children and host-state snapshot into the fresh
+   pools. Do not receive the original empty `data` root over an existing pool
+   root. Load the original child keys, adopt the new roots, and verify all
+   retained history and current metadata before permitting writes. Restore
+   the intended mount, key-location, and read-only properties explicitly.
+4. Restore `/home` from Borg without replacing newer retained workspace copies.
+   Restore `/persist/host`, including the password hash and original Secure Boot
+   PKI, before `nixos-install` activation. Pin observed UID/GID assignments
+   before generating new NixOS allocation state or running tmpfiles.
+5. Install the reviewed closure. Keep restored-data writers, backup/prune jobs,
+   Syncthing, Hister, WARP, and dependent Caddy stopped through first-boot
+   verification. Recreate WARP registration intentionally; verify its private
+   route before enabling Caddy. Keep Mini mirroring/private search paused.
+6. Verify NVMe-only boot and original SSH identities. After separate approval,
+   re-enable Secure Boot with the existing enrolled keys and verify signed
+   startup. Only then accept the restored services, seed fresh active replicas,
+   and resume mirroring/search. Do not retire recovery copies before acceptance.
+
+Keep the failed SSD and all existing recovery copies. Never initialize the
+failed SSD. If it becomes readable, image it before further recovery work.
 
 Open fixes this incident calls for:
 

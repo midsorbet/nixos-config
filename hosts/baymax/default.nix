@@ -70,10 +70,10 @@ in {
       enable = true;
       # Persist Secure Boot PKI material across rebuilds/reboots.
       pkiBundle = "/persist/host/sbctl";
-      # Do not allow unsigned UKIs once keys exist.
+      # Require the recovered PKI; never generate or enroll replacement keys.
       allowUnsigned = false;
-      autoGenerateKeys.enable = true;
-      autoEnrollKeys.enable = true;
+      autoGenerateKeys.enable = false;
+      autoEnrollKeys.enable = false;
     };
     initrd.availableKernelModules = [
       "xhci_pci"
@@ -124,6 +124,12 @@ in {
     # Force usb-storage (disable UAS) for the Seagate enclosure to avoid reset/timeouts.
     kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
     zfs.forceImportRoot = false;
+  };
+
+  # Lanzaboote only emits this configuration when automatic key setup is enabled.
+  environment.etc."sbctl/sbctl.conf".source = (pkgs.formats.yaml {}).generate "sbctl.conf" {
+    keydir = "${config.boot.lanzaboote.pkiBundle}/keys";
+    guid = "${config.boot.lanzaboote.pkiBundle}/GUID";
   };
 
   fileSystems = {
@@ -279,14 +285,15 @@ in {
       # Merge into every generated syncoid-* service, including future
       # commands, rather than maintaining a hand-written list.
       service.unitConfig.OnFailure = "ntfy-failure@%n";
+      # Seed fresh replicas after recovery changes the source encryption roots.
       commands."baymax-persist-save" = {
         source = "data/persistSave";
-        target = "archive/replica/baymax-persistSave";
+        target = "archive/replica/baymax-persistSave-nvme";
         recursive = true;
       };
       commands."baymax-persist-host" = {
         source = "rpool/persistHost";
-        target = "archive/replica/baymax-persistHost";
+        target = "archive/replica/baymax-persistHost-nvme";
         recursive = true;
       };
     };
@@ -499,10 +506,6 @@ in {
       extraOptions = ["--interval=1800"];
       defaults.monitored = "-a -o on -S on -s (S/../.././03|L/../../7/04)";
       devices = [
-        {
-          device = "/dev/disk/by-id/ata-512GB_SSD_MQ23W96605594";
-          options = "";
-        }
         {
           device = "/dev/disk/by-id/nvme-SPCC_M.2_PCIe_SSD_20250501B1514";
           options = "-d nvme";
