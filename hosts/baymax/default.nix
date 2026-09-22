@@ -825,6 +825,7 @@ in {
         "/persist/host/sbctl"
       ])
       // (mkTmpDirEntries "root" "root" "0755" [
+        "/persist/save"
         "/persist/host/etc"
       ])
       // {

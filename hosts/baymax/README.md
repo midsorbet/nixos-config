@@ -411,15 +411,15 @@ Recovery evidence and remaining gates:
   the original SSH identities, data key, password hash, and signing PKI. Pinned
   UID:GID pairs and the activated login password hash passed readback. The home
   recovery hold and blank root snapshot remain present.
-- Firmware entry `Boot0000`, labelled `NixOS Baymax`, selects the NVMe ESP and
-  `\EFI\systemd\systemd-bootx64.efi`. `BootNext` is `0000`; `BootOrder` is
-  `0000,0001,0002`. Both original boot entries remain byte-for-byte unchanged.
-  Secure Boot remains disabled. `SecureBoot`, `SetupMode`, `PK`, `KEK`, and `db`
-  remain byte-for-byte unchanged; `dbx` remains absent.
-- After verification, `data` and `rpool` were cleanly exported with no remaining
-  target mounts. The NVMe and Seagate disk/partition guards are block-read-only;
-  all three partition tables are unchanged. The archive stayed exported. Actual
-  NVMe boot and live service-hold acceptance are still pending.
+- At installation, firmware entry `Boot0000`, labelled `NixOS Baymax`, selected
+  the NVMe ESP and `\EFI\systemd\systemd-bootx64.efi`. `BootNext` was `0000`;
+  `BootOrder` was `0000,0001,0002`. Both original boot entries were unchanged.
+  Secure Boot remained disabled. `SecureBoot`, `SetupMode`, `PK`, `KEK`, and
+  `db` were unchanged; `dbx` remained absent.
+- After installation verification, `data` and `rpool` were cleanly exported with
+  no remaining target mounts. The NVMe and Seagate disk/partition guards were
+  block-read-only, and all three partition tables were unchanged. The archive
+  stayed exported. Actual NVMe boot had not yet been tested at that boundary.
 
 The final restore report is
 `.git/agent-artifacts/baymax-nvme-restore-final-20260921.json`. The verification
@@ -445,16 +445,17 @@ retain the held system, exact source, and all 64 inputs. Keep the closures there
 not in Mini's host store. Preserve this USB until installed recovery passes
 acceptance.
 
-These live bind mounts do not survive a rescue reboot. After any restart,
-recheck disk identities and applicable read-only guards, mount the workspace
-by UUID, and restore both bindings with the Nix daemon and socket stopped.
-Keep the client store bind read-only; the daemon uses its writable namespace.
-The current bindings and native builds were tested; a rescue reboot was not.
+Only an approved return to the rescue environment may reuse that workspace.
+In that environment, recheck disk identities and applicable read-only guards,
+mount the workspace by UUID, and restore both bindings with the Nix daemon and
+socket stopped. Keep the client store bind read-only; the daemon uses its writable
+namespace. Those rescue bindings and native builds were tested before installation.
 
-The first boot must use the separately built `recovery-held` generation,
-retained at `recovery-b862fc8/firstboot-held-system`. Its isolated operational
-overlay masks 66 system units and one user unit without changing repository
-source. Native systemd resolved every generated mask to `/dev/null`; all 71
+The first NVMe boot used the separately built `recovery-held` generation,
+retained on the disconnected USB at `recovery-b862fc8/firstboot-held-system`.
+Its isolated operational overlay masks 66 system units and one user unit without
+changing repository source. Native systemd resolved every generated mask to
+`/dev/null`; all 71
 new closure paths passed content verification. Kernel, initrd, configured
 kernel parameters, UID/GID assignments, essential mount/network/SSH units,
 and fstab are unchanged. The full unit inventory, overlay, audit, and build
@@ -475,22 +476,82 @@ enabled. Preserve the home recovery snapshot before these approved writes.
 Release services only through a separately approved declarative generation;
 use the normal generation only when every remaining hold may be released.
 Do not bypass the held generation with runtime unmasking. Installation,
-bootstrap activation, and offline EFI verification have passed. Actual NVMe
-startup, live hold verification, and Secure Boot startup acceptance have not.
+bootstrap activation, offline EFI checks, NVMe boot, and live hold checks have
+passed. Startup acceptance remains open for the tmpfiles correction below.
+Secure Boot startup acceptance has not been attempted.
 
-Before first boot, shut Baymax down completely and physically disconnect the
-Seagate archive and Samsung rescue USB. Do not unplug the live rescue USB. The
-archive must be absent: its normal fstab mounts are writable, and tmpfiles
-includes `/archive/immich`; rescue block-read-only guards do not survive reboot.
-Keep power, Ethernet, and the installed NVMe connected. Use a real firmware boot,
-not kexec. Keep the original known-host pins for initrd `root` on port 2222 and
-stage-two `me` on port 22; the rescue-specific pins do not apply.
+### First NVMe boot and ownership correction
 
-Recovery sequence: steps 1-4 and the installation part of step 5 are complete.
-Installation, activation, and first NVMe boot are approved. Physical media
-disconnection and real startup verification remain pending. Secure Boot and
-service release remain separate approval gates. Do not rerun Disko or the erase
-or installation helpers.
+Baymax booted the installed held generation from the NVMe with the Seagate and
+Samsung rescue USB disconnected. Keep both disconnected. The archive must be
+absent: its normal fstab mounts are writable, and tmpfiles includes
+`/archive/immich`; rescue block-read-only guards do not survive reboot.
+
+The current recovery address is `192.168.4.29`, not the usual `.200`. The original
+stage-two SSH identity is unchanged. Connect with its existing host-key pin:
+
+```zsh
+ssh -o StrictHostKeyChecking=yes -o HostKeyAlias=192.168.4.200 \
+  -o CheckHostIP=no me@192.168.4.29
+```
+
+The real boot verified the held UKI and kernel, root rollback, all eight required
+mounts, and healthy `rpool` and `data` pools. All 63 retained recovery-object
+identities and creation records match the preboot inventory. All 21 original
+host-state files still match their recovered snapshot. Original SSH identities,
+machine-id, password hash, and pinned UID:GID pairs passed readback. All 66 system
+masks and the one user mask are inactive, with no invocation or start record.
+
+`BootCurrent` is `0000`, and `BootNext` was consumed. Firmware also exposes
+`Boot0003` as a fallback entry on the same NVMe ESP. All five signed boot-artifact
+hashes and the original Secure Boot variable hashes are unchanged. Secure Boot
+is still disabled; no keys were enrolled or replaced.
+
+`zfs-import-archive.service` fails after waiting about 62 seconds because the
+archive disk is intentionally absent. This is the only failed unit. Do not
+reconnect the archive or import it to remove this expected failure.
+
+A separate tmpfiles problem blocks startup acceptance. `/persist/save` is
+`1000:100` with mode `0755`. Tmpfiles refuses unsafe transitions through this
+user-owned parent into the correctly owned Actual, Immich, Paperless, and
+PostgreSQL directories. The unit reports `Result=success`, but
+`ExecMainStatus=73`; the upstream unit accepts exit statuses 65 and 73. That
+reported success does not prove that directory setup completed.
+
+The source correction adds `/persist/save` to the existing `root:root` `0755`
+tmpfiles group. A root-run RAM fixture reproduced exit 73 with the old ownership.
+Adding only the parent rule produced exit 0 and created the missing child while
+preserving existing child ownership and file bytes, mode, size, and mtime. The
+fixture was removed. The real `/persist/save` is still unchanged. Do not use a
+recursive ownership change.
+
+The corrected held generation was built and reviewed natively:
+
+```text
+/nix/store/2qhrz8dz3iyybm1gzg89vv8xrjfpa0m5-nixos-system-baymax-recovery-held-26.11.20260919.20b1ddd
+```
+
+Its GC root is
+`/home/me/.local/state/nix/gcroots/baymax-owner-repair-20260921/system`. All 64
+source/input store paths are retained under the adjacent `inputs/` directory.
+The compiled tmpfiles difference is exactly the new parent rule. All 67 masks,
+the kernel, initrd, kernel parameters, and fstab are preserved. The activation
+script differs only in the system and generated `/etc` store references. Signing
+still requires the original PKI, with automatic key generation and enrollment
+disabled. The running system and system profile still point to the original
+`52rglinpl5y5pi35b00fap9kdhkq0y5c-…` held generation.
+
+First-boot proof is recorded in
+`.git/agent-artifacts/baymax-firstboot-verification-20260921.json`. The correction
+report is `.git/agent-artifacts/baymax-owner-repair-20260921.json`; the retained
+build expression and audit are beside it. The evidence bundle is
+`.git/agent-artifacts/baymax-firstboot-verification-20260921.tar.gz`.
+
+The correction is built but **not activated**. Its deployment and subsequent
+boot verification require separate approval. Steps 1-4 are complete; step 5
+remains open for that correction and acceptance. Secure Boot enablement and
+service release remain separate approval gates. Keep mirroring and private
+search paused. Do not rerun Disko or the erase or installation helpers.
 
 1. Confirm the retained reviewed build, original identities, and ownership
    records before the erase boundary. Keep both backups and the original NVMe
@@ -511,16 +572,18 @@ or installation helpers.
    Restore `/persist/host`, including the password hash and original Secure Boot
    PKI, before `nixos-install` activation. Pin observed UID/GID assignments
    before generating new NixOS allocation state or running tmpfiles.
-5. The retained `recovery-held` generation is installed and offline-verified.
-   On the actual first boot, verify every mask and prove held units never
-   started. Keep restored-data writers, backup/prune jobs, Syncthing, Hister, WARP, and
-   dependent Caddy stopped through verification. Recreate WARP registration
-   intentionally in an approved release stage; verify its private route before
-   enabling Caddy. Keep Mini mirroring/private search paused.
-6. Verify NVMe-only boot and original SSH identities. After separate approval,
-   re-enable Secure Boot with the existing enrolled keys and verify signed
-   startup. Only then accept the restored services, seed fresh active replicas,
-   and resume mirroring/search. Do not retire recovery copies before acceptance.
+5. The original `recovery-held` generation has booted, and every hold passed
+   live verification. After separate correction approval, activate and boot the
+   reviewed parent-ownership repair. Require tmpfiles to exit 0 without unsafe
+   path transitions, then recheck storage, identities, and every hold. Keep
+   restored-data writers, backup/prune jobs, Syncthing, Hister, WARP, and dependent
+   Caddy stopped. Recreate WARP registration intentionally in an approved release
+   stage; verify its private route before enabling Caddy. Keep Mini mirroring and
+   private search paused.
+6. After corrected startup acceptance and separate approval, re-enable Secure
+   Boot with the existing enrolled keys and verify signed startup. Only then
+   accept the restored services, seed fresh active replicas, and resume
+   mirroring/search. Do not retire recovery copies before acceptance.
 
 Keep the failed SSD and all existing recovery copies. Never initialize the
 failed SSD. If it becomes readable, image it before further recovery work.
