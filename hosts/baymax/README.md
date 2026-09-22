@@ -478,7 +478,9 @@ use the normal generation only when every remaining hold may be released.
 Do not bypass the held generation with runtime unmasking. Installation,
 bootstrap activation, offline EFI checks, NVMe boot, and live hold checks have
 passed. The corrected held generation has also passed startup acceptance.
-Secure Boot startup acceptance has not been attempted.
+Secure Boot enablement is now approved. Its preflight passed and a firmware-setup
+reboot was requested. The physical toggle and signed-startup verification remain
+pending; no service release is approved.
 
 ### First NVMe boot and ownership correction
 
@@ -565,10 +567,11 @@ modes. Root rollback completed again. All eight mounts, both healthy pools, all
 original identities, and all seven pinned UID:GID pairs passed the postboot
 checks. All 67 live masks remain inactive with no invocation or journal record.
 
-The signed boot artifacts passed verification again after boot. Original Secure
-Boot enrollment and mode variables are unchanged. Secure Boot is still disabled.
-The missing archive is still the only failed unit. Both external disks remain
-disconnected. No restored service, mirror, or private-search consumer was released.
+The signed boot artifacts passed verification again after the corrected boot.
+At that boundary, original Secure Boot enrollment and mode variables were
+unchanged, and Secure Boot was disabled. The missing archive was the only failed
+unit. Both external disks remained disconnected. No restored service, mirror,
+or private-search consumer was released.
 
 The current acceptance report is
 `.git/agent-artifacts/baymax-owner-deployment-20260921.json`. The evidence bundle
@@ -579,9 +582,10 @@ Temporary verification scripts and tool roots were removed. Private administrati
 terminals were closed, and sudo credentials were invalidated. Retain the builds,
 source roots, ESP backup, and all earlier recovery copies.
 
-Recovery steps 1-5 are complete. Secure Boot enablement and service release remain
-separate approval gates. Keep mirroring and private search paused. Do not rerun
-Disko or the erase or installation helpers.
+Recovery steps 1-5 are complete. Secure Boot enablement is approved; signed-startup
+acceptance remains open. Service release requires separate approval. Keep
+mirroring and private search paused. Do not rerun Disko or the erase or
+installation helpers.
 
 1. Confirm the retained reviewed build, original identities, and ownership
    records before the erase boundary. Keep both backups and the original NVMe
@@ -608,10 +612,28 @@ Disko or the erase or installation helpers.
    WARP, and dependent Caddy stopped. Recreate WARP registration intentionally in
    an approved release stage. Verify the intended LAN address and private route
    before enabling Caddy. Keep Mini mirroring and private search paused.
-6. After separate approval, re-enable Secure Boot with the existing enrolled keys
-   and verify signed startup. Only then accept the restored services, seed fresh
-   active replicas, and resume mirroring/search. Do not retire recovery copies
-   before acceptance.
+6. Secure Boot enablement is approved for the existing enrolled keys. Complete
+   the physical firmware toggle, then verify signed startup. Only afterward may
+   a separately approved generation release restored services. Accept services
+   and privacy/routing before seeding active replicas or resuming mirroring/search.
+   Do not retire recovery copies before acceptance.
+
+The Secure Boot preflight on `2026-09-22T03:54:03Z` confirmed that the four EFI
+images, signed kernel/initrd payloads, and original firmware keys still match
+the accepted generation 2 proof. Both pools were healthy, tmpfiles exited 0, and
+all 67 holds remained masked and inactive. A fresh, verified ESP backup is
+retained only on Baymax at
+`/persist/host/boot-backup-secureboot-20260922T035400Z-7c5n20.tgz`, owned by
+`0:0` with mode `0600`. Do not copy this sensitive archive to Mini.
+
+Baymax accepted `systemctl reboot --firmware-setup` and closed SSH. The physical
+firmware screen has not yet been confirmed. Enable only Secure Boot, retain
+Custom mode and the existing keys, then save and exit. Do not clear keys, restore
+factory keys, or enter Setup Mode. Keep both external disks disconnected.
+Recheck the DHCP address after boot and retain the original SSH host-key pin.
+The handoff report is `.git/agent-artifacts/baymax-secureboot-handoff-20260921.json`;
+native preflight evidence is under the retained build workspace
+`secureboot-proof/`. This handoff is not proof that Secure Boot is enabled.
 
 Keep the failed SSD and all existing recovery copies. Never initialize the
 failed SSD. If it becomes readable, image it before further recovery work.
