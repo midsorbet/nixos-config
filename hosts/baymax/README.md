@@ -29,7 +29,7 @@ sudo chmod 644 /persist/host/secrets/initrd/ssh_host_ed25519_key.pub
 Unlock from another machine:
 
 ```zsh
-ssh -tt -p 2222 root@192.168.4.200
+ssh -tt -p 2222 root@192.168.4.24
 ```
 
 ## Console Rescue
@@ -37,14 +37,14 @@ ssh -tt -p 2222 root@192.168.4.200
 If Baymax boots without an IPv4 address, log in at the console and set the usual LAN address temporarily:
 
 ```bash
-sudo ip addr add 192.168.4.200/24 dev enp1s0
+sudo ip addr add 192.168.4.24/24 dev enp1s0
 sudo ip route replace default via 192.168.4.1
 ```
 
 Then verify from another machine:
 
 ```zsh
-ssh me@192.168.4.200
+ssh me@192.168.4.24
 ```
 
 ## Secure Boot
@@ -75,8 +75,8 @@ Build/install signed UKIs:
 nix run nixpkgs#nixos-rebuild -- \
   boot \
   --flake .#baymax \
-  --target-host me@192.168.4.200 \
-  --build-host me@192.168.4.200 \
+  --target-host me@192.168.4.24 \
+  --build-host me@192.168.4.24 \
   --sudo \
   --ask-sudo-password
 ```
@@ -150,7 +150,7 @@ Useful symptoms:
 - `302` to `midsorbet.cloudflareaccess.com` means the hostname is still matched by Access.
 - `403` from Cloudflare on a gated hostname usually means the request did not satisfy the Access policy.
 - `NXDOMAIN` means the published route or DNS record is missing, not that Baymax itself is down.
-- `ERR_CONNECTION_REFUSED` for `readeck`, `photos`, `budget`, `hister`, or `atuin` on the home LAN means split-horizon DNS reached `192.168.4.200`, but Caddy is not listening. Check `systemctl status caddy` and the port 443 listeners on Baymax before investigating Cloudflare.
+- `ERR_CONNECTION_REFUSED` for `readeck`, `photos`, `budget`, `hister`, or `atuin` on the home LAN means split-horizon DNS reached `192.168.4.24`, but Caddy is not listening. Check `systemctl status caddy` and the port 443 listeners on Baymax before investigating Cloudflare.
 - A Caddy boot failure that mentions `100.96.0.3:443` means the WARP address was not ready. The managed Caddy pre-start gate must wait for that address before Caddy binds its listeners.
 
 ## Local HTTPS Security Boundaries
@@ -208,9 +208,9 @@ Before each Borg run, `actual-backup.service` stops Actual briefly, snapshots th
 snapshot. Verify the live backup path with:
 
 ```zsh
-ssh -t me@192.168.4.200 'sudo systemctl start actual-backup.service'
-ssh me@192.168.4.200 'systemctl show actual-backup.service --property=Result,ExecMainStatus,ExecMainStartTimestamp,ExecMainExitTimestamp'
-ssh -t me@192.168.4.200 'sudo tar --list --zstd --file /persist/save/actual-backups/actual-server.tar.zst >/dev/null'
+ssh -t me@192.168.4.24 'sudo systemctl start actual-backup.service'
+ssh me@192.168.4.24 'systemctl show actual-backup.service --property=Result,ExecMainStatus,ExecMainStartTimestamp,ExecMainExitTimestamp'
+ssh -t me@192.168.4.24 'sudo tar --list --zstd --file /persist/save/actual-backups/actual-server.tar.zst >/dev/null'
 ```
 
 Actual's end-to-end encryption password is retained only in the password manager.
@@ -243,10 +243,10 @@ datasets until final acceptance.
 Inspect replication state without changing datasets:
 
 ```zsh
-ssh me@192.168.4.200 'systemctl show sanoid.service syncoid-baymax-persist-save.service syncoid-baymax-persist-host.service -p Result -p ExecMainStatus -p ExecMainExitTimestamp --no-pager'
-ssh me@192.168.4.200 'journalctl -u syncoid-baymax-persist-save.service -u syncoid-baymax-persist-host.service --since "7 days ago" --no-pager'
-ssh me@192.168.4.200 'zfs list -t snapshot -o name,creation -s creation data/persistSave archive/replica/baymax-persistSave-nvme'
-ssh me@192.168.4.200 'zfs list -t bookmark -o name,creation -s creation data/persistSave'
+ssh me@192.168.4.24 'systemctl show sanoid.service syncoid-baymax-persist-save.service syncoid-baymax-persist-host.service -p Result -p ExecMainStatus -p ExecMainExitTimestamp --no-pager'
+ssh me@192.168.4.24 'journalctl -u syncoid-baymax-persist-save.service -u syncoid-baymax-persist-host.service --since "7 days ago" --no-pager'
+ssh me@192.168.4.24 'zfs list -t snapshot -o name,creation -s creation data/persistSave archive/replica/baymax-persistSave-nvme'
+ssh me@192.168.4.24 'zfs list -t bookmark -o name,creation -s creation data/persistSave'
 ```
 
 ## Atuin Security and Recovery
@@ -478,21 +478,25 @@ use the normal generation only when every remaining hold may be released.
 Do not bypass the held generation with runtime unmasking. Installation,
 bootstrap activation, offline EFI checks, NVMe boot, and live hold checks have
 passed. The corrected held generation has also passed startup acceptance.
-Secure Boot startup has now passed with the original enrolled keys. All service
-holds remain masked and inactive. Service release is not approved.
+Secure Boot startup passed with the original enrolled keys. This is the held
+baseline; the separately approved local-service releases are recorded below.
 
 ### First NVMe boot and ownership correction
 
-Baymax booted the installed held generation from the NVMe with the Seagate and
-Samsung rescue USB disconnected. Keep both disconnected. The archive must be
-absent: its normal fstab mounts are writable, and tmpfiles includes
-`/archive/immich`; rescue block-read-only guards do not survive reboot.
+Baymax first booted the installed held generation from the NVMe with the Seagate
+and Samsung rescue USB disconnected. Keep the Samsung disconnected. The archive
+has writable normal fstab mounts and a tmpfiles entry for `/archive/immich`;
+reconnect the Seagate only through the guarded service-restoration stage below.
 
 The recovery DHCP address changed from `192.168.4.29` on the first NVMe boot to
 `192.168.4.31` after the ownership correction, then to `192.168.4.24` for the
-verified Secure Boot startup. The usual operational address is still `.200`.
-Recheck the address after a reboot. The original stage-two SSH identity is
-unchanged; keep its existing host-key pin:
+verified Secure Boot startup. The user supplied `192.168.4.27` after generation
+4 booted. The configured/reserved target remains `.24`; do not rewrite service
+or Cloudflare addresses to follow this lease. DHCP/eero troubleshooting is
+explicitly deferred. Ask the user for the current administrative address when
+needed, including after reboots; do not infer boot failure from an old address.
+Substitute the supplied address in SSH/build commands below. The original
+stage-two SSH identity is unchanged; keep its existing host-key pin:
 
 ```zsh
 ssh -o StrictHostKeyChecking=yes -o HostKeyAlias=192.168.4.200 \
@@ -583,10 +587,11 @@ Temporary verification scripts and tool roots were removed. Private administrati
 terminals were closed, and sudo credentials were invalidated. Retain the builds,
 source roots, ESP backup, and all earlier recovery copies.
 
-NVMe startup and Secure Boot acceptance are complete. Restored-service, routing,
-privacy, and active-consumer acceptance remain open. Service release requires
-separate approval. Keep mirroring and private search paused. Do not rerun Disko
-or the erase or installation helpers.
+NVMe startup and Secure Boot acceptance are complete. The user approved staged
+service restoration on September 22; full service, routing, privacy, and
+active-consumer acceptance remain open. Keep mirroring and private search paused.
+Do not rerun Disko or the erase or installation helpers. Steps 1–4 below record
+the completed restore sequence, not instructions to repeat it.
 
 1. Confirm the retained reviewed build, original identities, and ownership
    records before the erase boundary. Keep both backups and the original NVMe
@@ -607,12 +612,12 @@ or the erase or installation helpers.
    Restore `/persist/host`, including the password hash and original Secure Boot
    PKI, before `nixos-install` activation. Pin observed UID/GID assignments
    before generating new NixOS allocation state or running tmpfiles.
-5. Corrected `recovery-held` generation 2 has passed real startup acceptance:
-   tmpfiles exits 0, storage and identities match, and all 67 held units remain
-   masked and inactive. Keep restored-data writers, backup/prune jobs, Syncthing, Hister,
-   WARP, and dependent Caddy stopped. Recreate WARP registration intentionally in
-   an approved release stage. Verify the intended LAN address and private route
-   before enabling Caddy. Keep Mini mirroring and private search paused.
+5. Corrected `recovery-held` generation 2 passed real startup acceptance with
+   tmpfiles exiting 0, matching storage/identities, and all 67 holds inactive.
+   This is the baseline for the approved staged releases below. Retain every
+   remaining hold. Restore WARP registration intentionally and verify the LAN
+   address and private route before enabling Caddy. Keep Mini mirroring and
+   private search paused until their acceptance gates pass.
 6. Generation 2 has passed signed startup with Secure Boot enforcement enabled
    and the original enrolled keys unchanged. Only a separately approved
    declarative generation may release restored services. Accept services and
@@ -644,12 +649,12 @@ intact, and all 21 original host-state files still match their recovered snapsho
 The machine-id, password hash, SSH identities, and seven pinned UID:GID/group
 pairs passed verification. Tmpfiles ran and exited 0, with no unsafe transitions.
 
-All 66 system holds and the one user hold remain masked and inactive, with no
-invocation, start timestamp, or held-unit journal record. The absent archive is
-still the only failed unit. Both external disks remain disconnected. No service,
-mirror, or private-search consumer was released.
+At the generation 2 acceptance boundary, all 66 system holds and the user hold
+were masked and inactive, with no held-unit invocation or start record. The
+absent archive was the only failed unit; both external disks were disconnected.
+No service, mirror, or private-search consumer had been released at that point.
 
-The current acceptance report is
+The Secure Boot startup acceptance report is
 `.git/agent-artifacts/baymax-secureboot-verification-20260921.json`. The frozen
 bundle `.git/agent-artifacts/baymax-secureboot-verification-20260921.tar.gz` has
 a matching SHA-256 copy in the retained native build workspace
@@ -662,6 +667,136 @@ pre-enablement boundary, not the current status. Temporary verification helpers
 were removed, the one-shot privileged session closed, and sudo credentials were
 invalidated on both hosts. The held system, all 64 source/input roots, ESP backups,
 and earlier recovery copies remain retained.
+
+### Approved service restoration (2026-09-22)
+
+The user approved staged restoration, not a switch to the unmasked normal
+generation. Before releasing writers, five
+`service-restoration-prewrite-20260922` snapshots of `rpool/home`,
+`rpool/persist`, `rpool/persistHost`, `data/persistSave`, and `data/cache` received
+the `baymax-service-restoration` hold. Keep those holds and every older recovery
+copy. Their identities are in
+`.git/agent-artifacts/baymax-prewrite-protection-20260922.json`.
+
+The first local-service generation was activated and tested. PostgreSQL, Actual,
+Atuin, Miniflux, Paperless, Readeck, and the managed-network beacon passed their
+local acceptance checks. A read-only PostgreSQL transaction confirmed version
+17.11 and `/persist/save/postgresql/17`. The application origins remain on
+loopback. WARP runs but has no recovered registration; this is not working
+private routing. Caddy, Cloudflared, ACME, Immich, Hjem, the auth broker,
+Syncthing, Hister/importer, backups, pruning, and automatic upgrades remain held.
+The staged generation retains 54 system masks and one user mask.
+
+The router remains on ISP DNS. Before the later DHCP address change, direct
+IPv4/IPv6 UDP/TCP queries passed against Mini and Baymax.
+Isolated per-unit tests blocked each primary resolver in turn
+and verified local and upstream resolution through the other resolver; the host
+resolver file stayed unchanged. Mini now starts loopback Unbound immediately,
+waits for Ethernet before starting its LAN listener, and starts the VZ builder
+after loopback DNS owns its sockets. The VM and Rosetta remained functional.
+Cloudflare managed-network and Home-profile fallback addresses were changed
+from the former address to `.24`, then read back under the narrowly approved
+idempotent retry exception.
+
+Archive reconnection exposed a boot-time driver prerequisite: with the Seagate
+absent at startup, `usb_storage` was not loaded before
+`security.lockKernelModules` set `kernel.modules_disabled=1`. USB enumeration
+succeeded, but no disk device appeared. `boot.kernelModules` now preloads
+`usb_storage` and `sd_mod`; `initrd.availableKernelModules` alone is not a
+preload guarantee. Keep the security lock and the Seagate UAS quirk enabled.
+The fix requires a reboot, not a late `modprobe` or a weaker security policy.
+
+Both host builds passed for the driver fix. Mini rebuilt to its already-active
+system. Baymax generation 4 was installed and passed the approved reboot with
+the Seagate disconnected. Its kernel, initrd, kernel parameters, numeric
+identities, PostgreSQL, and release set are unchanged. Its UKI and both loaders
+passed verification with the recovered db certificate; generations 1–3 stayed
+byte-identical. Active, booted, and selected system paths now all match:
+
+```text
+/nix/store/6058flmz3976278lfl7cq2kfg2wzcq95-nixos-system-baymax-recovery-local-26.11.20260919.20b1ddd
+```
+
+Before reconnection, live checks verified both preloaded drivers, the module
+lock, Secure Boot with the original owner GUID, all 54 system holds and the
+user hold, healthy pools, retained prewrite holds, and the WWN-specific
+block-read-only rule. There were no failed units. Fresh Seagate hotplug then
+produced the expected disk and partition with both kernel read-only flags set.
+Serial, WWN, sizes, original GPT, and all four labels matched the retained
+pool GUID `2793237780643487490`.
+
+The archive imported ONLINE with `readonly=on`, `cachefile=none`, no mounts,
+and private alternate root `/run/baymax-archive-readonly-20260922`. All 3,540
+original archive object identities matched exactly. After that identity check,
+the original key loaded from its recovered file and only `archive/media` mounted
+in the private read-only location. An isolated read-only namespace let UID 998
+check all 11,095 original and 31,650 derived paths referenced by Immich. No path
+was missing, unreadable, or outside `/archive/immich`. This proves presence and
+read access, not complete file-content checksums. No private filenames were
+exported, and the production mount, replicas, and Immich remained held.
+
+The private media mount was then unmounted, the archive key unloaded, and the
+pool exported without force. The connected Seagate disk and partition retain
+their kernel read-only flags. All five original prewrite snapshot identities
+and holds passed the closeout check; `rpool` and `data` were healthy, with no
+failed system units. The 54 system holds and one user hold remain in force.
+Completed diagnostic helpers and compiler caches were removed. The temporary
+root session closed and sudo credentials were invalidated on both hosts; the
+user-owned Herdr tab remains open. All recovery copies, builds, overlays, and
+evidence remain retained. The live acceptance report is
+`.git/agent-artifacts/baymax-usb-preload-restoration-20260922.json`.
+
+The next **media-only** candidate passed both host builds, but has not been
+installed, activated, or booted:
+
+```text
+/nix/store/p1mr7zxizjb5wrsd54z3n2m89gzacl3c-nixos-system-baymax-recovery-archive-media-26.11.20260919.20b1ddd
+```
+
+Its overlay is `.git/agent-artifacts/baymax-services-archive-media-20260922.nix`.
+It releases only `zfs-import-archive.service` and `archive.mount`, and adds a
+hold on `zfs-mount.service`: 53 system holds and one user hold remain. The extra
+hold prevents the parked workspace-recovery dataset from auto-mounting at its
+non-legacy native mountpoint. Replica mounts and both Immich units stay masked.
+The candidate suppresses both `/archive/immich` tmpfiles sources and removes
+the recovery WWN read-only rule only from that uninstalled generation.
+
+`archive-media-prewrite.service` must verify that only `archive/media` is
+mounted writable, then create `archive/media@immich-prewrite-20260922` with hold
+`baymax-immich-release-20260922`. Its evaluated script correctly rejected the
+real read-only import before creating a snapshot. The writable success path is
+not yet proven. Install and verify the signed boot artifacts only when the user
+is ready for the controlled reboot and encrypted-root unlock. Keep the Seagate
+connected and the Samsung rescue USB disconnected for that next boot.
+
+Immich still requires a separate reviewed release after the media gate passes.
+Before starting it, create and restore-test a per-database rollback copy on
+Baymax; do not roll back the shared live PostgreSQL dataset to undo one app
+migration. Native Immich 3.2.2 uses `/archive/immich` for originals and generated
+files. `THUMB_LOCATION`, `ENCODED_VIDEO_LOCATION`, `PROFILE_LOCATION`, and
+`BACKUP_LOCATION` are Docker Compose variables, not native folder controls.
+Preserve the verified paths during recovery rather than silently relocating
+data. Review stored application settings, queued jobs, and backup scheduling
+before the later writer release.
+
+Mesh recovery is still blocked on the existing node identity after discovery
+returned API error 1084. Control-plane work stopped; no token was fetched and
+no node was created or deleted. Do not substitute the old registration ID for a
+Mesh node ID, bypass the Caddy WARP-address gate, or treat configured routes as
+verified access. Mini Projects is still paused/send-only; Baymax remains the
+cold receive-only mirror. Current convergence has not passed acceptance.
+
+A sandboxed read-only Hister audit enumerated live external IDs from 22
+Bleve/Scorch indexes without decoding stored document fields or exporting real
+IDs. It counted 37,429 ID entries, including 28,666 file-URL entries. Of those,
+26,692 are outside the current `/persist/save/projects-mirror` root; they must
+be reconciled before search starts. These are entries across indexes, not a
+count of unique documents. No file-URL ID matched `vault/private` or a hidden
+path component. This bounded result does not prove physical erasure or link
+provenance. No index records were deleted. Hister and its importer remain held;
+release consumers only through the next reviewed stage after routing,
+ownership, synchronization, and privacy gates pass. The detailed report is
+`.git/agent-artifacts/hister-index-id-privacy-20260922.json`.
 
 Keep the failed SSD and all existing recovery copies. Never initialize the
 failed SSD. If it becomes readable, image it before further recovery work.
@@ -681,6 +816,9 @@ Open fixes this incident calls for:
 
 ## Recovery
 
+Do not use the normal redeploy or automatic-upgrade commands below while any
+recovery holds remain. Follow the approved staged-restoration boundary above.
+
 If the tunnel token rotates or the Cloudflare tunnel object gets deleted and recreated:
 
 1. Update `baymax-tunnel.age` in the `nix-secrets` repo.
@@ -695,8 +833,8 @@ nix flake update secrets --commit-lock-file
 ```zsh
 nh os switch . \
   -H baymax \
-  --target-host me@192.168.4.200 \
-  --build-host me@192.168.4.200
+  --target-host me@192.168.4.24 \
+  --build-host me@192.168.4.24
 ```
 
 After the config is pushed to `main`, Baymax can also build the reviewed GitHub
@@ -705,12 +843,12 @@ profile and reboots only inside the configured reboot window; it does not prove
 the running system switched until `/run/current-system` matches the new profile.
 
 ```zsh
-ssh me@192.168.4.200 '
+ssh me@192.168.4.24 '
   systemctl="$(readlink -f /run/current-system/sw/bin/systemctl)"
   sudo -n "$systemctl" start nixos-upgrade.service
 '
-ssh me@192.168.4.200 'systemctl status nixos-upgrade.service --no-pager -l'
-ssh me@192.168.4.200 'readlink -f /nix/var/nix/profiles/system; readlink -f /run/current-system'
+ssh me@192.168.4.24 'systemctl status nixos-upgrade.service --no-pager -l'
+ssh me@192.168.4.24 'readlink -f /nix/var/nix/profiles/system; readlink -f /run/current-system'
 ```
 
 4. In Cloudflare, recreate the published application routes under `Networking -> Tunnels -> baymax-apps`.
@@ -721,10 +859,10 @@ ssh me@192.168.4.200 'readlink -f /nix/var/nix/profiles/system; readlink -f /run
 Check Baymax-side service health:
 
 ```zsh
-ssh me@192.168.4.200 'systemctl --failed --no-pager'
-ssh me@192.168.4.200 'systemctl is-active caddy cloudflared-tunnel-baymax-apps cloudflare-warp avahi-daemon'
-ssh me@192.168.4.200 'getent hosts mini-me.local'
-ssh me@192.168.4.200 'systemctl is-active actual immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
+ssh me@192.168.4.24 'systemctl --failed --no-pager'
+ssh me@192.168.4.24 'systemctl is-active caddy cloudflared-tunnel-baymax-apps cloudflare-warp avahi-daemon'
+ssh me@192.168.4.24 'getent hosts mini-me.local'
+ssh me@192.168.4.24 'systemctl is-active actual immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
 ```
 
 Check the published hostnames. Readeck is intentionally public; the other app
