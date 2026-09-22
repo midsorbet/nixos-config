@@ -477,7 +477,7 @@ Release services only through a separately approved declarative generation;
 use the normal generation only when every remaining hold may be released.
 Do not bypass the held generation with runtime unmasking. Installation,
 bootstrap activation, offline EFI checks, NVMe boot, and live hold checks have
-passed. Startup acceptance remains open for the tmpfiles correction below.
+passed. The corrected held generation has also passed startup acceptance.
 Secure Boot startup acceptance has not been attempted.
 
 ### First NVMe boot and ownership correction
@@ -487,12 +487,13 @@ Samsung rescue USB disconnected. Keep both disconnected. The archive must be
 absent: its normal fstab mounts are writable, and tmpfiles includes
 `/archive/immich`; rescue block-read-only guards do not survive reboot.
 
-The current recovery address is `192.168.4.29`, not the usual `.200`. The original
-stage-two SSH identity is unchanged. Connect with its existing host-key pin:
+The recovery address changed from `192.168.4.29` to `192.168.4.31` on the
+corrective reboot; neither is the usual `.200`. Recheck the address after a
+reboot. The original stage-two SSH identity is unchanged. Keep its existing pin:
 
 ```zsh
 ssh -o StrictHostKeyChecking=yes -o HostKeyAlias=192.168.4.200 \
-  -o CheckHostIP=no me@192.168.4.29
+  -o CheckHostIP=no me@192.168.4.31
 ```
 
 The real boot verified the held UKI and kernel, root rollback, all eight required
@@ -502,30 +503,31 @@ host-state files still match their recovered snapshot. Original SSH identities,
 machine-id, password hash, and pinned UID:GID pairs passed readback. All 66 system
 masks and the one user mask are inactive, with no invocation or start record.
 
-`BootCurrent` is `0000`, and `BootNext` was consumed. Firmware also exposes
-`Boot0003` as a fallback entry on the same NVMe ESP. All five signed boot-artifact
-hashes and the original Secure Boot variable hashes are unchanged. Secure Boot
-is still disabled; no keys were enrolled or replaced.
+On the first NVMe boot, `BootCurrent` was `0000`, and `BootNext` was consumed.
+Firmware also exposed `Boot0003` as a fallback entry on the same NVMe ESP. All
+five installation-artifact hashes and the original Secure Boot variable hashes
+matched at that boundary. Secure Boot remained disabled.
 
 `zfs-import-archive.service` fails after waiting about 62 seconds because the
 archive disk is intentionally absent. This is the only failed unit. Do not
 reconnect the archive or import it to remove this expected failure.
 
-A separate tmpfiles problem blocks startup acceptance. `/persist/save` is
-`1000:100` with mode `0755`. Tmpfiles refuses unsafe transitions through this
+The first boot exposed a tmpfiles ownership problem. `/persist/save` was
+`1000:100` with mode `0755`. Tmpfiles refused unsafe transitions through this
 user-owned parent into the correctly owned Actual, Immich, Paperless, and
-PostgreSQL directories. The unit reports `Result=success`, but
+PostgreSQL directories. The unit reported `Result=success`, but
 `ExecMainStatus=73`; the upstream unit accepts exit statuses 65 and 73. That
-reported success does not prove that directory setup completed.
+reported success did not prove that directory setup completed.
 
 The source correction adds `/persist/save` to the existing `root:root` `0755`
 tmpfiles group. A root-run RAM fixture reproduced exit 73 with the old ownership.
 Adding only the parent rule produced exit 0 and created the missing child while
 preserving existing child ownership and file bytes, mode, size, and mtime. The
-fixture was removed. The real `/persist/save` is still unchanged. Do not use a
-recursive ownership change.
+fixture was removed without changing the live directory. The later approved
+boot applied the declarative parent rule. No recursive ownership repair was used.
 
-The corrected held generation was built and reviewed natively:
+The corrected held generation was built and reviewed natively, then installed
+and booted as generation 2 under separate explicit approval:
 
 ```text
 /nix/store/2qhrz8dz3iyybm1gzg89vv8xrjfpa0m5-nixos-system-baymax-recovery-held-26.11.20260919.20b1ddd
@@ -538,8 +540,8 @@ The compiled tmpfiles difference is exactly the new parent rule. All 67 masks,
 the kernel, initrd, kernel parameters, and fstab are preserved. The activation
 script differs only in the system and generated `/etc` store references. Signing
 still requires the original PKI, with automatic key generation and enrollment
-disabled. The running system and system profile still point to the original
-`52rglinpl5y5pi35b00fap9kdhkq0y5c-…` held generation.
+disabled. The running system and system profile now both select this generation.
+The original `52rglinpl5y5pi35b00fap9kdhkq0y5c-…` system remains generation 1.
 
 First-boot proof is recorded in
 `.git/agent-artifacts/baymax-firstboot-verification-20260921.json`. The correction
@@ -547,11 +549,39 @@ report is `.git/agent-artifacts/baymax-owner-repair-20260921.json`; the retained
 build expression and audit are beside it. The evidence bundle is
 `.git/agent-artifacts/baymax-firstboot-verification-20260921.tar.gz`.
 
-The correction is built but **not activated**. Its deployment and subsequent
-boot verification require separate approval. Steps 1-4 are complete; step 5
-remains open for that correction and acceptance. Secure Boot enablement and
-service release remain separate approval gates. Keep mirroring and private
-search paused. Do not rerun Disko or the erase or installation helpers.
+The approved boot-only deployment preserved a root-only ESP backup at
+`/persist/host/boot-backup-owner-repair-20260922T025206Z-wP6V8J.tgz`. Both loader
+copies and both held UKIs passed independent signature verification against the
+original enrolled certificate. Signed payload hashes, the base initrd, and the
+embedded original initrd SSH identity passed verification before the reboot.
+Generation 2 was the default boot entry; generation 1 remained available.
+
+The real firmware reboot selected generation 2. Boot ID
+`b1094c9e-c0b5-4560-ad68-8e91934fdab9` differs from the first boot. Tmpfiles
+actually ran and exited **0**, with no unsafe-path messages. `/persist/save` is
+now `0:0` with mode `0755`; service-owned children have the expected owners and
+modes. Root rollback completed again. All eight mounts, both healthy pools, all
+63 recovery objects, the home recovery hold, all 21 original host-state files,
+original identities, and all seven pinned UID:GID pairs passed the postboot
+checks. All 67 live masks remain inactive with no invocation or journal record.
+
+The signed boot artifacts passed verification again after boot. Original Secure
+Boot enrollment and mode variables are unchanged. Secure Boot is still disabled.
+The missing archive is still the only failed unit. Both external disks remain
+disconnected. No restored service, mirror, or private-search consumer was released.
+
+The current acceptance report is
+`.git/agent-artifacts/baymax-owner-deployment-20260921.json`. The evidence bundle
+`.git/agent-artifacts/baymax-owner-deployment-verification-20260921.tar.gz` has a
+matching SHA-256 copy under the native build workspace
+`/home/me/.local/state/nix/gcroots/baymax-owner-repair-20260921/evidence/`.
+Temporary verification scripts and tool roots were removed. Private administrative
+terminals were closed, and sudo credentials were invalidated. Retain the builds,
+source roots, ESP backup, and all earlier recovery copies.
+
+Recovery steps 1-5 are complete. Secure Boot enablement and service release remain
+separate approval gates. Keep mirroring and private search paused. Do not rerun
+Disko or the erase or installation helpers.
 
 1. Confirm the retained reviewed build, original identities, and ownership
    records before the erase boundary. Keep both backups and the original NVMe
@@ -572,18 +602,16 @@ search paused. Do not rerun Disko or the erase or installation helpers.
    Restore `/persist/host`, including the password hash and original Secure Boot
    PKI, before `nixos-install` activation. Pin observed UID/GID assignments
    before generating new NixOS allocation state or running tmpfiles.
-5. The original `recovery-held` generation has booted, and every hold passed
-   live verification. After separate correction approval, activate and boot the
-   reviewed parent-ownership repair. Require tmpfiles to exit 0 without unsafe
-   path transitions, then recheck storage, identities, and every hold. Keep
-   restored-data writers, backup/prune jobs, Syncthing, Hister, WARP, and dependent
-   Caddy stopped. Recreate WARP registration intentionally in an approved release
-   stage; verify its private route before enabling Caddy. Keep Mini mirroring and
-   private search paused.
-6. After corrected startup acceptance and separate approval, re-enable Secure
-   Boot with the existing enrolled keys and verify signed startup. Only then
-   accept the restored services, seed fresh active replicas, and resume
-   mirroring/search. Do not retire recovery copies before acceptance.
+5. Corrected `recovery-held` generation 2 has passed real startup acceptance:
+   tmpfiles exits 0, storage and identities match, and all 67 held units remain
+   masked and inactive. Keep restored-data writers, backup/prune jobs, Syncthing, Hister,
+   WARP, and dependent Caddy stopped. Recreate WARP registration intentionally in
+   an approved release stage. Verify the intended LAN address and private route
+   before enabling Caddy. Keep Mini mirroring and private search paused.
+6. After separate approval, re-enable Secure Boot with the existing enrolled keys
+   and verify signed startup. Only then accept the restored services, seed fresh
+   active replicas, and resume mirroring/search. Do not retire recovery copies
+   before acceptance.
 
 Keep the failed SSD and all existing recovery copies. Never initialize the
 failed SSD. If it becomes readable, image it before further recovery work.
