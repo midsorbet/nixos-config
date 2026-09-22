@@ -395,9 +395,31 @@ Recovery evidence and remaining gates:
   bytes. All 3,540 original archive object identities and the Seagate/USB
   partition tables remained unchanged. Intended dataset `readonly=off`
   properties were restored before exporting `data`, `rpool`, and `archive`.
-  The NVMe, all three NVMe partitions, and the Seagate disk/partition are now
-  block-read-only. Temporary credentials, decoded Borg metadata, helpers, and
-  the private recovery terminal were removed or closed. Nothing was installed.
+  At that restore boundary, the NVMe, all three NVMe partitions, and the Seagate
+  disk/partition were block-read-only. Temporary credentials, decoded Borg
+  metadata, helpers, and the private recovery terminal were removed or closed.
+  Nothing had yet been installed.
+- Separately approved installation and bootstrap activation completed on
+  2026-09-22 UTC. Only generation 1 of the retained `recovery-held` system was
+  installed. Recursive content verification of the copied target closure passed.
+  The signed loader copies and thin UKI passed independent signature checks;
+  the signing certificate matches an already enrolled firmware `db` certificate.
+  Signed kernel/initrd hashes, the exact held kernel command line, the base
+  initrd, and the embedded original initrd SSH identity all matched.
+- All 67 installed unit masks passed offline target-root checks. All 21 original
+  host-state files still match the recovered snapshot byte-for-byte, including
+  the original SSH identities, data key, password hash, and signing PKI. Pinned
+  UID:GID pairs and the activated login password hash passed readback. The home
+  recovery hold and blank root snapshot remain present.
+- Firmware entry `Boot0000`, labelled `NixOS Baymax`, selects the NVMe ESP and
+  `\EFI\systemd\systemd-bootx64.efi`. `BootNext` is `0000`; `BootOrder` is
+  `0000,0001,0002`. Both original boot entries remain byte-for-byte unchanged.
+  Secure Boot remains disabled. `SecureBoot`, `SetupMode`, `PK`, `KEK`, and `db`
+  remain byte-for-byte unchanged; `dbx` remains absent.
+- After verification, `data` and `rpool` were cleanly exported with no remaining
+  target mounts. The NVMe and Seagate disk/partition guards are block-read-only;
+  all three partition tables are unchanged. The archive stayed exported. Actual
+  NVMe boot and live service-hold acceptance are still pending.
 
 The final restore report is
 `.git/agent-artifacts/baymax-nvme-restore-final-20260921.json`. The verification
@@ -405,14 +427,23 @@ bundle and parked-state log have matching SHA-256 copies on Mini and under
 the USB workspace's `recovery-b862fc8/nvme-restore-evidence/` directory. Preserve
 both copies and all earlier recovery evidence.
 
-The native workspace is `/mnt/baymax-recovery-build`, mounted from ext4 UUID
-`558bfd41-b13e-4535-b6ac-e7c570978f45` on Samsung USB serial
-`0373026010000352`. Its `nix/store` and `nix/var/nix` directories are bound to
-`/nix/store` and `/nix/var/nix`; build scratch uses its `build` directory. The
-`recovery-b862fc8/system` link retains the built system, while `source` and
-`input-roots/` retain the exact source and all 64 inputs. Keep the full closure
-there, not in Mini's host store. Preserve this USB until installed recovery
-passes acceptance.
+The installation report is
+`.git/agent-artifacts/baymax-nvme-installation-20260921.json`. Matching SHA-256
+verification bundles are retained on Mini and at
+`recovery-b862fc8/installation-verification.tar.gz` on the USB. The first installer
+attempt stopped before copying because positional `script` arguments discarded
+empty option values. Explicit `script --command` quoting fixed that failure;
+the failed attempt and successful retry remain in the evidence bundle.
+
+The preserved native workspace is on ext4 UUID
+`558bfd41-b13e-4535-b6ac-e7c570978f45`, Samsung USB serial `0373026010000352`.
+During rescue it is mounted at `/mnt/baymax-recovery-build`; its `nix/store` and
+`nix/var/nix` directories are bound to `/nix/store` and `/nix/var/nix`, and build
+scratch uses its `build` directory. The `recovery-b862fc8/system` link retains
+the reviewed normal system. `firstboot-held-system`, `source`, and `input-roots/`
+retain the held system, exact source, and all 64 inputs. Keep the closures there,
+not in Mini's host store. Preserve this USB until installed recovery passes
+acceptance.
 
 These live bind mounts do not survive a rescue reboot. After any restart,
 recheck disk identities and applicable read-only guards, mount the workspace
@@ -443,12 +474,23 @@ original machine-id, creates pinned users, decrypts agenix secrets, reconciles
 enabled. Preserve the home recovery snapshot before these approved writes.
 Release services only through a separately approved declarative generation;
 use the normal generation only when every remaining hold may be released.
-Do not bypass the held generation with runtime unmasking. No EFI image signing,
-installation, activation, NVMe boot, or Secure Boot verification has run.
+Do not bypass the held generation with runtime unmasking. Installation,
+bootstrap activation, and offline EFI verification have passed. Actual NVMe
+startup, live hold verification, and Secure Boot startup acceptance have not.
 
-Recovery sequence: steps 1-4 are complete. Remaining installation and activation
-require explicit approval; Secure Boot remains a separate gate. Do not rerun
-Disko or the erase helpers for installation.
+Before first boot, shut Baymax down completely and physically disconnect the
+Seagate archive and Samsung rescue USB. Do not unplug the live rescue USB. The
+archive must be absent: its normal fstab mounts are writable, and tmpfiles
+includes `/archive/immich`; rescue block-read-only guards do not survive reboot.
+Keep power, Ethernet, and the installed NVMe connected. Use a real firmware boot,
+not kexec. Keep the original known-host pins for initrd `root` on port 2222 and
+stage-two `me` on port 22; the rescue-specific pins do not apply.
+
+Recovery sequence: steps 1-4 and the installation part of step 5 are complete.
+Installation, activation, and first NVMe boot are approved. Physical media
+disconnection and real startup verification remain pending. Secure Boot and
+service release remain separate approval gates. Do not rerun Disko or the erase
+or installation helpers.
 
 1. Confirm the retained reviewed build, original identities, and ownership
    records before the erase boundary. Keep both backups and the original NVMe
@@ -469,9 +511,9 @@ Disko or the erase helpers for installation.
    Restore `/persist/host`, including the password hash and original Secure Boot
    PKI, before `nixos-install` activation. Pin observed UID/GID assignments
    before generating new NixOS allocation state or running tmpfiles.
-5. Install only the retained `recovery-held` generation. On the actual first
-   boot, verify every mask and confirm that held units never started. Keep
-   restored-data writers, backup/prune jobs, Syncthing, Hister, WARP, and
+5. The retained `recovery-held` generation is installed and offline-verified.
+   On the actual first boot, verify every mask and prove held units never
+   started. Keep restored-data writers, backup/prune jobs, Syncthing, Hister, WARP, and
    dependent Caddy stopped through verification. Recreate WARP registration
    intentionally in an approved release stage; verify its private route before
    enabling Caddy. Keep Mini mirroring/private search paused.
