@@ -478,9 +478,8 @@ use the normal generation only when every remaining hold may be released.
 Do not bypass the held generation with runtime unmasking. Installation,
 bootstrap activation, offline EFI checks, NVMe boot, and live hold checks have
 passed. The corrected held generation has also passed startup acceptance.
-Secure Boot enablement is now approved. Its preflight passed and a firmware-setup
-reboot was requested. The physical toggle and signed-startup verification remain
-pending; no service release is approved.
+Secure Boot startup has now passed with the original enrolled keys. All service
+holds remain masked and inactive. Service release is not approved.
 
 ### First NVMe boot and ownership correction
 
@@ -489,13 +488,15 @@ Samsung rescue USB disconnected. Keep both disconnected. The archive must be
 absent: its normal fstab mounts are writable, and tmpfiles includes
 `/archive/immich`; rescue block-read-only guards do not survive reboot.
 
-The recovery address changed from `192.168.4.29` to `192.168.4.31` on the
-corrective reboot; neither is the usual `.200`. Recheck the address after a
-reboot. The original stage-two SSH identity is unchanged. Keep its existing pin:
+The recovery DHCP address changed from `192.168.4.29` on the first NVMe boot to
+`192.168.4.31` after the ownership correction, then to `192.168.4.24` for the
+verified Secure Boot startup. The usual operational address is still `.200`.
+Recheck the address after a reboot. The original stage-two SSH identity is
+unchanged; keep its existing host-key pin:
 
 ```zsh
 ssh -o StrictHostKeyChecking=yes -o HostKeyAlias=192.168.4.200 \
-  -o CheckHostIP=no me@192.168.4.31
+  -o CheckHostIP=no me@192.168.4.24
 ```
 
 The real boot verified the held UKI and kernel, root rollback, all eight required
@@ -573,7 +574,7 @@ unchanged, and Secure Boot was disabled. The missing archive was the only failed
 unit. Both external disks remained disconnected. No restored service, mirror,
 or private-search consumer was released.
 
-The current acceptance report is
+The earlier corrected-boot acceptance report is
 `.git/agent-artifacts/baymax-owner-deployment-20260921.json`. The evidence bundle
 `.git/agent-artifacts/baymax-owner-deployment-verification-20260921.tar.gz` has a
 matching SHA-256 copy under the native build workspace
@@ -582,10 +583,10 @@ Temporary verification scripts and tool roots were removed. Private administrati
 terminals were closed, and sudo credentials were invalidated. Retain the builds,
 source roots, ESP backup, and all earlier recovery copies.
 
-Recovery steps 1-5 are complete. Secure Boot enablement is approved; signed-startup
-acceptance remains open. Service release requires separate approval. Keep
-mirroring and private search paused. Do not rerun Disko or the erase or
-installation helpers.
+NVMe startup and Secure Boot acceptance are complete. Restored-service, routing,
+privacy, and active-consumer acceptance remain open. Service release requires
+separate approval. Keep mirroring and private search paused. Do not rerun Disko
+or the erase or installation helpers.
 
 1. Confirm the retained reviewed build, original identities, and ownership
    records before the erase boundary. Keep both backups and the original NVMe
@@ -612,10 +613,10 @@ installation helpers.
    WARP, and dependent Caddy stopped. Recreate WARP registration intentionally in
    an approved release stage. Verify the intended LAN address and private route
    before enabling Caddy. Keep Mini mirroring and private search paused.
-6. Secure Boot enablement is approved for the existing enrolled keys. Complete
-   the physical firmware toggle, then verify signed startup. Only afterward may
-   a separately approved generation release restored services. Accept services
-   and privacy/routing before seeding active replicas or resuming mirroring/search.
+6. Generation 2 has passed signed startup with Secure Boot enforcement enabled
+   and the original enrolled keys unchanged. Only a separately approved
+   declarative generation may release restored services. Accept services and
+   privacy/routing before seeding active replicas or resuming mirroring/search.
    Do not retire recovery copies before acceptance.
 
 The Secure Boot preflight on `2026-09-22T03:54:03Z` confirmed that the four EFI
@@ -626,14 +627,41 @@ retained only on Baymax at
 `/persist/host/boot-backup-secureboot-20260922T035400Z-7c5n20.tgz`, owned by
 `0:0` with mode `0600`. Do not copy this sensitive archive to Mini.
 
-Baymax accepted `systemctl reboot --firmware-setup` and closed SSH. The physical
-firmware screen has not yet been confirmed. Enable only Secure Boot, retain
-Custom mode and the existing keys, then save and exit. Do not clear keys, restore
-factory keys, or enter Setup Mode. Keep both external disks disconnected.
-Recheck the DHCP address after boot and retain the original SSH host-key pin.
-The handoff report is `.git/agent-artifacts/baymax-secureboot-handoff-20260921.json`;
-native preflight evidence is under the retained build workspace
-`secureboot-proof/`. This handoff is not proof that Secure Boot is enabled.
+Baymax accepted the firmware-setup reboot, then returned at `192.168.4.24` with
+new boot ID `b69d9eb9-c53c-444a-85bd-603e570d8a11`. Firmware reports
+`SecureBoot=1` and `SetupMode=0`; `sbctl` reports Enabled, and `bootctl` reports
+`enabled (user)`. Of the five monitored Secure Boot variables, only the enable
+byte changed. Original PK, KEK, db, SetupMode, and signing-certificate identities
+are unchanged; dbx remains absent. No key replacement or enrollment was needed.
+
+The firmware selected the same default generation 2 UKI. All four EFI images
+passed independent signature verification again and remain byte-identical to
+the accepted preflight. Signed kernel/initrd hashes, the base initrd, and the
+embedded original initrd SSH identity passed readback. Generation 1 is retained.
+Root rollback completed. Both pools remain ONLINE with zero errors, all eight
+mounts match, all 63 recovery-object records and the home recovery hold remain
+intact, and all 21 original host-state files still match their recovered snapshot.
+The machine-id, password hash, SSH identities, and seven pinned UID:GID/group
+pairs passed verification. Tmpfiles ran and exited 0, with no unsafe transitions.
+
+All 66 system holds and the one user hold remain masked and inactive, with no
+invocation, start timestamp, or held-unit journal record. The absent archive is
+still the only failed unit. Both external disks remain disconnected. No service,
+mirror, or private-search consumer was released.
+
+The current acceptance report is
+`.git/agent-artifacts/baymax-secureboot-verification-20260921.json`. The frozen
+bundle `.git/agent-artifacts/baymax-secureboot-verification-20260921.tar.gz` has
+a matching SHA-256 copy in the retained native build workspace
+`/home/me/.local/state/nix/gcroots/baymax-owner-repair-20260921/evidence/`.
+Raw native evidence is in
+`/home/me/.local/state/nix/gcroots/baymax-owner-repair-20260921/secureboot-proof/`.
+The earlier
+`.git/agent-artifacts/baymax-secureboot-handoff-20260921.json` records the
+pre-enablement boundary, not the current status. Temporary verification helpers
+were removed, the one-shot privileged session closed, and sudo credentials were
+invalidated on both hosts. The held system, all 64 source/input roots, ESP backups,
+and earlier recovery copies remain retained.
 
 Keep the failed SSD and all existing recovery copies. Never initialize the
 failed SSD. If it becomes readable, image it before further recovery work.
