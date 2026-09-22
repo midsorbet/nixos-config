@@ -18,7 +18,7 @@ For one-off sudo, use foreground `bash` with `pty: true`. `nh os switch` and
 Tell the user before authentication. When `HERDR_ENV=1`, immediately before the
 visible console TTY or Herdr tab begins waiting for authentication or other user
 input, run exactly:
-`herdr notification show "OMP needs input" --body "Return to the waiting prompt" --sound request`.
+`herdr notification show "OMP needs input" --body "Return to the waiting prompt" --sound none`.
 The notification must not contain passwords, secrets, host-sensitive details,
 or command output. The user types directly into the visible TTY; never request,
 relay, log, or script a password. A background `hub` PTY is not a substitute for

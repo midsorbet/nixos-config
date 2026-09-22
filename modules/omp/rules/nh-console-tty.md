@@ -17,7 +17,7 @@ overlay in the current session; it does not require a separate terminal window.
 Tell the user before sudo prompts and let them type directly into the console
 TTY. When `HERDR_ENV=1`, immediately before the visible console TTY begins
 waiting for authentication or other user input, run exactly:
-`herdr notification show "OMP needs input" --body "Return to the waiting prompt" --sound request`.
+`herdr notification show "OMP needs input" --body "Return to the waiting prompt" --sound none`.
 The notification must not contain passwords, secrets, host-sensitive details,
 or command output. If Herdr is unavailable, retain the current console behavior
 without attempting a standalone fallback. If the session has no interactive UI,

@@ -36,11 +36,6 @@ console TTY is the interactive overlay in this OMP session, not a background
 `hub` PTY. If no interactive UI is available, stop for user input; do not
 silently fall back to a non-interactive command or a new terminal window.
 
-When `HERDR_ENV=1`, immediately before starting or exposing any foreground
-console TTY or Herdr-pane operation that will wait for user input, run
-`herdr notification show "OMP needs input" --body "Return to the waiting prompt" --sound request`.
-This notification is for attention only and must never carry secret content.
-
 For repeated sudo administration, prefer a dedicated Herdr tab after reading
 the Herdr skill and checking `HERDR_ENV=1`. Record the tab and pane IDs and
 whether this agent created them. Use a temporary root shell only for the
