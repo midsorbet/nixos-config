@@ -8,7 +8,7 @@
 }: let
   user = "me";
   homeDir = config.hjem.users.${user}.directory;
-  baymaxLanAddress = "192.168.4.200";
+  baymaxLanAddress = "192.168.4.24";
   miniEthernetLanAddress = "192.168.4.194";
   miniEthernetLanIpv6Address = "fdef:bd26:b58e:1:1412:ff96:d77a:51e6";
   miniWarpDnsDriftCheck = pkgs.writeShellApplication {
@@ -384,6 +384,14 @@ in {
       };
     };
   };
+
+  # Start host DNS before vmnet can claim the wildcard DNS sockets.
+  launchd.daemons.linux-builder.script = lib.mkBefore ''
+    while ! /usr/sbin/lsof -nP -a -c unbound -iTCP@127.0.0.1:53 -sTCP:LISTEN >/dev/null 2>&1 \
+      || ! /usr/sbin/lsof -nP -a -c unbound -iUDP@127.0.0.1:53 >/dev/null 2>&1; do
+      /bin/sleep 1
+    done
+  '';
 
   # Turn off NIX_PATH warnings now that we're using flakes
 

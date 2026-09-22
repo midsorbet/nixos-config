@@ -20,7 +20,7 @@
       }
     }
     https://:9443 {
-      bind 192.168.4.200
+      bind 192.168.4.24
       tls ${./home-managed-network-cert.pem} ${config.age.secrets."home-managed-network-key".path}
       respond 204
     }
@@ -74,7 +74,7 @@ in {
     '';
     virtualHosts.${photosHostname} = {
       useACMEHost = photosHostname;
-      listenAddresses = ["192.168.4.200"];
+      listenAddresses = ["192.168.4.24"];
       logFormat = null;
       extraConfig = ''
         reverse_proxy 127.0.0.1:2283 {
@@ -89,7 +89,7 @@ in {
     };
     virtualHosts.${readeckHostname} = {
       useACMEHost = readeckHostname;
-      listenAddresses = ["192.168.4.200"];
+      listenAddresses = ["192.168.4.24"];
       logFormat = null;
       extraConfig = ''
         reverse_proxy 127.0.0.1:8000 {
@@ -104,7 +104,7 @@ in {
     };
     virtualHosts.${actualHostname} = {
       useACMEHost = actualHostname;
-      listenAddresses = ["192.168.4.200"];
+      listenAddresses = ["192.168.4.24"];
       logFormat = null;
       extraConfig = ''
         reverse_proxy 127.0.0.1:5006 {
@@ -119,7 +119,7 @@ in {
     };
     virtualHosts.${histerHostname} = {
       useACMEHost = histerHostname;
-      listenAddresses = ["192.168.4.200"];
+      listenAddresses = ["192.168.4.24"];
       logFormat = null;
       extraConfig = ''
         reverse_proxy 127.0.0.1:4433 {
@@ -134,7 +134,7 @@ in {
     };
     virtualHosts.${atuinHostname} = {
       useACMEHost = atuinHostname;
-      listenAddresses = ["192.168.4.200" atuinWarpAddress];
+      listenAddresses = ["192.168.4.24" atuinWarpAddress];
       logFormat = null;
       extraConfig = ''
         reverse_proxy 127.0.0.1:8888 {

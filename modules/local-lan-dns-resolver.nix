@@ -7,7 +7,7 @@
   cfg = config.local.lanDnsResolver;
 
   darwinLocalResolverAddress = "127.0.0.1";
-  baymaxLanAddress = "192.168.4.200";
+  baymaxLanAddress = "192.168.4.24";
   homeLanNetworks = [
     "192.168.4.0/24"
     "fdef:bd26:b58e:1::/64"
@@ -113,29 +113,39 @@
   renderUnboundSettings = settings:
     lib.concatStringsSep "\n" (lib.mapAttrsToList (renderUnboundOption "") settings) + "\n";
 
-  darwinUnboundSettings = lib.recursiveUpdate sharedUnboundSettings {
-    server = {
-      chroot = ''""'';
-      directory = ''""'';
-      do-daemonize = false;
-      pidfile = ''""'';
-      username = ''"nobody"'';
+  mkDarwinUnboundSettings = interfaces:
+    lib.recursiveUpdate sharedUnboundSettings {
+      server = {
+        interface = interfaces;
+        chroot = ''""'';
+        directory = ''""'';
+        do-daemonize = false;
+        pidfile = ''""'';
+        username = ''"nobody"'';
+      };
     };
-  };
 
-  darwinUnboundConfigUnchecked = pkgs.writeText "local-lan-unbound.conf" (
-    renderUnboundSettings darwinUnboundSettings
-  );
-
-  darwinUnboundConfig =
-    pkgs.runCommand "local-lan-unbound-checked.conf" {
+  mkDarwinUnboundConfig = name: settings: let
+    uncheckedConfig = pkgs.writeText "${name}-unchecked.conf" (
+      renderUnboundSettings settings
+    );
+  in
+    pkgs.runCommand "${name}-checked.conf" {
       nativeBuildInputs = [pkgs.unbound];
       preferLocalBuild = true;
     } ''
-      unbound-checkconf ${darwinUnboundConfigUnchecked}
-      cp ${darwinUnboundConfigUnchecked} "$out"
+      unbound-checkconf ${uncheckedConfig}
+      cp ${uncheckedConfig} "$out"
     '';
-  darwinAddressWaitCommands =
+  darwinLocalUnboundConfig =
+    mkDarwinUnboundConfig "local-split-dns-unbound" (
+      mkDarwinUnboundSettings [darwinLocalResolverAddress]
+    );
+  darwinLanUnboundConfig =
+    mkDarwinUnboundConfig "local-lan-dns-unbound" (
+      mkDarwinUnboundSettings cfg.listenAddresses
+    );
+  darwinLanAddressWaitCommands =
     lib.concatMapStringsSep "\n" (
       address: let
         addressFamily =
@@ -143,19 +153,32 @@
           then "inet6"
           else "inet";
       in ''
-        while ! /sbin/ifconfig | /usr/bin/grep -q "${addressFamily} ${address} "; do
+        while ! /sbin/ifconfig 2>/dev/null | /usr/bin/grep -q "${addressFamily} ${address} "; do
           /bin/sleep 1
         done
       ''
     )
     cfg.listenAddresses;
-  darwinResolverCommand = ''
-    while [ ! -x "${pkgs.unbound}/bin/unbound" ] || [ ! -r "${darwinUnboundConfig}" ]; do
+  mkDarwinResolverCommand = unboundConfig: addressWaitCommands: ''
+    while [ ! -x "${pkgs.unbound}/bin/unbound" ] || [ ! -r "${unboundConfig}" ]; do
       /bin/sleep 1
     done
-    ${darwinAddressWaitCommands}
-    exec "${pkgs.unbound}/bin/unbound" -d -c "${darwinUnboundConfig}"
+    ${addressWaitCommands}
+    exec "${pkgs.unbound}/bin/unbound" -d -c "${unboundConfig}"
   '';
+  mkDarwinResolverService = command: logName: {
+    ProgramArguments = [
+      "/bin/sh"
+      "-c"
+      command
+    ];
+    RunAtLoad = true;
+    KeepAlive = true;
+    ProcessType = "Background";
+    StandardErrorPath = "/var/log/${logName}.err.log";
+    StandardOutPath = "/var/log/${logName}.out.log";
+    ThrottleInterval = 10;
+  };
 in {
   options.local.lanDnsResolver = {
     enable = lib.mkEnableOption "LAN-only Unbound resolver with Cloudflare Gateway forwarding";
@@ -182,18 +205,15 @@ in {
       }
       else if platform == "darwin"
       then {
-        launchd.daemons.local-lan-dns-resolver.serviceConfig = {
-          ProgramArguments = [
-            "/bin/sh"
-            "-c"
-            darwinResolverCommand
-          ];
-          RunAtLoad = true;
-          KeepAlive = true;
-          ProcessType = "Background";
-          StandardErrorPath = "/var/log/local-lan-dns-resolver.err.log";
-          StandardOutPath = "/var/log/local-lan-dns-resolver.out.log";
-          ThrottleInterval = 10;
+        launchd.daemons = {
+          local-split-dns-resolver.serviceConfig =
+            mkDarwinResolverService
+            (mkDarwinResolverCommand darwinLocalUnboundConfig "")
+            "local-split-dns-resolver";
+          local-lan-dns-resolver.serviceConfig =
+            mkDarwinResolverService
+            (mkDarwinResolverCommand darwinLanUnboundConfig darwinLanAddressWaitCommands)
+            "local-lan-dns-resolver";
         };
 
         system.activationScripts.postActivation.text = lib.mkAfter ''
