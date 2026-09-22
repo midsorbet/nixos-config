@@ -120,6 +120,9 @@ in {
     kernelModules = [
       "uinput"
       "tun"
+      # Keep USB archive hotplug working after security.lockKernelModules takes effect.
+      "usb_storage"
+      "sd_mod"
     ];
     # Force usb-storage (disable UAS) for the Seagate enclosure to avoid reset/timeouts.
     kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
