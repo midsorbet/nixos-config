@@ -136,7 +136,7 @@ in {
             };
           };
           toast = {
-            delivery = "terminal";
+            delivery = "system";
             delay_seconds = 1;
             herdr.position = "bottom-right";
             clipboard = {
