@@ -94,6 +94,8 @@ in {
       };
     };
     initrd.systemd = {
+      # Use the same DHCP identity before and after ZFS unlock.
+      network.networks."99-ethernet-default-dhcp".dhcpV4Config.ClientIdentifier = "mac";
       initrdBin = [
         (pkgs.writeShellScriptBin "initrd-ask-password" ''
           exec ${config.boot.initrd.systemd.package}/bin/systemd-tty-ask-password-agent --watch
@@ -562,8 +564,11 @@ in {
     };
   };
 
-  # Notification and monitoring systemd units
+  # System networking and service units
   systemd = {
+    # Match eero's Ethernet reservation after the initrd-to-normal-boot handoff.
+    network.networks."99-ethernet-default-dhcp".dhcpV4Config.ClientIdentifier = "mac";
+
     tmpfiles.rules = [
       "d /persist/save/syncthing 0700 me users - -"
       "d /persist/save/syncthing/config 0700 me users - -"

@@ -491,10 +491,13 @@ reconnect the Seagate only through the guarded service-restoration stage below.
 The recovery DHCP address changed from `192.168.4.29` on the first NVMe boot to
 `192.168.4.31` after the ownership correction, then to `192.168.4.24` for the
 verified Secure Boot startup. The user supplied `192.168.4.27` after generation
-4 booted. The configured/reserved target remains `.24`; do not rewrite service
-or Cloudflare addresses to follow this lease. DHCP/eero troubleshooting is
-explicitly deferred. Ask the user for the current administrative address when
-needed, including after reboots; do not infer boot failure from an old address.
+4 booted, and generation 6 later received `.30`. Generation 7 uses the Ethernet
+MAC as the DHCPv4 client identifier in both initrd and normal boot; its real boot
+received `.31` in both stages. The configured/reserved target remains `.24`; do
+not rewrite service or Cloudflare addresses to follow a lease. DHCP/eero
+troubleshooting is deferred. Ask the user for the current administrative address
+when needed, including after reboots; do not infer boot failure from an old address.
+Use the confirmed lease or stable ULA only for administration.
 Substitute the supplied address in SSH/build commands below. The original
 stage-two SSH identity is unchanged; keep its existing host-key pin:
 
@@ -797,18 +800,21 @@ The ESP backup is under
 `/persist/host/recovery-warp-preload-20260923T002101Z/`. Build, installation,
 and postboot receipts are retained in `.git/agent-artifacts/`.
 
-The initial postboot Caddy start then failed at its LAN bind: DHCP supplied
-`192.168.4.30`, not the configured `192.168.4.24`. Restore the `.24` reservation
-for Ethernet MAC `78:55:36:05:8d:4f`; use a changed DHCP address only for
-administration, not as an ad-hoc replacement in service or DNS settings.
-Router DNS must not be changed until LAN HTTPS and both resolvers pass.
+Generation 7 uses `ClientIdentifier=mac` in both initrd and normal
+`systemd-networkd`. The real boot received `192.168.4.31` in initrd at 5.54
+seconds and again after unlock at 132.08 seconds. Initrd SSH listened on port
+2222, then normal SSH listened on port 22. This proves one DHCP identity and one
+address across the boot handoff; it does not prove that eero applied the `.24`
+reservation. The eero device view showed matching Ethernet MAC
+`78:55:36:05:8d:4f` and both `.24` and `.31`. Further eero troubleshooting is
+deferred. Use the current lease only for administration, keep service and DNS
+addresses on `.24`, and do not change router DNS while Caddy cannot bind there.
 
-The Atuin Gateway target migration and exact Home-profile DNS fallback
-additions still require confirmed control-plane readback. The native Cloudflare
-MCP returned authentication error 10000 on the approved update and on a
-read-only readback, so that update outcome is unconfirmed. Reauthenticate the
-native connection and inspect state before any further mutation. Do not use
-alternate credentials or remove the old registration until routing works.
+The Atuin Gateway target migration to `100.96.0.9` has confirmed control-plane
+readback. The exact Hister and Atuin Home-profile fallback entries remain absent.
+The default/away profile remains unchanged. Any new Home-profile mutation needs
+a fresh explicit approval; do not use alternate credentials or remove the old
+Mesh registration until routing works.
 
 An earlier sandboxed read-only Hister audit enumerated live external IDs from
 22 Bleve/Scorch indexes without decoding stored document fields or exporting
