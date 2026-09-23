@@ -566,7 +566,7 @@ in {
 
   # System networking and service units
   systemd = {
-    # Match eero's Ethernet reservation after the initrd-to-normal-boot handoff.
+    # Keep normal boot on the same MAC-based DHCP identity as initrd.
     network.networks."99-ethernet-default-dhcp".dhcpV4Config.ClientIdentifier = "mac";
 
     tmpfiles.rules = [
