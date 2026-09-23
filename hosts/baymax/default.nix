@@ -120,6 +120,8 @@ in {
     kernelModules = [
       "uinput"
       "tun"
+      # WARP needs nftables rejection before security.lockKernelModules takes effect.
+      "nft_reject_inet"
       # Keep USB archive hotplug working after security.lockKernelModules takes effect.
       "usb_storage"
       "sd_mod"

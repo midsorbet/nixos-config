@@ -151,7 +151,7 @@ Useful symptoms:
 - `403` from Cloudflare on a gated hostname usually means the request did not satisfy the Access policy.
 - `NXDOMAIN` means the published route or DNS record is missing, not that Baymax itself is down.
 - `ERR_CONNECTION_REFUSED` for `readeck`, `photos`, `budget`, `hister`, or `atuin` on the home LAN means split-horizon DNS reached `192.168.4.24`, but Caddy is not listening. Check `systemctl status caddy` and the port 443 listeners on Baymax before investigating Cloudflare.
-- A Caddy boot failure that mentions `100.96.0.3:443` means the WARP address was not ready. The managed Caddy pre-start gate must wait for that address before Caddy binds its listeners.
+- A Caddy boot failure that mentions its configured WARP listener on port 443 means that address was not ready. The managed Caddy pre-start gate must wait for the address in `local-https.nix` before Caddy binds its listeners.
 
 ## Local HTTPS Security Boundaries
 
@@ -761,30 +761,54 @@ non-legacy native mountpoint. Replica mounts and both Immich units stay masked.
 The candidate suppresses both `/archive/immich` tmpfiles sources and removes
 the recovery WWN read-only rule only from that uninstalled generation.
 
-`archive-media-prewrite.service` must verify that only `archive/media` is
-mounted writable, then create `archive/media@immich-prewrite-20260922` with hold
-`baymax-immich-release-20260922`. Its evaluated script correctly rejected the
-real read-only import before creating a snapshot. The writable success path is
-not yet proven. Install and verify the signed boot artifacts only when the user
-is ready for the controlled reboot and encrypted-root unlock. Keep the Seagate
-connected and the Samsung rescue USB disconnected for that next boot.
+The archive-media release was followed by the approved uptime-first generation
+6. That generation retains `archive-media-prewrite.service` and the archive
+import guard. Keep `archive/media@immich-prewrite-20260922`, its
+`baymax-immich-release-20260922` hold, and every older recovery copy.
 
-Immich still requires a separate reviewed release after the media gate passes.
-Before starting it, create and restore-test a per-database rollback copy on
-Baymax; do not roll back the shared live PostgreSQL dataset to undo one app
-migration. Native Immich 3.2.2 uses `/archive/immich` for originals and generated
-files. `THUMB_LOCATION`, `ENCODED_VIDEO_LOCATION`, `PROFILE_LOCATION`, and
-`BACKUP_LOCATION` are Docker Compose variables, not native folder controls.
-Preserve the verified paths during recovery rather than silently relocating
-data. Review stored application settings, queued jobs, and backup scheduling
-before the later writer release.
+Immich now responds on its loopback HTTP origin. This does not establish
+authenticated photo access or complete backup acceptance. Retain its sealed
+per-database rollback copy; never roll back the shared live PostgreSQL dataset
+to undo one application migration. Native Immich 3.2.2 uses `/archive/immich`
+for originals and generated files. `THUMB_LOCATION`, `ENCODED_VIDEO_LOCATION`,
+`PROFILE_LOCATION`, and `BACKUP_LOCATION` are Docker Compose variables, not
+native folder controls. Preserve the verified paths during recovery rather
+than silently relocating data.
 
-Mesh recovery is still blocked on the existing node identity after discovery
-returned API error 1084. Control-plane work stopped; no token was fetched and
-no node was created or deleted. Do not substitute the old registration ID for a
-Mesh node ID, bypass the Caddy WARP-address gate, or treat configured routes as
-verified access. Mini Projects is still paused/send-only; Baymax remains the
-cold receive-only mirror. Current convergence has not passed acceptance.
+The approved replacement Mesh node enrolled as Baymax with virtual IPv4
+`100.96.0.9`. The node ID and device-registration ID are different identifiers;
+never substitute one for the other. The enrollment token was handled privately
+and removed after use. Authored Nix secrets belong in the separate `nix-secrets`
+repository. WARP maintains its generated registration state in
+`/var/lib/cloudflare-warp`, persisted on `rpool/persist`.
+
+The first connection attempt failed because WARP could not install nftables
+`reject` rules after kernel module loading was locked. `boot.kernelModules`
+now preloads `nft_reject_inet`; keep `security.lockKernelModules` enabled.
+The approved generation 6 booted on 2026-09-23 with that module loaded and
+`kernel.modules_disabled=1`. WARP reported `Connected` and `Network: healthy`,
+and its interface held `100.96.0.9/32`. The Caddy address and readiness gate
+now use that address. No gate was bypassed and no listener was widened.
+
+The native build retained the existing kernel, initrd, signing keys, 24 system
+holds, and one user hold. The new UKI passed signature verification against
+the recovered db certificate; existing EFI images remained byte-identical.
+The ESP backup is under
+`/persist/host/recovery-warp-preload-20260923T002101Z/`. Build, installation,
+and postboot receipts are retained in `.git/agent-artifacts/`.
+
+The initial postboot Caddy start then failed at its LAN bind: DHCP supplied
+`192.168.4.30`, not the configured `192.168.4.24`. Restore the `.24` reservation
+for Ethernet MAC `78:55:36:05:8d:4f`; use a changed DHCP address only for
+administration, not as an ad-hoc replacement in service or DNS settings.
+Router DNS must not be changed until LAN HTTPS and both resolvers pass.
+
+The Atuin Gateway target migration and exact Home-profile DNS fallback
+additions still require confirmed control-plane readback. The native Cloudflare
+MCP returned authentication error 10000 on the approved update and on a
+read-only readback, so that update outcome is unconfirmed. Reauthenticate the
+native connection and inspect state before any further mutation. Do not use
+alternate credentials or remove the old registration until routing works.
 
 A sandboxed read-only Hister audit enumerated live external IDs from 22
 Bleve/Scorch indexes without decoding stored document fields or exporting real

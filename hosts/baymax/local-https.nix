@@ -10,7 +10,7 @@
   histerHostname = "hister.midsorbet.me";
   atuinHostname = "atuin.midsorbet.me";
   # Home DNS returns the LAN address. Gateway DNS returns this WARP peer address.
-  atuinWarpAddress = "100.96.0.3";
+  atuinWarpAddress = "100.96.0.9";
   managedNetworkCaddyfile = pkgs.writeText "home-managed-network.Caddyfile" ''
     {
       admin off
