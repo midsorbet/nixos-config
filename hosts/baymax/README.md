@@ -697,7 +697,10 @@ waits for Ethernet before starting its LAN listener, and starts the VZ builder
 after loopback DNS owns its sockets. The VM and Rosetta remained functional.
 Cloudflare managed-network and Home-profile fallback addresses were changed
 from the former address to `.24`, then read back under the narrowly approved
-idempotent retry exception.
+idempotent retry exception. Generation 9 later changed the Home LAN managed-
+network TLS endpoint to `192.168.4.31:9443` through the native API. Readback
+retained the existing SHA-256 pin, and the live beacon certificate fingerprint
+matched it. This endpoint update did not change Home-profile fallback records.
 
 Archive reconnection exposed a boot-time driver prerequisite: with the Seagate
 absent at startup, `usb_storage` was not loaded before
@@ -802,11 +805,11 @@ Generation 7 uses `ClientIdentifier=mac` in both initrd and normal
 `systemd-networkd`. The real boot received `192.168.4.31` in initrd at 5.54
 seconds and again after unlock at 132.08 seconds. Initrd SSH listened on port
 2222, then normal SSH listened on port 22. This proves one DHCP identity and one
-address across the boot handoff; it does not prove that eero applied the `.24`
-reservation. The eero device view showed matching Ethernet MAC
-`78:55:36:05:8d:4f` and both `.24` and `.31`. Further eero troubleshooting is
-deferred. Use the current lease only for administration, keep service and DNS
-addresses on `.24`, and do not change router DNS while Caddy cannot bind there.
+address across the boot handoff. At that boundary, eero had not applied the old
+`.24` reservation; its device view showed matching Ethernet MAC
+`78:55:36:05:8d:4f` and both `.24` and `.31`. Generation 9 resolves the
+deferred address issue by making `.31` permanent. Keep the eero reservation,
+Baymax service address, and secondary custom DNS endpoint on `.31`.
 
 Generation 8 fixes WARP DNS ownership without changing the router or listener
 addresses. Direct DNS packets to WARP's `127.0.2.2` proxy resolved
@@ -834,11 +837,17 @@ Network beacon could not bind the reserved LAN address because eero still leased
 Generation 9 adopts `192.168.4.31` without a reboot. Its kernel, initrd, exact
 OMP 18.2.9 path, 24 system holds, user hold, archive guard, and running Immich
 invocations match generation 8. Unbound, Caddy, and the managed-network beacon
-are active on `.31`. Direct queries for all five home names return `.31`, and
-direct HTTPS returned verified certificates with expected HTTP responses. WARP,
-Cloudflare Tunnel, Hister, both Immich services, and all pools remained healthy.
-Mini uses `.31` for the builder and host-key alias while its managed tunnel still
-connects to Baymax over the stable ULA; both forwarding directions passed.
+are active on `.31`. After the eero restart and a DHCP renewal, Baymax retained
+`.31`; the lease advertises Mini at `192.168.4.194` and Baymax at `.31`, plus
+both stable ULAs, as the custom DNS servers. Both advertised IPv4 resolvers
+return `.31` for all five home names over UDP and TCP. Normal client HTTPS
+reached `.31`, verified every certificate, and returned the expected HTTP
+responses. The eero router-local DNS proxy at `.1` is not DHCP-advertised and
+continues to answer from public DNS, so it is not the custom-resolver acceptance
+path. WARP, Cloudflare Tunnel, Hister, both Immich services, and all pools
+remained healthy. Mini uses `.31` for the builder and host-key alias while its
+managed tunnel still connects to Baymax over the stable ULA; both forwarding
+directions passed.
 
 The Atuin Gateway target migration to `100.96.0.9` has confirmed control-plane
 readback. The exact Hister and Atuin Home-profile fallback entries remain absent.
