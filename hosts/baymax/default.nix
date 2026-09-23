@@ -274,7 +274,7 @@ in {
       interval = "daily";
       # Send only the newest Sanoid snapshot so Syncoid 2.3.0 bookmark recovery
       # reaches its common hold/bookmark lifecycle instead of returning early.
-      commonArgs = ["--no-stream" "--no-sync-snap" "--use-hold" "--create-bookmark"];
+      commonArgs = ["--no-stream" "--no-sync-snap" "--use-hold" "--create-bookmark" "--no-rollback" "--identifier=nvme-replica"];
       localSourceAllow = [
         "bookmark"
         "hold"
@@ -287,7 +287,6 @@ in {
         "mount"
         "receive"
         "release"
-        "rollback"
       ];
       # Merge into every generated syncoid-* service, including future
       # commands, rather than maintaining a hand-written list.

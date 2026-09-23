@@ -221,24 +221,30 @@ access makes encrypted Actual data and encrypted backup history unrecoverable.
 ## ZFS Replication and Disk Health
 
 Sanoid takes the configured hourly source snapshots. The daily Syncoid transfers
-use `--no-stream --no-sync-snap --use-hold --create-bookmark`. `--no-stream`
-sends only the newest available snapshot per run and ensures that bookmark-based
-recovery in the locked Syncoid 2.3.0 reaches its hold and bookmark lifecycle.
+use `--no-stream --no-sync-snap --use-hold --create-bookmark --no-rollback`
+with `--identifier=nvme-replica`. This identifier keeps new replication holds
+separate from the retained old replica history.
+`--no-stream` sends only the newest available snapshot per run and ensures that
+bookmark-based recovery in the locked Syncoid 2.3.0 reaches its hold and bookmark
+lifecycle. `--no-rollback` prevents Syncoid from passing `-F` to `zfs receive`;
+an incompatible target must fail rather than discard target state.
 After a completed transfer, Syncoid holds the newest snapshot on both sides,
 releases its previous holds, and creates a source bookmark as the durable
 incremental base. While each unit runs, the module delegates only
 `bookmark,hold,release,send` on its source and
-`create,hold,mount,receive,release,rollback` on its target.
+`create,hold,mount,receive,release` on its target.
 Both replication units and Sanoid publish failures to the local ntfy system topic;
 smartd health-warning events use the same publisher while retaining the ntfy
 publisher credentials in the smartd service environment.
 
 The post-recovery targets are `archive/replica/baymax-persistSave-nvme` and
 `archive/replica/baymax-persistHost-nvme`. Seed them from the final restored
-encryption roots. Do not reuse the old raw incremental chains after
-`zfs change-key -i`: an accepted stream and matching snapshot GUIDs did not prove
-readability in the recovery experiment. Retain the old replicas and all recovery
-datasets until final acceptance.
+encryption roots with non-raw sends into absent children of encrypted
+`archive/replica`; the new children inherit the archive encryption root.
+Continue these chains with non-raw incremental sends. Do not reuse the old raw
+incremental chains after `zfs change-key -i`: an accepted stream and matching
+snapshot GUIDs did not prove readability in the recovery experiment. Retain
+the old replicas and all recovery datasets until final acceptance.
 
 Inspect replication state without changing datasets:
 
