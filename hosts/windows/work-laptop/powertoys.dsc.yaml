@@ -38,6 +38,8 @@ resources:
             value: false
           fancyzones_overrideSnapHotkeys:
             value: true
+          fancyzones_moveWindowsBasedOnPosition:
+            value: true
           fancyzones_moveWindowAcrossMonitors:
             value: true
           fancyzones_displayOrWorkAreaChange_moveWindows:
@@ -49,7 +51,7 @@ resources:
           fancyzones_openWindowOnActiveMonitor:
             value: true
           fancyzones_span_zones_across_monitors:
-            value: false
+            value: true
           fancyzones_monitorRotation:
             value: true
           fancyzones_monitorRotation_hotkey:

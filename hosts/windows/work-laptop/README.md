@@ -93,28 +93,81 @@ actual installed PowerToys version rather than guessed property names.
 
 ## Keyboard-Driven Workflow
 
-Use Windows Terminal plus WSL/NixOS-WSL as the main shell path. The Terminal
-fragment maps pane focus to `Alt+h/j/k/l` and pane resize to
-`Alt+Shift+h/j/k/l`. The focus layer matches Paneru. The shifted layer is
-Terminal-specific because Paneru uses those chords to swap windows.
+Use Windows Terminal plus WSL/NixOS-WSL as the main shell path. When Herdr runs
+inside Terminal, Herdr owns the terminal tabs and panes, so one Terminal window
+is enough. The Terminal fragment maps pane focus to `Alt+h/j/k/l` and pane
+resize to `Alt+Shift+h/j/k/l`. The focus layer matches Paneru. The shifted layer
+is Terminal-specific because Paneru uses those chords to swap windows.
 
-PowerToys and native Windows provide the system-wide layer:
+### Desk layout
 
-- `Win+Alt+Space` opens Command Palette as a compact search box. PowerToys Run
-  is disabled so the profile has one launcher.
-- `Alt+backtick` selects the next window from the focused application, and
-  `Alt+Shift+backtick` selects the previous one through Window Hopper.
-- `Win+Arrow` moves the active window through FancyZones.
-- Hold `Alt+X`, then press Left or Right, to rotate open windows across monitors.
-- `Win+PgUp/PgDn` cycles windows that occupy the same FancyZone.
-- `Win+Ctrl+T` toggles Always On Top for the active window.
-- `Win+Shift+;` opens Workspaces. Workspace definitions and captured application
-  positions remain user-created.
-- `Win+Shift+/` opens Shortcut Guide. Holding either Windows key for 900 ms also
-  opens it, and releasing the key closes it.
-- `Win+Ctrl+Left/Right` changes the native Windows virtual desktop.
+The work desk has two Dell P2225H monitors side by side. FancyZones spans both
+monitors (`fancyzones_span_zones_across_monitors`), so one layout covers both
+screens and a window can cover both monitors. Keyboard snapping uses relative
+position (`fancyzones_moveWindowsBasedOnPosition`), which enables keyboard
+spanning.
 
-Keyboard Manager is explicitly disabled. The profile does not assign
-system-wide Paneru chords to Windows commands with different behavior.
-FancyZones provides keyboard placement, but it does not provide spatial focus,
-window swaps, direct numbered desktops, or automatic tiling.
+Windows switching addresses apps by taskbar position. Pin the apps in this
+order: Windows Terminal, IntelliJ IDEA, Chrome, Teams, Outlook, Remote Desktop
+Connection.
+
+Default placement on the three virtual desktops:
+
+1. Teams in the left zone and Outlook in the right zone.
+2. Terminal and IntelliJ share the left zone. Chrome uses the right zone.
+3. Remote Desktop Connection to the build PC.
+
+One-time Windows setup:
+
+1. In Settings > System > Display, give both monitors the same scale and align
+   their top edges. Spanning requires equal DPI scaling.
+2. In Settings > Personalization > Taskbar > Taskbar behaviors, turn on
+   **Show my taskbar on all displays**. The spanned layout uses the bounding
+   rectangle of both work areas. Matching taskbars keep zones off the taskbar.
+3. In Settings > System > Multitasking > Desktops, set **On the taskbar, show
+   all the open windows** to **On all desktops**. Then `Win+number` reaches an
+   app on another virtual desktop.
+4. On each virtual desktop, open the FancyZones editor with ``Win+Shift+` `` and
+   select the **Columns** template with 2 zones. FancyZones keeps a separate
+   layout for each virtual desktop.
+5. In Remote Desktop Connection, open **Show Options > Local Resources**, set
+   **Apply Windows key combinations** to **On this computer**, and save the
+   connection. The `.rdp` equivalent is `keyboardhook:i:0`. Windows shortcuts
+   then stay on the laptop, including desktop switching from the remote window.
+   They no longer reach the build PC.
+
+### Keys
+
+| Keys | Action |
+| --- | --- |
+| `Win+1` to `Win+6` | Open or focus the pinned app. Press again to cycle its windows. |
+| `Win+Ctrl+1` to `Win+Ctrl+6` | Go to the last active window of the pinned app. |
+| `Win+PgUp` / `Win+PgDn` | Switch between windows that share a zone, such as Terminal and IntelliJ. |
+| `Win+Left` / `Win+Right` | Move the active window to the left or right zone. |
+| `Win+Ctrl+Alt+Right` / `Win+Ctrl+Alt+Left` | Extend the window across both monitors, or shrink it back. |
+| ``Alt+` `` | Next window of the same app (Window Hopper). |
+| ``Win+` `` | Toggle the Terminal quake window on the current desktop. |
+| `Win+Alt+Space` | Command Palette. Type a window title to switch to that window. |
+| `Win+Ctrl+Left` / `Win+Ctrl+Right` | Previous or next virtual desktop. |
+| Hold `Alt+X`, then Left or Right | Rotate open windows across monitors. |
+| `Win+Ctrl+T` | Toggle Always On Top. |
+| `Win+Shift+;` | Open Workspaces. |
+| `Win+Shift+/` | Open Shortcut Guide. Holding either Windows key for 900 ms also opens it. |
+
+With relative position, FancyZones handles `Win+Up` and `Win+Down` for every
+window it can snap, so these keys no longer maximize or minimize. Use
+`Alt+Space`, then `X` or `N`, for the window menu instead.
+
+Command Palette is the only launcher; PowerToys Run is disabled. Keyboard
+Manager is explicitly disabled. The profile does not assign system-wide Paneru
+chords to Windows commands with different behavior. PowerToys does not provide
+spatial focus, window swaps, direct numbered desktops, per-monitor desktops, or
+automatic tiling.
+
+After applying the profile, check these behaviors on the laptop:
+
+- `Win+Ctrl+Alt+Right` extends IntelliJ or Terminal across both monitors, and
+  `Win+Ctrl+Alt+Left` shrinks it back.
+- `Win+PgDn` switches between Terminal and IntelliJ in the left zone.
+- `Win+4` reaches Teams from desktop 2.
+- `Alt+X` rotation still works while zones span both monitors.
