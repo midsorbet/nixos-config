@@ -127,7 +127,12 @@ in {
       after = ["network-online.target"];
       wants = ["network-online.target"];
       wantedBy = ["multi-user.target"];
-      environment.HISTER_CONFIG = histerConfig;
+      environment = {
+        HISTER_CONFIG = histerConfig;
+        GOMEMLIMIT = "1GiB";
+        GOGC = "50";
+        GOMAXPROCS = "2";
+      };
       serviceConfig = {
         ExecStart = "${lib.getExe cfg.package} listen";
         EnvironmentFile = cfg.environmentFile;
@@ -135,7 +140,11 @@ in {
         Group = "hister";
         WorkingDirectory = cfg.dataDir;
         Restart = "on-failure";
-        RestartSec = "5s";
+        RestartSec = "10s";
+        MemoryAccounting = true;
+        MemoryHigh = "1536M";
+        MemoryMax = "2G";
+        MemorySwapMax = 0;
         UMask = "0077";
         NoNewPrivileges = true;
         PrivateDevices = true;

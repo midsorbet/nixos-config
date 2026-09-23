@@ -810,17 +810,28 @@ read-only readback, so that update outcome is unconfirmed. Reauthenticate the
 native connection and inspect state before any further mutation. Do not use
 alternate credentials or remove the old registration until routing works.
 
-A sandboxed read-only Hister audit enumerated live external IDs from 22
-Bleve/Scorch indexes without decoding stored document fields or exporting real
-IDs. It counted 37,429 ID entries, including 28,666 file-URL entries. Of those,
-26,692 are outside the current `/persist/save/projects-mirror` root; they must
-be reconciled before search starts. These are entries across indexes, not a
-count of unique documents. No file-URL ID matched `vault/private` or a hidden
-path component. This bounded result does not prove physical erasure or link
-provenance. No index records were deleted. Hister and its importer remain held;
-release consumers only through the next reviewed stage after routing,
-ownership, synchronization, and privacy gates pass. The detailed report is
+An earlier sandboxed read-only Hister audit enumerated live external IDs from
+22 Bleve/Scorch indexes without decoding stored document fields or exporting
+real IDs. It counted 37,429 ID entries, including 28,666 file-URL entries. Of
+those, 26,692 are outside the current `/persist/save/projects-mirror` root and
+still need reconciliation. These are entries across indexes, not unique
+documents. No file-URL ID matched `vault/private` or a hidden path component.
+This bounded result does not prove physical erasure or link provenance. No
+index records were deleted. The detailed report is
 `.git/agent-artifacts/hister-index-id-privacy-20260922.json`.
+
+The user subsequently approved uptime before final reconciliation. Hister now
+serves the preserved index with watched directories empty and semantic search
+disabled in the staged recovery generation. Its importer remains held. The
+managed service applies a 1 GiB Go memory limit, a 1536 MiB systemd high limit,
+and a 2 GiB hard service limit. The postboot origin check returned HTTP 200
+with zero restarts; this does not prove that bulk indexing is ready to resume.
+
+Both Projects folders were resumed after the earlier synchronization, privacy,
+and executable checks. Preserve the source ownership and permissions. Complete
+the deferred index reconciliation and read-only mirror access work before
+re-enabling watched-file indexing, embeddings, or the Readeck importer. Fresh
+replica acceptance, pruning, and recovery-copy retirement remain separate gates.
 
 Keep the failed SSD and all existing recovery copies. Never initialize the
 failed SSD. If it becomes readable, image it before further recovery work.
