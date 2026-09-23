@@ -7,7 +7,7 @@
   cfg = config.local.lanDnsResolver;
 
   darwinLocalResolverAddress = "127.0.0.1";
-  baymaxLanAddress = "192.168.4.24";
+  baymaxLanAddress = "192.168.4.31";
   homeLanNetworks = [
     "192.168.4.0/24"
     "fdef:bd26:b58e:1::/64"

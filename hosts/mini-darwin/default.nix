@@ -8,7 +8,7 @@
 }: let
   user = "me";
   homeDir = config.hjem.users.${user}.directory;
-  baymaxLanAddress = "192.168.4.24";
+  baymaxLanAddress = "192.168.4.31";
   baymaxLanIpv6Address = "fdef:bd26:b58e:1:7a55:36ff:fe05:8d4f";
   miniEthernetLanAddress = "192.168.4.194";
   miniEthernetLanIpv6Address = "fdef:bd26:b58e:1:1412:ff96:d77a:51e6";

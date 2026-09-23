@@ -29,7 +29,7 @@ sudo chmod 644 /persist/host/secrets/initrd/ssh_host_ed25519_key.pub
 Unlock from another machine:
 
 ```zsh
-ssh -tt -p 2222 root@192.168.4.24
+ssh -tt -p 2222 root@192.168.4.31
 ```
 
 ## Console Rescue
@@ -37,14 +37,14 @@ ssh -tt -p 2222 root@192.168.4.24
 If Baymax boots without an IPv4 address, log in at the console and set the usual LAN address temporarily:
 
 ```bash
-sudo ip addr add 192.168.4.24/24 dev enp1s0
+sudo ip addr add 192.168.4.31/24 dev enp1s0
 sudo ip route replace default via 192.168.4.1
 ```
 
 Then verify from another machine:
 
 ```zsh
-ssh me@192.168.4.24
+ssh me@192.168.4.31
 ```
 
 ## Secure Boot
@@ -75,8 +75,8 @@ Build/install signed UKIs:
 nix run nixpkgs#nixos-rebuild -- \
   boot \
   --flake .#baymax \
-  --target-host me@192.168.4.24 \
-  --build-host me@192.168.4.24 \
+  --target-host me@192.168.4.31 \
+  --build-host me@192.168.4.31 \
   --sudo \
   --ask-sudo-password
 ```
@@ -150,7 +150,7 @@ Useful symptoms:
 - `302` to `midsorbet.cloudflareaccess.com` means the hostname is still matched by Access.
 - `403` from Cloudflare on a gated hostname usually means the request did not satisfy the Access policy.
 - `NXDOMAIN` means the published route or DNS record is missing, not that Baymax itself is down.
-- `ERR_CONNECTION_REFUSED` for `readeck`, `photos`, `budget`, `hister`, or `atuin` on the home LAN means split-horizon DNS reached `192.168.4.24`, but Caddy is not listening. Check `systemctl status caddy` and the port 443 listeners on Baymax before investigating Cloudflare.
+- `ERR_CONNECTION_REFUSED` for `readeck`, `photos`, `budget`, `hister`, or `atuin` on the home LAN means split-horizon DNS reached `192.168.4.31`, but Caddy is not listening. Check `systemctl status caddy` and the port 443 listeners on Baymax before investigating Cloudflare.
 - A Caddy boot failure that mentions its configured WARP listener on port 443 means that address was not ready. The managed Caddy pre-start gate must wait for the address in `local-https.nix` before Caddy binds its listeners.
 
 ## Local HTTPS Security Boundaries
@@ -208,9 +208,9 @@ Before each Borg run, `actual-backup.service` stops Actual briefly, snapshots th
 snapshot. Verify the live backup path with:
 
 ```zsh
-ssh -t me@192.168.4.24 'sudo systemctl start actual-backup.service'
-ssh me@192.168.4.24 'systemctl show actual-backup.service --property=Result,ExecMainStatus,ExecMainStartTimestamp,ExecMainExitTimestamp'
-ssh -t me@192.168.4.24 'sudo tar --list --zstd --file /persist/save/actual-backups/actual-server.tar.zst >/dev/null'
+ssh -t me@192.168.4.31 'sudo systemctl start actual-backup.service'
+ssh me@192.168.4.31 'systemctl show actual-backup.service --property=Result,ExecMainStatus,ExecMainStartTimestamp,ExecMainExitTimestamp'
+ssh -t me@192.168.4.31 'sudo tar --list --zstd --file /persist/save/actual-backups/actual-server.tar.zst >/dev/null'
 ```
 
 Actual's end-to-end encryption password is retained only in the password manager.
@@ -243,10 +243,10 @@ datasets until final acceptance.
 Inspect replication state without changing datasets:
 
 ```zsh
-ssh me@192.168.4.24 'systemctl show sanoid.service syncoid-baymax-persist-save.service syncoid-baymax-persist-host.service -p Result -p ExecMainStatus -p ExecMainExitTimestamp --no-pager'
-ssh me@192.168.4.24 'journalctl -u syncoid-baymax-persist-save.service -u syncoid-baymax-persist-host.service --since "7 days ago" --no-pager'
-ssh me@192.168.4.24 'zfs list -t snapshot -o name,creation -s creation data/persistSave archive/replica/baymax-persistSave-nvme'
-ssh me@192.168.4.24 'zfs list -t bookmark -o name,creation -s creation data/persistSave'
+ssh me@192.168.4.31 'systemctl show sanoid.service syncoid-baymax-persist-save.service syncoid-baymax-persist-host.service -p Result -p ExecMainStatus -p ExecMainExitTimestamp --no-pager'
+ssh me@192.168.4.31 'journalctl -u syncoid-baymax-persist-save.service -u syncoid-baymax-persist-host.service --since "7 days ago" --no-pager'
+ssh me@192.168.4.31 'zfs list -t snapshot -o name,creation -s creation data/persistSave archive/replica/baymax-persistSave-nvme'
+ssh me@192.168.4.31 'zfs list -t bookmark -o name,creation -s creation data/persistSave'
 ```
 
 ## Atuin Security and Recovery
@@ -493,17 +493,15 @@ The recovery DHCP address changed from `192.168.4.29` on the first NVMe boot to
 verified Secure Boot startup. The user supplied `192.168.4.27` after generation
 4 booted, and generation 6 later received `.30`. Generation 7 uses the Ethernet
 MAC as the DHCPv4 client identifier in both initrd and normal boot; its real boot
-received `.31` in both stages. The configured/reserved target remains `.24`; do
-not rewrite service or Cloudflare addresses to follow a lease. DHCP/eero
-troubleshooting is deferred. Ask the user for the current administrative address
-when needed, including after reboots; do not infer boot failure from an old address.
-Use the confirmed lease or stable ULA only for administration.
-Substitute the supplied address in SSH/build commands below. The original
-stage-two SSH identity is unchanged; keep its existing host-key pin:
+received `.31` in both stages. Generation 9 makes `.31` the permanent LAN service
+address. Configure the eero reservation and secondary custom DNS endpoint to
+`.31`; do not rewrite service or Cloudflare addresses to follow another lease.
+Use `.31` or the stable ULA for administration. The original stage-two SSH
+identity is unchanged; keep its existing host-key pin:
 
 ```zsh
-ssh -o StrictHostKeyChecking=yes -o HostKeyAlias=192.168.4.200 \
-  -o CheckHostIP=no me@192.168.4.24
+ssh -o StrictHostKeyChecking=yes -o HostKeyAlias=192.168.4.31 \
+  -o CheckHostIP=no me@192.168.4.31
 ```
 
 The real boot verified the held UKI and kernel, root rollback, all eight required
@@ -829,9 +827,18 @@ new generation 8 boot stub passed signature verification against the recovered
 db certificate, and its authenticated kernel and initrd hashes match the ESP
 payloads. All eight loopback application origins responded, Cloudflare Tunnel
 remained active with zero restarts, Hister remained within its recovery limits,
-and all pools remained healthy. Caddy and the Home Managed Network beacon still
-cannot bind `192.168.4.24`; this is the deferred eero-address issue, not a WARP
-failure. Keep router DNS unchanged until LAN HTTPS works.
+and all pools remained healthy. At that boundary, Caddy and the Home Managed
+Network beacon could not bind the reserved LAN address because eero still leased
+`.31`; this was an address-assignment issue, not a WARP failure.
+
+Generation 9 adopts `192.168.4.31` without a reboot. Its kernel, initrd, exact
+OMP 18.2.9 path, 24 system holds, user hold, archive guard, and running Immich
+invocations match generation 8. Unbound, Caddy, and the managed-network beacon
+are active on `.31`. Direct queries for all five home names return `.31`, and
+direct HTTPS returned verified certificates with expected HTTP responses. WARP,
+Cloudflare Tunnel, Hister, both Immich services, and all pools remained healthy.
+Mini uses `.31` for the builder and host-key alias while its managed tunnel still
+connects to Baymax over the stable ULA; both forwarding directions passed.
 
 The Atuin Gateway target migration to `100.96.0.9` has confirmed control-plane
 readback. The exact Hister and Atuin Home-profile fallback entries remain absent.
@@ -897,8 +904,8 @@ nix flake update secrets --commit-lock-file
 ```zsh
 nh os switch . \
   -H baymax \
-  --target-host me@192.168.4.24 \
-  --build-host me@192.168.4.24
+  --target-host me@192.168.4.31 \
+  --build-host me@192.168.4.31
 ```
 
 After the config is pushed to `main`, Baymax can also build the reviewed GitHub
@@ -907,12 +914,12 @@ profile and reboots only inside the configured reboot window; it does not prove
 the running system switched until `/run/current-system` matches the new profile.
 
 ```zsh
-ssh me@192.168.4.24 '
+ssh me@192.168.4.31 '
   systemctl="$(readlink -f /run/current-system/sw/bin/systemctl)"
   sudo -n "$systemctl" start nixos-upgrade.service
 '
-ssh me@192.168.4.24 'systemctl status nixos-upgrade.service --no-pager -l'
-ssh me@192.168.4.24 'readlink -f /nix/var/nix/profiles/system; readlink -f /run/current-system'
+ssh me@192.168.4.31 'systemctl status nixos-upgrade.service --no-pager -l'
+ssh me@192.168.4.31 'readlink -f /nix/var/nix/profiles/system; readlink -f /run/current-system'
 ```
 
 4. In Cloudflare, recreate the published application routes under `Networking -> Tunnels -> baymax-apps`.
@@ -923,10 +930,10 @@ ssh me@192.168.4.24 'readlink -f /nix/var/nix/profiles/system; readlink -f /run/
 Check Baymax-side service health:
 
 ```zsh
-ssh me@192.168.4.24 'systemctl --failed --no-pager'
-ssh me@192.168.4.24 'systemctl is-active caddy cloudflared-tunnel-baymax-apps cloudflare-warp avahi-daemon'
-ssh me@192.168.4.24 'getent hosts mini-me.local'
-ssh me@192.168.4.24 'systemctl is-active actual immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
+ssh me@192.168.4.31 'systemctl --failed --no-pager'
+ssh me@192.168.4.31 'systemctl is-active caddy cloudflared-tunnel-baymax-apps cloudflare-warp avahi-daemon'
+ssh me@192.168.4.31 'getent hosts mini-me.local'
+ssh me@192.168.4.31 'systemctl is-active actual immich-server immich-machine-learning paperless-web paperless-consumer paperless-scheduler paperless-task-queue readeck miniflux ntfy-sh'
 ```
 
 Check the published hostnames. Readeck is intentionally public; the other app

@@ -52,7 +52,7 @@ in {
   local.lanDnsResolver = {
     enable = true;
     listenAddresses = [
-      "192.168.4.24"
+      "192.168.4.31"
       "fdef:bd26:b58e:1:7a55:36ff:fe05:8d4f"
     ];
   };
