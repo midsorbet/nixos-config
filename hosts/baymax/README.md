@@ -700,7 +700,10 @@ from the former address to `.24`, then read back under the narrowly approved
 idempotent retry exception. Generation 9 later changed the Home LAN managed-
 network TLS endpoint to `192.168.4.31:9443` through the native API. Readback
 retained the existing SHA-256 pin, and the live beacon certificate fingerprint
-matched it. This endpoint update did not change Home-profile fallback records.
+matched it. A subsequent explicitly approved Home-profile update replaced
+`.24` with `.31` in the existing Photos, Readeck, and Budget fallbacks and
+added exact Hister and Atuin fallbacks with the same four redundant LAN
+resolvers.
 
 Archive reconnection exposed a boot-time driver prerequisite: with the Seagate
 absent at startup, `usb_storage` was not loaded before
@@ -850,10 +853,15 @@ managed tunnel still connects to Baymax over the stable ULA; both forwarding
 directions passed.
 
 The Atuin Gateway target migration to `100.96.0.9` has confirmed control-plane
-readback. The exact Hister and Atuin Home-profile fallback entries remain absent.
-The default/away profile remains unchanged. Any new Home-profile mutation needs
-a fresh explicit approval; do not use alternate credentials or remove the old
-Mesh registration until routing works.
+readback. The Home LAN profile now contains exact Photos, Readeck, Budget,
+Hister, and Atuin fallback entries. Each uses Baymax at `192.168.4.31`, Mini
+at `192.168.4.194`, and both stable ULAs. API readback showed no application
+fallbacks in the Mesh or default/away profiles. After one WARP reconnect, the
+live client loaded profile `2011c12e-5fd8-4a6d-ba13-1c0fe25fa91e`, reported a
+healthy network, and exposed all five records. Normal client DNS returned
+`.31` for every name; HTTPS reached `.31`, verified each certificate, and
+returned 200 for Photos, Budget, Hister, and Atuin and 303 for Readeck. The
+default/away profile and old Mesh registration remain unchanged.
 
 An earlier sandboxed read-only Hister audit enumerated live external IDs from
 22 Bleve/Scorch indexes without decoding stored document fields or exporting
