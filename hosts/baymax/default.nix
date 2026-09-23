@@ -230,10 +230,11 @@ in {
 
     sanoid = {
       enable = true;
+      # Preserve recovery history until retention cleanup is explicitly approved.
       datasets = {
         "rpool/persistHost" = {
           autosnap = true;
-          autoprune = true;
+          autoprune = false;
           hourly = 0;
           daily = 30;
           weekly = 12;
@@ -241,7 +242,7 @@ in {
         };
         "data/persistSave" = {
           autosnap = true;
-          autoprune = true;
+          autoprune = false;
           hourly = 24;
           daily = 14;
           weekly = 8;
@@ -249,7 +250,7 @@ in {
         };
         "archive/media" = {
           autosnap = true;
-          autoprune = true;
+          autoprune = false;
           hourly = 0;
           daily = 14;
           weekly = 12;
@@ -257,7 +258,7 @@ in {
         };
         "archive/replica" = {
           autosnap = false;
-          autoprune = true;
+          autoprune = false;
           hourly = 0;
           daily = 30;
           weekly = 0;
@@ -323,11 +324,8 @@ in {
       environment = {
         BORG_RSH = "ssh -i ${config.age.secrets.hetzner-borg-key.path} -p 23 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${config.age.secrets.hetzner-borg-hosts.path}";
       };
-      prune.keep = {
-        daily = 7;
-        weekly = 8;
-        monthly = 12;
-      };
+      # An empty policy omits both Borg prune and compact from the job.
+      prune.keep = {};
     };
 
     postgresqlBackup = {
