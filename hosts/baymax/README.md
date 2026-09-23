@@ -187,6 +187,20 @@ Useful symptoms:
   exploitable upstream advisory as urgent: upgrade or backport promptly, or
   disable public ingress until fixed.
 
+## Projects Search Mirror
+
+Syncthing receives Projects at `/persist/save/projects-mirror` and preserves file
+modes, including executable bits. Do not broaden those modes or recursively
+change ownership to give Hister access.
+
+The managed `hister-projects-mirror-view.service` creates a read-only idmapped
+view at `/run/hister-projects-mirror`. It maps the mirror owner `1000:100` to
+the configured Hister UID and GID without changing source metadata. Hister
+requires that service and binds the view over the canonical mirror path inside
+its private mount namespace. Stopping the view service unmounts the view.
+The Hister account does not require membership in the shared `users` group.
+Recovery activation status and index-acceptance gates are recorded below.
+
 ## Actual Budget
 
 Actual listens only on Baymax loopback port `5006`. Its server and user files live
@@ -878,24 +892,134 @@ preserved. Boot evidence is under `/persist/host/recovery-omp-20260923`;
 local evidence is `.git/agent-artifacts/omp-18.2.10-acceptance-20260923.json`.
 No reboot occurred during activation.
 
-At the user-requested restart pause, both Projects endpoints reported 100%
-convergence, no pending items or folder errors, and matching ignore hashes.
-Hister and Syncthing were briefly stopped to preserve
-`data/persistSave@migration-search-20260923` with the
-`migration-search-preservation` hold, then restarted. The isolated clone
-`data/migration-search-20260923` is retained unmounted with `canmount=noauto`.
-Its temporary Hister service and read-only mirror mount were stopped.
-Production Hister, Syncthing, Caddy, the OMP broker, both Immich units, and
-Cloudflare Tunnel were active; all pools were healthy and no units failed.
+Projects mirroring remains active. The 2026-09-23 acceptance check reported
+100% convergence on both endpoints, 192,745 files, no pending items or folder
+errors, and matching hashes for all 26 ignore rules. Mini remains send-only;
+Baymax remains receive-only. Both preserve source permissions.
 
-Search reconciliation remains incomplete. The trial identity-mapped mirror
-reported overflow ownership (`65534:65534`); correct and prove the mapping
-before indexing. Existing preservation exports have conflicting scope
-contracts; do not rewrite a manifest to bypass validation. No fresh index,
-fresh replica seed, pruning, or recovery-copy retirement occurred. Retain
-the source snapshot, clone, original index, and all earlier recovery copies.
-Resume with post-restart generation/service checks, then preservation,
-mirror-access, index, and replica acceptance.
+The preservation snapshot `data/persistSave@migration-search-20260923`
+retains its `migration-search-preservation` hold. Its isolated clone,
+`data/migration-search-20260923`, is mounted for private reconciliation.
+The corrected read-only identity-mapped view maps the source owner and group
+to Hister. A sandboxed readback passed without supplementary groups, without
+changing source permissions, and without exposing paths outside the mirror.
+
+Search reconciliation is still in progress. The frozen scan and preserved-Web
+import are complete, but the replacement remains private. Generation 10 serves
+the original index with watched directories empty, semantic search disabled,
+and the importer held. The candidate system has built with the mapped view
+and without the shared `users` group. It includes
+a 3 GiB Go memory limit, an 8 GiB service limit, and 26 system holds plus the
+user hold. It has not been activated. Do not release indexing or backup holds
+on the strength of that build alone.
+
+The reviewed Web preservation export contains 8,768 unique non-file records.
+It retains 5,657 blank labels and 1,409 repeated-capture counts. Native import
+resets capture counts. Re-importing an empty label also retains the CLI
+default label. Both behaviors were reproduced. Disjoint native imports now
+preserve blank and nonblank labels; the pinned native SDK separately restores
+capture counts and metadata. Runtime checks passed title, timestamp, metadata,
+and content preservation, incorrect-checksum rejection, and a real semantic
+query. All 1,135 favicon assets referenced by 4,071 preserved records were
+copied and checksum-verified. The final quiescent tail is still pending.
+The final-delta planners also passed full frozen-source self-comparisons:
+59,967 indexed files under the Hister identity with no supplementary groups,
+and all 8,768 preserved Web records. Both plans reported zero changes.
+The guarded Local deletion client passed native watcher-created fixtures.
+It preserved the neighboring URL and source files, retained literal percent
+characters, and rejected incorrect plan/config hashes and a mismatched census
+before deletion. The native facet census requires an explicit `q=*` query;
+the runtime smoke caught and corrected its omission.
+Canonical capture also passed a real native duplicate: three stable reads
+selected the current content and metadata and excluded a legacy file URL.
+The combined Web-delta smoke preserved a neighboring record and proved that
+hydrated favicon data survives canonical capture, exact deletion, and native
+re-import. These remain fixture proofs, not final live-delta acceptance.
+The canonicalizer also passed all 8,768 preserved records without changing
+their content or metadata. It removed its temporary payloads and left the
+original index untouched.
+
+The metadata SDK now queues changes to native embedding context before saving
+them. A native regression reproduced the former stale-vector behavior and
+proved that title and author changes receive completed replacement embeddings.
+Capture-count, timestamp, and unrelated metadata changes do not queue extra
+work. Existing failed jobs are rejected, not silently reset. All 8,768 private
+Web records passed metadata readback, with 1,409 capture counts restored. That
+restoration changed no embedding context. Final semantic acceptance is pending.
+
+A stable private inventory of 59,967 Local records seeded the native embedding
+queue. The initial scan accounted for all 178,046 queued paths: 150,032 Local
+records and 28,014 exclusions. It produced 158,800 records after adding the
+8,768 preserved Web records, without traversal errors or permission failures.
+
+The second preservation snapshot,
+`data/persistSave@migration-search-delta-20260923`, retains the
+`migration-search-delta-preservation` hold. Its mapped mirror passed the full
+readability and privacy audit without supplementary groups. The private delta
+reconciled 1,344 changed or removed Local records, 11 new Web captures, and two
+changed Web captures. Native readback verified all 8,779 Web records and
+restored eight metadata records without requesting extra embeddings. All
+1,136 referenced favicon assets passed content-hash checks.
+
+The deletion client initially timed out after the first eight native deletes.
+A complete URL inventory proved that only that exact planned batch changed.
+A new plan then applied the remaining 1,336 deletions. Thirty measured batches
+exceeded the former 20-second limit; the slowest took 31.07 seconds. The
+120-second client limit completed the guarded operation without retrying
+already-deleted records.
+
+The second scan accounted for all 178,038 paths: 150,023 Local records and
+28,015 exclusions. These were 27,285 binary files, 548 empty files, 178 files
+over 10 MiB, two dangling links, one sensitive-data rejection, and one PDF
+without extractable text. There were no traversal errors, permission failures,
+or unclassified failures. The private candidate now contains 158,802 records,
+including 8,779 preserved Web records.
+
+The full native workset audit checked all 158,802 document identities and their
+allowed URL scope. It passed with 8,897 unqueued records, 149,905 queued records,
+and 207,627 finite 768-dimensional vectors. No obsolete or failed jobs were present.
+This verifies required coverage for unqueued records and durable pending work,
+not full embedding completion. The two-document strict-coverage fixture
+remains separate from this full-corpus workset result. Private workers
+have resumed without watched directories or supplementary groups.
+
+The private browser check passed Local keyword search, ten in-scope semantic
+hits, stored Local preview, and preserved Web results with labels and favicons.
+The initial test tunnel used the wrong port and received the native same-origin
+guard's HTTP 500. Matching the configured origin restored the WebSocket without
+changing application security. The acceptance browser and both test tunnels
+were closed. Production still serves the original index with embeddings
+disabled. Final application-state handoff, quiescent tail reconciliation, and
+production activation remain pending. Counts-only private acceptance evidence
+is in `.git/agent-artifacts/hister-live-delta-acceptance-20260923.json`.
+
+The application-state handoff passed a separate SQLite runtime smoke. It
+preserved original tables, session data, signing and rules files, and the
+candidate work queue; retained the recoverable old WAL; and left lexical and
+vector files unchanged. It has not been applied to live data. The original
+application state must be preserved before cutover, with the private derived
+queue reconciled afterward through native APIs.
+Post-reconciliation verification also passed real SQLite checks. It rejects
+an obsolete queue, changed session data or signing key, unexpected user files,
+and an altered saved queue inventory.
+The installed `mv --exchange --no-copy -T` passed a directory-swap smoke on
+the Save ZFS filesystem. Inodes exchanged, open handles retained their data,
+the reverse exchange restored both directories, and a cross-filesystem
+exchange failed without copying. No live application directory was swapped.
+
+The fresh host replica `archive/replica/baymax-persistHost-nvme` has received
+`rpool/persistHost@replica_seed_20260923T063030Z`. Its full restored-tree
+content and metadata comparison passed, together with snapshot GUID, hold,
+bookmark, and archive encryption-inheritance checks. It is unmounted with
+`mountpoint=none` and `canmount=noauto`. Protected receipts are under
+`/persist/host/.replica-seed-replica_seed_20260923T063030Z`.
+
+The persistSave seed and both first-incremental proofs remain gated on final
+search acceptance. PostgreSQL 17 recovery tooling now restores into a private
+cluster on encrypted storage, not test databases in the live cluster. A
+two-cluster runtime smoke passed globals, vchord, table content, ownership,
+database settings, and catalog-query checks; this is not yet the live-data
+restore proof. Keep all original indexes, snapshots, and recovery copies.
 
 An earlier sandboxed read-only Hister audit enumerated live external IDs from
 22 Bleve/Scorch indexes without decoding stored document fields or exporting

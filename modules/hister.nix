@@ -5,6 +5,20 @@
   ...
 }: let
   cfg = config.local.hister;
+  # systemd has no idmapped BindReadOnlyPaths; mount the translated view in a
+  # root-managed runtime path, then bind it into Hister's private namespace.
+  histerProjectsMirrorViewDir = "/run/hister-projects-mirror";
+  histerProjectsMirrorViewMount = pkgs.writeShellApplication {
+    name = "hister-projects-mirror-view-mount";
+    runtimeInputs = [pkgs.util-linux];
+    text = ''
+      mount --bind -o ro \
+        --map-users "1000:${toString config.users.users.hister.uid}:1" \
+        --map-groups "100:${toString config.users.groups.hister.gid}:1" \
+        ${lib.escapeShellArg cfg.projectsMirrorDir} \
+        ${lib.escapeShellArg histerProjectsMirrorViewDir}
+    '';
+  };
   yamlFormat = pkgs.formats.yaml {};
   histerConfig = yamlFormat.generate "hister-config.yml" {
     app = {
@@ -111,7 +125,6 @@ in {
     users.users.hister = {
       isSystemUser = true;
       group = "hister";
-      extraGroups = ["users"];
       home = cfg.dataDir;
     };
 
@@ -120,16 +133,31 @@ in {
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 hister hister - -"
       "d ${cfg.projectsMirrorDir} 0770 me users - -"
+      "d ${histerProjectsMirrorViewDir} 0700 root root - -"
     ];
+
+    systemd.services.hister-projects-mirror-view = {
+      description = "Create Hister's read-only Projects mirror view";
+      before = ["hister.service"];
+      wantedBy = ["multi-user.target"];
+      unitConfig.RequiresMountsFor = [cfg.projectsMirrorDir];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${histerProjectsMirrorViewMount}/bin/hister-projects-mirror-view-mount";
+        ExecStop = "${pkgs.util-linux}/bin/umount ${histerProjectsMirrorViewDir}";
+      };
+    };
 
     systemd.services.hister = {
       description = "Private Hister search service";
-      after = ["network-online.target"];
+      after = ["network-online.target" "hister-projects-mirror-view.service"];
       wants = ["network-online.target"];
+      requires = ["hister-projects-mirror-view.service"];
       wantedBy = ["multi-user.target"];
       environment = {
         HISTER_CONFIG = histerConfig;
-        GOMEMLIMIT = "1GiB";
+        GOMEMLIMIT = "3GiB";
         GOGC = "50";
         GOMAXPROCS = "2";
       };
@@ -141,9 +169,10 @@ in {
         WorkingDirectory = cfg.dataDir;
         Restart = "on-failure";
         RestartSec = "10s";
+        BindReadOnlyPaths = ["${histerProjectsMirrorViewDir}:${cfg.projectsMirrorDir}"];
         MemoryAccounting = true;
-        MemoryHigh = "1536M";
-        MemoryMax = "2G";
+        MemoryHigh = "8G";
+        MemoryMax = "8G";
         MemorySwapMax = 0;
         UMask = "0077";
         NoNewPrivileges = true;
