@@ -863,6 +863,34 @@ healthy network, and exposed all five records. Normal client DNS returned
 returned 200 for Photos, Budget, Hister, and Atuin and 303 for Readeck. The
 default/away profile and old Mesh registration remain unchanged.
 
+Generation 10 activates OMP 18.2.10 on both Baymax and Mini. Both builds were
+reviewed before activation. Baymax retained its kernel, initrd, 24 system
+holds, user hold, and Hister limits. Authenticated broker health reports
+18.2.10, and the Mini Herdr relay passed a bounded start/stop check. Boot
+signature and payload checks passed; all 15 existing EFI images were
+preserved. Boot evidence is under `/persist/host/recovery-omp-20260923`;
+local evidence is `.git/agent-artifacts/omp-18.2.10-acceptance-20260923.json`.
+No reboot occurred during activation.
+
+At the user-requested restart pause, both Projects endpoints reported 100%
+convergence, no pending items or folder errors, and matching ignore hashes.
+Hister and Syncthing were briefly stopped to preserve
+`data/persistSave@migration-search-20260923` with the
+`migration-search-preservation` hold, then restarted. The isolated clone
+`data/migration-search-20260923` is retained unmounted with `canmount=noauto`.
+Its temporary Hister service and read-only mirror mount were stopped.
+Production Hister, Syncthing, Caddy, the OMP broker, both Immich units, and
+Cloudflare Tunnel were active; all pools were healthy and no units failed.
+
+Search reconciliation remains incomplete. The trial identity-mapped mirror
+reported overflow ownership (`65534:65534`); correct and prove the mapping
+before indexing. Existing preservation exports have conflicting scope
+contracts; do not rewrite a manifest to bypass validation. No fresh index,
+fresh replica seed, pruning, or recovery-copy retirement occurred. Retain
+the source snapshot, clone, original index, and all earlier recovery copies.
+Resume with post-restart generation/service checks, then preservation,
+mirror-access, index, and replica acceptance.
+
 An earlier sandboxed read-only Hister audit enumerated live external IDs from
 22 Bleve/Scorch indexes without decoding stored document fields or exporting
 real IDs. It counted 37,429 ID entries, including 28,666 file-URL entries. Of
