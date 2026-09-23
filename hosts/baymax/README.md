@@ -810,6 +810,29 @@ reservation. The eero device view showed matching Ethernet MAC
 deferred. Use the current lease only for administration, keep service and DNS
 addresses on `.24`, and do not change router DNS while Caddy cannot bind there.
 
+Generation 8 fixes WARP DNS ownership without changing the router or listener
+addresses. Direct DNS packets to WARP's `127.0.2.2` proxy resolved
+`connectivity-check.warp-svc`, but the prior NSS order stopped at
+`nss-resolve` after the physical uplink returned NXDOMAIN. Keep `dns` before
+`resolve [!UNAVAIL=return]` in `system.nssDatabases.hosts`; this makes glibc
+consult WARP's generated `resolv.conf` first while retaining
+`systemd-resolved` as fallback. The runtime test and persistent activation both
+returned the WARP internal proxy addresses, and WARP reported `Connected` and
+`Network: healthy`. SSH through `100.96.0.9` also passed.
+
+The no-reboot generation 8 activation retained the generation 7 kernel, initrd,
+DHCP identity, 24 system holds, one user hold, Caddy listeners, Hister limits,
+and OMP 18.2.9. The ESP backup is under
+`/persist/host/recovery-warp-nss-20260923T021347Z/`. All 12 pre-existing EFI
+images match that backup; six images removed by Lanzaboote were restored. The
+new generation 8 boot stub passed signature verification against the recovered
+db certificate, and its authenticated kernel and initrd hashes match the ESP
+payloads. All eight loopback application origins responded, Cloudflare Tunnel
+remained active with zero restarts, Hister remained within its recovery limits,
+and all pools remained healthy. Caddy and the Home Managed Network beacon still
+cannot bind `192.168.4.24`; this is the deferred eero-address issue, not a WARP
+failure. Keep router DNS unchanged until LAN HTTPS works.
+
 The Atuin Gateway target migration to `100.96.0.9` has confirmed control-plane
 readback. The exact Hister and Atuin Home-profile fallback entries remain absent.
 The default/away profile remains unchanged. Any new Home-profile mutation needs

@@ -564,6 +564,17 @@ in {
     };
   };
 
+  # WARP writes its local DNS proxy into resolv.conf. Consult that proxy before
+  # nss-resolve, which otherwise returns NXDOMAIN from the physical uplink.
+  system.nssDatabases.hosts = lib.mkForce [
+    "mymachines"
+    "mdns4_minimal [NOTFOUND=return]"
+    "files"
+    "myhostname"
+    "dns"
+    "resolve [!UNAVAIL=return]"
+  ];
+
   # System networking and service units
   systemd = {
     # Keep normal boot on the same MAC-based DHCP identity as initrd.
