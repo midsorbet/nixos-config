@@ -52,6 +52,24 @@ resources:
             value: true
           fancyzones_span_zones_across_monitors:
             value: true
+          fancyzones_windowSwitching:
+            value: true
+          fancyzones_nextTab_hotkey:
+            value:
+              win: true
+              ctrl: false
+              alt: true
+              shift: false
+              code: 70
+              key: F
+          fancyzones_prevTab_hotkey:
+            value:
+              win: true
+              ctrl: false
+              alt: true
+              shift: true
+              code: 70
+              key: F
           fancyzones_monitorRotation:
             value: true
           fancyzones_monitorRotation_hotkey:
@@ -94,10 +112,10 @@ resources:
             value:
               win: true
               ctrl: false
-              alt: false
-              shift: true
-              code: 186
-              key: ";"
+              alt: true
+              shift: false
+              code: 87
+              key: W
         name: Workspaces
         version: 1.0
 
