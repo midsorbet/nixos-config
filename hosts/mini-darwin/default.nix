@@ -9,6 +9,7 @@
   user = "me";
   homeDir = config.hjem.users.${user}.directory;
   baymaxLanAddress = "192.168.4.24";
+  baymaxLanIpv6Address = "fdef:bd26:b58e:1:7a55:36ff:fe05:8d4f";
   miniEthernetLanAddress = "192.168.4.194";
   miniEthernetLanIpv6Address = "fdef:bd26:b58e:1:1412:ff96:d77a:51e6";
   miniWarpDnsDriftCheck = pkgs.writeShellApplication {
@@ -107,6 +108,8 @@
     "-o"
     "GlobalKnownHostsFile=/dev/null"
     "-o"
+    "HostKeyAlias=${baymaxLanAddress}"
+    "-o"
     "IdentitiesOnly=yes"
     "-o"
     "LogLevel=ERROR"
@@ -132,7 +135,7 @@
     "127.0.0.1:22000:127.0.0.1:22000"
     "-R"
     "127.0.0.1:11434:127.0.0.1:11434"
-    "${user}@${baymaxLanAddress}"
+    "${user}@${baymaxLanIpv6Address}"
   ];
 in {
   imports = [
