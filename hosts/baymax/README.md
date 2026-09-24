@@ -971,6 +971,15 @@ Its concurrent CUA skill update was restored after the older reviewed Mini
 generation briefly replaced it. The active system and managed skill symlink
 were verified afterward.
 
+On 2026-09-24 the approved fleet upgrade replaced the recovery overlay with the
+normal generation 13,
+`/nix/store/rpyw2n2yhpq3dkfxpapq9fwxvhq0ldvb-nixos-system-baymax-26.11.20260923.4975466`.
+No recovery unit masks remain, and `nixos-upgrade.timer` is active again. The
+normal configuration keeps the recovery guard that binds `immich-server` to
+`archive.mount`. The ESP backup taken before activation is
+`/persist/host/boot-backup-fleet-upgrade-20260924T052606Z.tgz`. Mini activated
+`/nix/store/mijvblqb76waazb91cwjih2zgsyv1kza-darwin-system-26.11.4cff07d`.
+
 The pre-cutover privacy census at
 `.git/agent-artifacts/hister-index-id-privacy-20260922.json` applies only to
 the retained original, not the active index. Closeout evidence is under
