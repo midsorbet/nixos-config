@@ -202,11 +202,14 @@ The Hister account does not require membership in the shared `users` group.
 Recovery activation status and index-acceptance gates are recorded below.
 
 Hister writes `db.sqlite3` and `vectors.sqlite3` continuously, so Borg excludes
-the live files. Before each Borg run, `hister-sqlite-backup.service` writes
-`VACUUM INTO` copies to `/persist/save/hister-backup`, checks them with
-`PRAGMA integrity_check`, and fails the backup if a copy is bad. To restore,
-stop Hister and copy both files back into `/persist/save/hister`. The Bleve
-index and `data/` payloads are still read live.
+the live files. Before each Borg run, `hister-sqlite-backup.service` stops
+Hister, takes the temporary `data/persistSave@hister-backup` snapshot, and
+starts Hister again. It then copies the closed databases from that snapshot to
+`/persist/save/hister-backup`, checks them with `PRAGMA integrity_check`, and
+fails the backup if a copy is bad. Copying the live databases blocked Hister's
+writes and dropped embeddings. To restore, stop Hister and copy both files back
+into `/persist/save/hister`. The Bleve index and `data/` payloads are still read
+live.
 
 ## Actual Budget
 

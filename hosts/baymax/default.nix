@@ -807,46 +807,48 @@ in {
 
       "hister-sqlite-backup" = {
         description = "Create consistent Hister SQLite backups";
-        path = [pkgs.coreutils pkgs.sqlite];
+        path = [pkgs.coreutils pkgs.sqlite pkgs.systemd pkgs.zfs];
         serviceConfig = {
           Type = "oneshot";
           TimeoutStartSec = "30m";
-          User = "hister";
-          Group = "hister";
           UMask = "0077";
-          NoNewPrivileges = true;
-          PrivateTmp = true;
-          ProtectHome = true;
-          ProtectSystem = "strict";
-          ReadWritePaths = ["/persist/save/hister" "/persist/save/hister-backup"];
+          ExecStopPost = "${pkgs.systemd}/bin/systemctl start hister.service";
         };
+        # Copying live databases blocked Hister's writes and dropped embeddings.
+        # Stop Hister only long enough to snapshot closed databases, then copy
+        # them from the read-only snapshot.
         script = ''
           set -euo pipefail
 
-          sourceDir="/persist/save/hister"
+          snapshot="data/persistSave@hister-backup"
+          snapshotDir="/persist/save/.zfs/snapshot/hister-backup/hister"
           backupDir="/persist/save/hister-backup"
-          temporaryFiles=()
+
           cleanup() {
-            if ((''${#temporaryFiles[@]} > 0)); then
-              rm -f -- "''${temporaryFiles[@]}"
-            fi
+            rm -f -- "$backupDir"/.*.tmp "$backupDir"/.*.tmp-wal "$backupDir"/.*.tmp-shm
+            zfs destroy "$snapshot" >/dev/null 2>&1 || true
           }
           trap cleanup EXIT
 
+          zfs destroy "$snapshot" >/dev/null 2>&1 || true
+          systemctl stop hister.service
+          zfs snapshot "$snapshot"
+          systemctl start hister.service
+
           for database in db.sqlite3 vectors.sqlite3; do
-            source="$sourceDir/$database"
-            destination="$backupDir/$database"
+            source="$snapshotDir/$database"
             temporary="$backupDir/.$database.tmp"
             test -f "$source"
-            rm -f -- "$temporary"
-            temporaryFiles+=("$temporary")
-            # Hister writes continuously. The online backup API restarts after
-            # every foreign write, so read one consistent snapshot instead and
-            # wait for Hister's locks rather than failing.
-            sqlite3 -cmd ".timeout 300000" "$source" "VACUUM INTO '$temporary'"
+            cp -- "$source" "$temporary"
+            if test -s "$source-wal"; then
+              cp -- "$source-wal" "$temporary-wal"
+            fi
+            # Closing the last connection checkpoints any copied WAL into the file.
             test "$(sqlite3 "$temporary" 'PRAGMA integrity_check;')" = ok
-            mv -f -- "$temporary" "$destination"
-            temporaryFiles=()
+            test ! -e "$temporary-wal"
+            chown hister:hister "$temporary"
+            chmod 0600 "$temporary"
+            mv -f -- "$temporary" "$backupDir/$database"
           done
         '';
       };
