@@ -403,7 +403,7 @@ in {
           thumbnail = {
             format = "webp";
             size = 400;
-            quality = 80;
+            quality = 90;
           };
           # 4K-class previews for the photo viewer (default 1440 at quality 80).
           preview = {
@@ -425,13 +425,21 @@ in {
         ffmpeg = {
           accel = "vaapi";
           accelDecode = true;
-          targetResolution = "1080";
+          # iPhone Air HEVC/Dolby Vision and AV1 play natively on the phone and
+          # the M4 Mac, so serve originals untouched; keep full resolution for
+          # anything that must still be transcoded.
+          acceptedVideoCodecs = ["h264" "hevc" "av1"];
+          targetResolution = "original";
         };
         machineLearning = {
           urls = ["http://localhost:3003"];
-          # Better search recall (83.2 vs 69.9) for about 1.1 GiB of RAM. Faces
-          # keep buffalo_l so existing people clusters stay valid.
-          clip.modelName = "ViT-B-16-SigLIP-384__webli";
+          # Highest published search recall. The model needs about 3.8 GiB of
+          # RAM; zfs_arc_max below leaves room for it. Faces keep buffalo_l so
+          # existing people clusters stay valid.
+          clip.modelName = "ViT-SO400M-16-SigLIP2-384__webli";
+          # The server OCR model takes about 10 minutes per image on the N150.
+          # Read text at full preview resolution with the mobile model instead.
+          ocr.maxResolution = 2160;
         };
       };
     };
@@ -649,6 +657,9 @@ in {
       "d /persist/save/syncthing 0700 me users - -"
       "d /persist/save/syncthing/config 0700 me users - -"
       "d /persist/save/syncthing/database 0700 me users - -"
+      # ARC otherwise grows to about 14.7 GiB with no swap. Cap it at 6 GiB so
+      # large Immich ML models can load without OOM kills.
+      "w /sys/module/zfs/parameters/zfs_arc_max - - - - 6442450944"
     ];
 
     services = {
