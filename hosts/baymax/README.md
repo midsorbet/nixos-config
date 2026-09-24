@@ -979,6 +979,9 @@ normal configuration keeps the recovery guard that binds `immich-server` to
 `archive.mount`. The ESP backup taken before activation is
 `/persist/host/boot-backup-fleet-upgrade-20260924T052606Z.tgz`. Mini activated
 `/nix/store/mijvblqb76waazb91cwjih2zgsyv1kza-darwin-system-26.11.4cff07d`.
+Baymax then rebooted into generation 13 with kernel 6.18.53. Secure Boot stayed
+enabled, and the initrd unlock, the archive mount, and every checked service
+recovered without manual steps.
 
 The pre-cutover privacy census at
 `.git/agent-artifacts/hister-index-id-privacy-20260922.json` applies only to
