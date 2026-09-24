@@ -897,13 +897,13 @@ Mini converged to 100% (`need=0`, `errors=0`); all 26 ignore-rule hashes
 matched (`09437e852e7c59413594fb1d8fe13c852e5db67c66c380a39aebd986800c2fa0`).
 Source permissions remain preserved.
 
-The approved `nh` search generation is active and selected on Baymax. Running
-and boot profiles both match
+The approved `nh` search generation activated successfully. At that point,
+running and selected boot profiles both matched
 `/nix/store/ylw3qcrw41bzw1ay01fx3dl397cf47vl-nixos-system-baymax-recovery-search-view-26.11.20260919.20b1ddd`;
 its source is `/nix/store/22wqkawdgmr03wk7mrvb1mbnwyz0x04b-source`. Activation
 waited on the `syncthing-init` receiver condition; it was removed only after
 live Hister proof, then approved `nh` succeeded. No runtime recovery unmask
-occurred. Twenty-six system holds and one user hold remain.
+occurred. That generation retained 26 system holds and one user hold.
 
 `/persist/save/hister` is the active new index;
 `/persist/save/hister-reconciled-20260923c` retains the original. Atomic
@@ -949,11 +949,27 @@ incremental eligibility. The earlier modified receiver is retained at
 and unmounted, with its original snapshots and a held checkpoint of its head.
 No rollback or forced receive occurred.
 
-The persistSave seed, actual PostgreSQL restore, and its first incremental are
-not yet accepted. Keep the original indexes, snapshots, and recovery copies.
-The selected retention policy preserves all existing history: automatic ZFS
-pruning and Borg pruning/compaction are disabled in the prepared source. This
-policy is not live until its separately approved generation is activated.
+The persistSave replica passed its full metadata/content comparison, actual
+isolated PostgreSQL restore, and first incremental with a complete tree
+comparison. Its seed is `replica_seed_20260923T210818Z`; receipts are under
+`/persist/save/.replica-seed-replica_seed_20260923T210818Z`. Both fresh receivers
+are unmounted with `mountpoint=none` and `canmount=noauto`. All original indexes,
+snapshots, and recovery copies remain retained. Private reconciliation views
+were unmounted without destroying their datasets.
+
+After explicit approval, Baymax activated
+`/nix/store/k4fih13baf8mkqvavsmqivirgjzhagk1-nixos-system-baymax-recovery-history-preserving-26.11.20260919.20b1ddd`.
+Running and selected boot profiles match. Automatic ZFS pruning and Borg
+pruning/compaction are disabled; snapshot creation and backup schedules are
+restored. Sanoid, both Syncoid jobs, the export prerequisites, and the Readeck
+importer completed successfully. Borg started its scheduled backup; this is
+not a claim that that new archive has completed. Automatic upgrades remain
+masked by the approved recovery overlay.
+
+Mini retains `/nix/store/vdm1va2hjnxdxwnilb9wxxrkpf2amvcj-darwin-system-26.11.4cff07d`.
+Its concurrent CUA skill update was restored after the older reviewed Mini
+generation briefly replaced it. The active system and managed skill symlink
+were verified afterward.
 
 The pre-cutover privacy census at
 `.git/agent-artifacts/hister-index-id-privacy-20260922.json` applies only to
@@ -963,6 +979,17 @@ the retained original, not the active index. Closeout evidence is under
 `directory-exchange.json`, and `live-mirror-fixture.log`); archived
 candidate artifacts are at
 `/persist/save/hister-cutover-20260923/candidate-artifacts`.
+
+Final native API checks on both Syncthing endpoints showed only the `projects`
+folder, idle with zero pending items and errors. Mini is send-only; Baymax is
+receive-only; both preserve permissions. The old `vault` sharing is absent.
+Final activation receipts are in `final-activation-status.txt` in the closeout
+directory. Runtime and staging tools were archived there, compared against
+their originals, then removed from temporary locations. Obsolete continuation
+helpers and compiler caches were removed. Recovery datasets, snapshots, holds,
+source, builds, and evidence remain retained. The temporary Baymax root shell
+was exited, sudo credentials invalidated on both hosts, and only its
+agent-created Herdr tab was closed.
 
 Keep the failed SSD and all existing recovery copies. Never initialize the
 failed SSD. If it becomes readable, image it before further recovery work.
