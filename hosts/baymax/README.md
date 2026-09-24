@@ -1009,9 +1009,6 @@ Open fixes this incident calls for:
 
 ## Recovery
 
-Do not use the normal redeploy or automatic-upgrade commands below while any
-recovery holds remain. Follow the approved staged-restoration boundary above.
-
 If the tunnel token rotates or the Cloudflare tunnel object gets deleted and recreated:
 
 1. Update `baymax-tunnel.age` in the `nix-secrets` repo.
