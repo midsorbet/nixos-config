@@ -201,6 +201,13 @@ its private mount namespace. Stopping the view service unmounts the view.
 The Hister account does not require membership in the shared `users` group.
 Recovery activation status and index-acceptance gates are recorded below.
 
+Hister writes `db.sqlite3` and `vectors.sqlite3` continuously, so Borg excludes
+the live files. Before each Borg run, `hister-sqlite-backup.service` writes
+`VACUUM INTO` copies to `/persist/save/hister-backup`, checks them with
+`PRAGMA integrity_check`, and fails the backup if a copy is bad. To restore,
+stop Hister and copy both files back into `/persist/save/hister`. The Bleve
+index and `data/` payloads are still read live.
+
 ## Actual Budget
 
 Actual listens only on Baymax loopback port `5006`. Its server and user files live
