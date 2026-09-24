@@ -394,6 +394,40 @@ in {
       machine-learning.enable = true;
       # Expose only the iGPU render node for hardware transcoding.
       accelerationDevices = ["/dev/dri/renderD128"];
+      # Declarative system settings. The admin settings pages become read-only;
+      # keys not listed here use Immich defaults. Tuned for image viewing.
+      settings = {
+        server.externalDomain = "https://photos.${domain}";
+        image = {
+          # Sharper grid thumbnails on high-DPI screens (default 250).
+          thumbnail = {
+            format = "webp";
+            size = 400;
+            quality = 80;
+          };
+          # 4K-class previews for the photo viewer (default 1440 at quality 80).
+          preview = {
+            format = "jpeg";
+            size = 2160;
+            quality = 90;
+            progressive = true;
+          };
+          # Full-resolution web images for HEIC and RAW originals, so zoom
+          # shows every pixel.
+          fullsize = {
+            enabled = true;
+            format = "jpeg";
+            quality = 90;
+            progressive = true;
+          };
+          colorspace = "p3";
+        };
+        ffmpeg = {
+          accel = "vaapi";
+          accelDecode = true;
+          targetResolution = "1080";
+        };
+      };
     };
 
     ntfy-sh = {
