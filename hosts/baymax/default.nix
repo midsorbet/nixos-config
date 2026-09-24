@@ -131,10 +131,21 @@ in {
     # Force usb-storage (disable UAS) for the Seagate enclosure to avoid reset/timeouts.
     kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
     zfs.forceImportRoot = false;
+    # Baymax is wired-only. Keep the Wi-Fi and Bluetooth radios off now that
+    # their firmware is available.
+    blacklistedKernelModules = ["iwlwifi" "iwlmvm" "btusb" "btintel" "bluetooth"];
   };
 
-  # The N150 iGPU needs i915 GuC/HuC firmware; without it the GPU is wedged.
-  hardware.enableRedistributableFirmware = true;
+  hardware = {
+    # The N150 iGPU needs i915 GuC/HuC firmware; without it the GPU is wedged.
+    enableRedistributableFirmware = true;
+    cpu.intel.updateMicrocode = true;
+    # VA-API and oneVPL (QSV) drivers for Immich video transcoding.
+    graphics = {
+      enable = true;
+      extraPackages = [pkgs.intel-media-driver pkgs.vpl-gpu-rt];
+    };
+  };
 
   # Lanzaboote only emits this configuration when automatic key setup is enabled.
   environment.etc."sbctl/sbctl.conf".source = (pkgs.formats.yaml {}).generate "sbctl.conf" {
@@ -381,6 +392,8 @@ in {
       };
       openFirewall = false;
       machine-learning.enable = true;
+      # Expose only the iGPU render node for hardware transcoding.
+      accelerationDevices = ["/dev/dri/renderD128"];
     };
 
     ntfy-sh = {
@@ -990,7 +1003,10 @@ in {
       };
 
       hister.uid = 986;
-      immich.uid = 998;
+      immich = {
+        uid = 998;
+        extraGroups = ["render" "video"];
+      };
 
       readeck = {
         isSystemUser = true;
