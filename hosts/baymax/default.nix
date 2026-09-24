@@ -325,7 +325,7 @@ in {
         BORG_RSH = "ssh -i ${config.age.secrets.hetzner-borg-key.path} -p 23 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${config.age.secrets.hetzner-borg-hosts.path}";
       };
       # Borg must not read Hister's live SQLite databases; the prep service
-      # below snapshots them with SQLite's online backup API.
+      # below copies consistent snapshots of them into /persist/save/hister-backup.
       exclude = [
         "sh:/persist/save/hister/db.sqlite3"
         "sh:/persist/save/hister/db.sqlite3-wal"
@@ -773,7 +773,10 @@ in {
             test -f "$source"
             rm -f -- "$temporary"
             temporaryFiles+=("$temporary")
-            sqlite3 "$source" ".backup '$temporary'"
+            # Hister writes continuously. The online backup API restarts after
+            # every foreign write, so read one consistent snapshot instead and
+            # wait for Hister's locks rather than failing.
+            sqlite3 -cmd ".timeout 300000" "$source" "VACUUM INTO '$temporary'"
             test "$(sqlite3 "$temporary" 'PRAGMA integrity_check;')" = ok
             mv -f -- "$temporary" "$destination"
             temporaryFiles=()
