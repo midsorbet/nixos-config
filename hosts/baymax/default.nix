@@ -324,6 +324,18 @@ in {
       environment = {
         BORG_RSH = "ssh -i ${config.age.secrets.hetzner-borg-key.path} -p 23 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=${config.age.secrets.hetzner-borg-hosts.path}";
       };
+      # Borg must not read Hister's live SQLite databases; the prep service
+      # below snapshots them with SQLite's online backup API.
+      exclude = [
+        "sh:/persist/save/hister/db.sqlite3"
+        "sh:/persist/save/hister/db.sqlite3-wal"
+        "sh:/persist/save/hister/db.sqlite3-shm"
+        "sh:/persist/save/hister/db.sqlite3-journal"
+        "sh:/persist/save/hister/vectors.sqlite3"
+        "sh:/persist/save/hister/vectors.sqlite3-wal"
+        "sh:/persist/save/hister/vectors.sqlite3-shm"
+        "sh:/persist/save/hister/vectors.sqlite3-journal"
+      ];
       # An empty policy omits both Borg prune and compact from the job.
       prune.keep = {};
     };
@@ -726,6 +738,48 @@ in {
         '';
       };
 
+      "hister-sqlite-backup" = {
+        description = "Create consistent Hister SQLite backups";
+        path = [pkgs.coreutils pkgs.sqlite];
+        serviceConfig = {
+          Type = "oneshot";
+          TimeoutStartSec = "30m";
+          User = "hister";
+          Group = "hister";
+          UMask = "0077";
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          ProtectHome = true;
+          ProtectSystem = "strict";
+          ReadWritePaths = ["/persist/save/hister" "/persist/save/hister-backup"];
+        };
+        script = ''
+          set -euo pipefail
+
+          sourceDir="/persist/save/hister"
+          backupDir="/persist/save/hister-backup"
+          temporaryFiles=()
+          cleanup() {
+            if ((''${#temporaryFiles[@]} > 0)); then
+              rm -f -- "''${temporaryFiles[@]}"
+            fi
+          }
+          trap cleanup EXIT
+
+          for database in db.sqlite3 vectors.sqlite3; do
+            source="$sourceDir/$database"
+            destination="$backupDir/$database"
+            temporary="$backupDir/.$database.tmp"
+            test -f "$source"
+            rm -f -- "$temporary"
+            temporaryFiles+=("$temporary")
+            sqlite3 "$source" ".backup '$temporary'"
+            test "$(sqlite3 "$temporary" 'PRAGMA integrity_check;')" = ok
+            mv -f -- "$temporary" "$destination"
+            temporaryFiles=()
+          done
+        '';
+      };
       # Template service for failure notifications
       "ntfy-failure@" = {
         description = "Send failure notification for %i";
@@ -756,6 +810,7 @@ in {
       "actual".serviceConfig.NoNewPrivileges = true;
       "actual".unitConfig.OnFailure = "ntfy-failure@%n";
       "actual-backup".unitConfig.OnFailure = "ntfy-failure@%n";
+      "hister-sqlite-backup".unitConfig.OnFailure = "ntfy-failure@%n";
       "readeck-export".unitConfig.OnFailure = "ntfy-failure@%n";
       "postgresqlBackup" = {
         requires = ["postgresql.service"];
@@ -765,12 +820,14 @@ in {
       "paperless-exporter".unitConfig.OnFailure = "ntfy-failure@%n";
       "borgbackup-job-hetzner".requires = [
         "actual-backup.service"
+        "hister-sqlite-backup.service"
         "paperless-exporter.service"
         "readeck-export.service"
         "postgresqlBackup.service"
       ];
       "borgbackup-job-hetzner".after = [
         "actual-backup.service"
+        "hister-sqlite-backup.service"
         "paperless-exporter.service"
         "readeck-export.service"
         "postgresqlBackup.service"
@@ -864,6 +921,9 @@ in {
           mode = "0444";
         };
       }
+      // (mkTmpDirEntries "hister" "hister" "0700" [
+        "/persist/save/hister-backup"
+      ])
       // (mkTmpDirEntries user "users" "0700" [
         "/home/${user}/.omp"
         "/home/${user}/.omp/agent"
