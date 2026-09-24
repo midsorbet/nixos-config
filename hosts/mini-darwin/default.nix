@@ -301,6 +301,8 @@ in {
     onActivation = {
       autoUpdate = true;
       upgrade = true;
+      # Homebrew 7 asks for plan confirmation on a TTY; nh switches run on one.
+      extraEnv.HOMEBREW_NO_ASK = "1";
     };
   };
 
