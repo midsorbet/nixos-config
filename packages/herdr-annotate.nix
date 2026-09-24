@@ -6,9 +6,9 @@
   makeWrapper,
   stdenv,
 }: let
-  version = "0.4.0";
-  revision = "7c8f5a177b8285dc56efc471ef04f7ab44a2b4b6";
-  plannotatorTuiVersion = "0.8.0";
+  version = "0.5.0";
+  revision = "d02b0b42cf1955a3b206959659f1833622f213b8";
+  plannotatorTuiVersion = "0.9.2";
   herdrAnnotateVersion = "0.1.0";
   herdrAnnotateBinary = fetchurl {
     url = "https://github.com/plannotator/herdr-annotate/releases/download/rust-lite-v${herdrAnnotateVersion}/herdr-annotate-aarch64-apple-darwin";
@@ -19,7 +19,7 @@
     then
       fetchurl {
         url = "https://github.com/plannotator/plannotator-tui/releases/download/v${plannotatorTuiVersion}/plannotator-tui-aarch64-apple-darwin";
-        hash = "sha256-fQV/Oho6ojywpEhD/tPwTUmKHaUhl83sAhLG+OFhjLI=";
+        hash = "sha256-eciAG6usXNJXA0A2U2u89Rp7TNjQa0N/HoVxNxRSHrA=";
       }
     else throw "herdr-annotate is not packaged for ${stdenv.hostPlatform.system}";
 in
@@ -31,7 +31,7 @@ in
       owner = "plannotator";
       repo = "herdr-annotate";
       rev = revision;
-      hash = "sha256-f+/2mDs8d5JICqbwzC7/tIYdLlb8NPJuV00Odp4CMSU=";
+      hash = "sha256-ra+iX1QrsaPe0lmbJ+FOxMp2YWP1YsvPUHPoB3HgOqY=";
     };
 
     nativeBuildInputs = [makeWrapper];
@@ -42,19 +42,19 @@ in
     dontFixup = stdenv.hostPlatform.isDarwin;
 
     postPatch = ''
-      substituteInPlace herdr-plugin.toml \
-        --replace-fail '[[build]]
-platforms = ["macos", "linux"]
-command = ["bash", "scripts/fetch-herdr-annotate.sh"]
+            substituteInPlace herdr-plugin.toml \
+              --replace-fail '[[build]]
+      platforms = ["macos", "linux"]
+      command = ["bash", "scripts/fetch-herdr-annotate.sh"]
 
-' "" \
-        --replace-fail '[[build]]
-platforms = ["macos", "linux"]
-command = ["bash", "scripts/fetch-plannotator-tui.sh"]
+      ' "" \
+              --replace-fail '[[build]]
+      platforms = ["macos", "linux"]
+      command = ["bash", "scripts/fetch-plannotator-tui.sh"]
 
-' "" \
-        --replace-fail 'command = ["sh",' 'command = ["${lib.getExe bash}",' \
-        --replace-fail 'exec bash \"' 'exec ${lib.getExe bash} \"'
+      ' "" \
+              --replace-fail 'command = ["sh",' 'command = ["${lib.getExe bash}",' \
+              --replace-fail 'exec bash \"' 'exec ${lib.getExe bash} \"'
     '';
 
     installPhase = ''

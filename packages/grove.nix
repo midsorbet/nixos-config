@@ -7,16 +7,16 @@
 }:
 buildGoModule rec {
   pname = "grove";
-  version = "1.1.15";
+  version = "1.1.18";
 
   src = fetchFromGitHub {
     owner = "nicksenap";
     repo = "grove";
     tag = "v${version}";
-    hash = "sha256-ysAHjMn3Iiydvr9Z1yaXzPPh7vChJHPM+5HfA/rdGAM=";
+    hash = "sha256-1ovtWgDimcJjTVbaAvNo4uIy6aqZPepsi6U2ITgTaPc=";
   };
 
-  vendorHash = "sha256-RJWUJP3/7sKNdDHmf1+S610tt4b+cisV/U9DGah91cA=";
+  vendorHash = "sha256-34i8R0orxZ5G0g/j9jOZtjV00F/vS7fB+j/MQ+CEOVo=";
 
   subPackages = ["cmd/gw"];
 
