@@ -776,7 +776,14 @@ in {
         "postgresqlBackup.service"
       ];
       "borgbackup-job-hetzner".unitConfig.OnFailure = "ntfy-failure@%n";
-      "immich-server".unitConfig.OnFailure = "ntfy-failure@%n";
+      # /archive is nofail. Without the pool, tmpfiles would create the media
+      # directory on the rolled-back root, and uploads there would be lost.
+      "immich-server" = {
+        unitConfig.OnFailure = "ntfy-failure@%n";
+        requires = ["archive.mount"];
+        after = ["archive.mount"];
+        bindsTo = ["archive.mount"];
+      };
       "immich-machine-learning".unitConfig.OnFailure = "ntfy-failure@%n";
       # Preserve ntfy credentials for smartd health-warning notifications;
       # OnFailure still covers daemon/process failures separately.
