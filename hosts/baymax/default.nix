@@ -133,6 +133,9 @@ in {
     zfs.forceImportRoot = false;
   };
 
+  # The N150 iGPU needs i915 GuC/HuC firmware; without it the GPU is wedged.
+  hardware.enableRedistributableFirmware = true;
+
   # Lanzaboote only emits this configuration when automatic key setup is enabled.
   environment.etc."sbctl/sbctl.conf".source = (pkgs.formats.yaml {}).generate "sbctl.conf" {
     keydir = "${config.boot.lanzaboote.pkiBundle}/keys";
