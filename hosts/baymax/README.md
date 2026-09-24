@@ -1001,6 +1001,15 @@ jellyfin-ffmpeg passed. To use it, select hardware transcoding (QSV or VA-API)
 in Immich's administration settings. The pre-install ESP backup is
 `/persist/host/boot-backup-igpu-20260924T162311Z.tgz`.
 
+Immich system settings now live in `services.immich.settings`
+(`IMMICH_CONFIG_FILE=/run/immich/config.json`), so the admin settings pages are
+read-only. Change settings in Nix. Smart search uses
+`ViT-B-16-SigLIP-384__webli`; faces keep `buffalo_l` so existing people
+clusters stay valid. After changing a model or image size, queue the matching
+"All" job (Smart Search, Face Detection, OCR, or Generate Thumbnails) in the
+Immich jobs page. Upstream Immich ML is not packaged for Darwin, so it stays on
+Baymax.
+
 The pre-cutover privacy census at
 `.git/agent-artifacts/hister-index-id-privacy-20260922.json` applies only to
 the retained original, not the active index. Closeout evidence is under
