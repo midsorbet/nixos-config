@@ -3,6 +3,11 @@
 (?d)/vault/private/**
 (?d)/.stignore
 
+// Local-only repositories, including their Git metadata, must also precede
+// the Git metadata inclusions below.
+(?d)/spark
+(?d)/spark/**
+
 // Git metadata must remain available everywhere outside privacy exclusions.
 !/.git
 !/.git/**
@@ -20,6 +25,10 @@
 (?d)**/result
 (?d)**/.next
 (?d)**/.svelte-kit
+(?d)**/.bloop
+(?d)**/.metals
+(?d)**/.bsp
+(?d)**/.scala-build
 
 // These target subtrees contain preserved linked worktrees, not build output.
 // Keep their source while dropping generated target output inside each worktree.
