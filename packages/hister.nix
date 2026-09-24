@@ -10,7 +10,7 @@
   stdenv,
   versionCheckHook,
 }: let
-  version = "0.19.0";
+  version = "0.20.0";
   platforms = [
     "aarch64-darwin"
     "x86_64-linux"
@@ -30,7 +30,7 @@
 
     src = fetchurl {
       url = "https://github.com/asciimoo/hister/releases/download/v${version}/hister_${version}_linux_amd64";
-      hash = "sha256-dXH3uUA5kX1Rk3L6av8Y/hLC71D5gayEfsGv9NfkFwE=";
+      hash = "sha256-KMRTzT/jg9rJNvkUUMC9bTvklEB5ZwqmB/OOASFYRP4=";
     };
 
     dontUnpack = true;
@@ -55,7 +55,7 @@
     owner = "asciimoo";
     repo = "hister";
     rev = "v${version}";
-    hash = "sha256-0DNrO8wLgkVKTNWfSjkVpwUBn0+X7xb2pb7mXnD1SIU=";
+    hash = "sha256-8FKieCq7T87wIawCjVoto2kX1PU2sV1LFQtz2nydzBM=";
   };
 
   frontend = buildNpmPackage {
@@ -84,7 +84,7 @@
     inherit version meta;
     src = source;
 
-    vendorHash = "sha256-5weBvVQotKuVaBPqaBWzsK571EDPTnAKpim4i6fpeg0=";
+    vendorHash = "sha256-piPns+kq6ZCM4Bpe7nzdjHjkZKe1VV6UY9IIMshNGpo=";
     proxyVendor = true;
 
     nativeBuildInputs = [pkg-config];
