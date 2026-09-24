@@ -427,6 +427,12 @@ in {
           accelDecode = true;
           targetResolution = "1080";
         };
+        machineLearning = {
+          urls = ["http://localhost:3003"];
+          # Better search recall (83.2 vs 69.9) for about 1.1 GiB of RAM. Faces
+          # keep buffalo_l so existing people clusters stay valid.
+          clip.modelName = "ViT-B-16-SigLIP-384__webli";
+        };
       };
     };
 
