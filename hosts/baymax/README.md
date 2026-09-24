@@ -1004,8 +1004,14 @@ in Immich's administration settings. The pre-install ESP backup is
 Immich system settings now live in `services.immich.settings`
 (`IMMICH_CONFIG_FILE=/run/immich/config.json`), so the admin settings pages are
 read-only. Change settings in Nix. Smart search uses
-`ViT-B-16-SigLIP-384__webli`; faces keep `buffalo_l` so existing people
-clusters stay valid. After changing a model or image size, queue the matching
+`ViT-SO400M-16-SigLIP2-384__webli` (1152 dimensions). A warm text query takes
+about 1 s, indexing takes about 8 s per image, and the loaded model uses up to
+about 8.6 GiB of RSS while another CLIP model is still resident. Idle models
+unload after five minutes. `zfs_arc_max` is capped at 6 GiB at runtime because
+the host has no swap. OCR keeps `PP-OCRv5_mobile` at `maxResolution` 2160. The
+server model took about 600 s per image on the N150. Faces keep `buffalo_l`,
+so existing people clusters stay valid. HEVC and AV1 originals are served
+without transcoding. After changing a model or image size, queue the matching
 "All" job (Smart Search, Face Detection, OCR, or Generate Thumbnails) in the
 Immich jobs page. Upstream Immich ML is not packaged for Darwin, so it stays on
 Baymax.
