@@ -990,6 +990,17 @@ Baymax then rebooted into generation 13 with kernel 6.18.53. Secure Boot stayed
 enabled, and the initrd unlock, the archive mount, and every checked service
 recovered without manual steps.
 
+Generation 16 enables the N150's hardware, which was never lacking; it was
+missing firmware. Redistributable firmware lets i915 load GuC 70.49.4 and HuC
+7.9.3 instead of declaring the iGPU wedged. Early microcode updated the CPU from
+`0x1a` to `0x21`. The Intel Wi-Fi (`00:14.3`) and Bluetooth controllers now
+have firmware too, so the wired-only host blocks `iwlwifi`, `iwlmvm`, `btusb`,
+`btintel`, and `bluetooth`. Immich can use only `/dev/dri/renderD128`, with the
+iHD VA-API and oneVPL drivers. A VA-API H.264 test encode with Immich's
+jellyfin-ffmpeg passed. To use it, select hardware transcoding (QSV or VA-API)
+in Immich's administration settings. The pre-install ESP backup is
+`/persist/host/boot-backup-igpu-20260924T162311Z.tgz`.
+
 The pre-cutover privacy census at
 `.git/agent-artifacts/hister-index-id-privacy-20260922.json` applies only to
 the retained original, not the active index. Closeout evidence is under
