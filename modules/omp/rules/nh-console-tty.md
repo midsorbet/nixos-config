@@ -5,7 +5,7 @@ condition:
 scope:
   - tool:bash
   - tool:eval
-  - tool:hub
+  - tool:write(proc://**)
 interruptMode: always
 ---
 
@@ -20,8 +20,9 @@ fi
 ```
 
 The notification is best effort. Its failure must not block, replace, or reroute
-the switch. Do not set `async: true`, pipe output, use a background `hub` PTY,
-route the switch through Herdr, or create another terminal. Tell the user before
+the switch. Do not set `async: true`, pipe output, or use a background `bash` job
+or named service. Do not route the switch through Herdr or create another terminal.
+Tell the user before
 sudo prompts and let them type directly into the OMP console TTY. Keep the
 repository's build-before-switch, host-order, explicit approval, and cleanup
 boundaries.

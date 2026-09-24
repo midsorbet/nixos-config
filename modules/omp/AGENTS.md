@@ -33,8 +33,8 @@ duplicate or override them in project notes.
 Use OMP's foreground console TTY for `nh os switch` and `nh darwin switch`:
 call `bash` with `pty: true`, without `async: true` or output pipes. The
 console TTY is the interactive overlay in this OMP session, not a background
-`hub` PTY. If no interactive UI is available, stop for user input; do not
-silently fall back to a non-interactive command or a new terminal window.
+`bash` service or async job. If no interactive UI is available, stop for user
+input; do not silently fall back to a non-interactive command or a new terminal window.
 
 For repeated sudo administration, prefer a dedicated Herdr tab after reading
 the Herdr skill and checking `HERDR_ENV=1`. Record the tab and pane IDs and

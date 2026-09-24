@@ -1,12 +1,12 @@
 ---
 description: Use a visible sudo session and clean up its privileges and owned tab.
 condition:
-  - '(?:\\?"command\\?"|command)[ \t]*:[ \t]*\\?"[^\r\n]{0,2048}\bsudo\b'
+  - '\bsudo\b'
   - '\bherdr[ \t]+(?:tab|pane)[ \t]+create\b[^\r\n]{0,320}\b(?:sudo|root|admin|interactive|authentication)\b'
 scope:
   - tool:bash
   - tool:eval
-  - tool:hub
+  - tool:write(proc://**)
 interruptMode: always
 ---
 
@@ -31,10 +31,8 @@ fi
 Notification failure must not block or reroute the administration. Never put
 passwords, secrets, host-sensitive details, or command output in notifications.
 The user types directly into the visible TTY; never request, relay, log, or
-script a password. A background `hub` PTY is not a substitute for a visible
-prompt. If Herdr is unavailable, use the OMP console TTY rather than creating a
-standalone terminal window.
-a visible prompt. If Herdr is unavailable, retain the current OMP console TTY
+script a password. A background `bash` job or named service is not a substitute
+for a visible prompt. If Herdr is unavailable, retain the current OMP console TTY
 behavior without attempting a standalone fallback or creating a terminal window.
 
 On success, failure, or abandonment: preserve verification output, exit the

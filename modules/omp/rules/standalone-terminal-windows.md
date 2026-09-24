@@ -12,7 +12,7 @@ condition:
 scope:
   - tool:bash
   - tool:eval
-  - tool:hub
+  - tool:write(proc://**)
 interruptMode: always
 ---
 

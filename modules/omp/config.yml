@@ -154,6 +154,8 @@ statusLine:
     - session_name
 terminal:
   showProgress: true
+tools:
+  xdevDocs: builtins
 tui:
   codexResetFireworks: true
   vimMode: false
