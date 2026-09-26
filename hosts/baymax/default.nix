@@ -127,6 +127,8 @@ in {
       # Keep USB archive hotplug working after security.lockKernelModules takes effect.
       "usb_storage"
       "sd_mod"
+      # zramSwap needs its module before security.lockKernelModules takes effect.
+      "zram"
     ];
     # Force usb-storage (disable UAS) for the Seagate enclosure to avoid reset/timeouts.
     kernelParams = ["usb-storage.quirks=0bc2:2344:u"];
@@ -146,6 +148,9 @@ in {
       extraPackages = [pkgs.intel-media-driver pkgs.vpl-gpu-rt];
     };
   };
+
+  # Compressed RAM swap absorbs Immich ML load spikes; the host has no disk swap.
+  zramSwap.enable = true;
 
   # Lanzaboote only emits this configuration when automatic key setup is enabled.
   environment.etc."sbctl/sbctl.conf".source = (pkgs.formats.yaml {}).generate "sbctl.conf" {
@@ -433,13 +438,20 @@ in {
         };
         machineLearning = {
           urls = ["http://localhost:3003"];
-          # Highest published search recall. The model needs about 3.8 GiB of
-          # RAM; zfs_arc_max below leaves room for it. Faces keep buffalo_l so
-          # existing people clusters stay valid.
+          # Highest published search recall. Under load the ML service reached
+          # 6.5-9.6 GiB and was OOM-killed about 20 times on 2026-09-24/25, so
+          # the job concurrency below, the ARC cap, and zram keep it in memory.
+          # Faces keep buffalo_l so existing people clusters stay valid.
           clip.modelName = "ViT-SO400M-16-SigLIP2-384__webli";
           # The server OCR model takes about 10 minutes per image on the N150.
           # Read text at full preview resolution with the mobile model instead.
           ocr.maxResolution = 2160;
+        };
+        # Send one request at a time to the ML service for each ML job type.
+        job = {
+          smartSearch.concurrency = 1;
+          faceDetection.concurrency = 1;
+          ocr.concurrency = 1;
         };
       };
     };
@@ -657,9 +669,9 @@ in {
       "d /persist/save/syncthing 0700 me users - -"
       "d /persist/save/syncthing/config 0700 me users - -"
       "d /persist/save/syncthing/database 0700 me users - -"
-      # ARC otherwise grows to about 14.7 GiB with no swap. Cap it at 6 GiB so
-      # large Immich ML models can load without OOM kills.
-      "w /sys/module/zfs/parameters/zfs_arc_max - - - - 6442450944"
+      # ARC otherwise grows to about 14.7 GiB with no swap. A 6 GiB cap still
+      # left too little room for the SO400M ML model, so cap it at 3 GiB.
+      "w /sys/module/zfs/parameters/zfs_arc_max - - - - 3221225472"
     ];
 
     services = {
