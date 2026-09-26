@@ -1008,10 +1008,14 @@ Immich system settings now live in `services.immich.settings`
 (`IMMICH_CONFIG_FILE=/run/immich/config.json`), so the admin settings pages are
 read-only. Change settings in Nix. Smart search uses
 `ViT-SO400M-16-SigLIP2-384__webli` (1152 dimensions). A warm text query takes
-about 1 s, indexing takes about 8 s per image, and the loaded model uses up to
-about 8.6 GiB of RSS while another CLIP model is still resident. Idle models
-unload after five minutes. `zfs_arc_max` is capped at 6 GiB at runtime because
-the host has no swap. OCR keeps `PP-OCRv5_mobile` at `maxResolution` 2160. The
+about 1 s, and indexing takes about 8 s per image. Under concurrent Smart Search
+and OCR jobs the ML service reached 6.5-9.6 GiB and was OOM-killed about 20
+times on 2026-09-24/25, failing those jobs. Smart Search, Face Detection, and
+OCR now run one job at a time, `zfs_arc_max` is capped at 3 GiB at runtime, and
+a 7.7 GiB zstd `zram0` swap absorbs spikes. `zram` is preloaded in
+`boot.kernelModules` because module loading is locked after boot, so zram
+changes need a reboot. Idle models unload after five minutes. OCR keeps
+`PP-OCRv5_mobile` at `maxResolution` 2160. The
 server model took about 600 s per image on the N150. Faces keep `buffalo_l`,
 so existing people clusters stay valid. HEVC and AV1 originals are served
 without transcoding. After changing a model or image size, queue the matching
